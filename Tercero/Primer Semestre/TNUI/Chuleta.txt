@@ -1,0 +1,3 @@
+Cuando dice "La derivada" se refiere el valor númerico de la derivada en un punto
+-
+De una muestra finita NO puedo sacar el modelo perfecto. Lo importante es que se aproxime mucho y que esté basado en datos.
