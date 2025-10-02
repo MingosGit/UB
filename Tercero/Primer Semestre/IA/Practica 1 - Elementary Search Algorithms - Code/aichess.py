@@ -281,25 +281,69 @@ class Aichess():
 
     def AStarSearch(self, currentState):
         import heapq
-        frontera = []
-        heapq.heappush(frontera, (self.h(currentState), currentState, 0))
-        visited = set()
-        visited.add(str(currentState))
-        while frontera:
-            f, node, g = heapq.heappop(frontera)
+        # Normalize the start state to (king, rook)
+        currentState = self.getWhiteState(currentState)
+        # frontier entries are tuples: (f_score, state, g_cost)
+        frontier = []
+        start_key = str(currentState)
+        heapq.heappush(frontier, (self.h(currentState), currentState, 0))
+
+        # cost-so-far (g) and parent map for reconstruction (store normalized states)
+        cost_so_far = {start_key: 0}
+        self.dictPath[start_key] = (None, 0)
+
+        found = False
+        # while expanding nodes, rebuild boardSim from the normalized white node
+        # plus the original black pieces to avoid complex move synchronization
+        while frontier:
+            f, node, g = heapq.heappop(frontier)
+            # debug
             print(f"Exploring state: {node}")
+
+            # rebuild boardSim so successor generation is accurate
+            try:
+                # node is normalized white-state (list of white piece states)
+                # combine with the original black state from self.chess.board.currentStateB
+                full_state = []
+                # white pieces from node
+                for w in node:
+                    full_state.append(w)
+                # black pieces from initial board (unchanged during A* search)
+                for b in self.chess.board.currentStateB:
+                    full_state.append(b)
+                # rebuild simulation board
+                self.newBoardSim(full_state)
+            except Exception as e:
+                print(f"Failed to rebuild boardSim for node {node}: {e}")
+                continue
+
+            # goal check
             if self.isCheckMate(node):
                 print("Checkmate found!")
-                self.pathToTarget.append(node)
+                # reconstruct path using dictPath; node is normalized
                 self.reconstructPath(node, g)
+                found = True
                 break
-            for son in self.getListNextStatesW(node):
-                if str(son) not in visited:
-                    visited.add(str(son))
-                    heapq.heappush(frontera, (g + 1 + self.h(son), son, g + 1))
-        print("Visited states:", visited)
-        print("Minimal depth to checkmate:", len(self.pathToTarget) - 1)
 
+            # expand successors; ensure node passed to successor generator is in normalized form
+            for son in self.getListNextStatesW(node):
+                # normalize successor to canonical (king, rook)
+                son_norm = self.getWhiteState(son)
+                son_key = str(son_norm)
+                tentative_g = g + 1
+                # if we already have a better path to son, skip
+                if son_key in cost_so_far and tentative_g >= cost_so_far[son_key]:
+                    continue
+                cost_so_far[son_key] = tentative_g
+                # parent pointer and depth (store parent as normalized state)
+                self.dictPath[son_key] = (node, tentative_g)
+                heapq.heappush(frontier, (tentative_g + self.h(son_norm), son_norm, tentative_g))
+
+        # diagnostic output
+        if found:
+            print("Minimal depth to checkmate:", len(self.pathToTarget) - 1)
+        else:
+            print("No checkmate found within search limits.")
 if __name__ == "__main__":
     TA = np.zeros((8, 8))
     TA[7][0] = 2  
@@ -309,7 +353,8 @@ if __name__ == "__main__":
     aichess = Aichess(TA, True)
     print("Printing board:")
     aichess.chess.boardSim.print_board()
-    currentState = aichess.chess.board.currentStateW.copy()
+    # Normalizar el estado blanco: asegurarse rey en índice 0, torre en índice 1
+    currentState = aichess.getWhiteState(aichess.getCurrentState())
     print("Current State:", currentState, "\n")
     aichess.AStarSearch(currentState)
     print("#A* move sequence:", aichess.pathToTarget)
