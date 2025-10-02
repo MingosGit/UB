@@ -334,33 +334,21 @@ class Aichess():
         self.pathToTarget.insert(0, state)
 
     def h(self, state):
+        # Get positions of the white king and rook
+        whiteKingPosition = state[0]
+        whiteRookPosition = state[1]
 
-        if state[0][2] == 2:
-            kingPosition = state[1]
-            rookPosition = state[0]
-        else:
-            kingPosition = state[0]
-            rookPosition = state[1]
+        # Define the target checkmate position for the white pieces
+        targetKingPosition = [0, 5]  # The black king's current position
 
-        # Example heuristic assusiming the target position for the king is (2,4).
+        # Calculate the Manhattan distance for both the king and rook
+        kingDistance = abs(whiteKingPosition[0] - targetKingPosition[0]) + abs(whiteKingPosition[1] - targetKingPosition[1])
+        rookDistance = abs(whiteRookPosition[0] - targetKingPosition[0]) + abs(whiteRookPosition[1] - targetKingPosition[1])
 
-        # Calculate the Manhattan distance for the king to reach the target configuration (2,4)
-        rowDiff = abs(kingPosition[0] - 2)
-        colDiff = abs(kingPosition[1] - 4)
-        # The minimum of row and column differences corresponds to diagonal moves,
-        # and the absolute difference corresponds to remaining straight moves
-        hKing = min(rowDiff, colDiff) + abs(rowDiff - colDiff)
+        # Return the sum of these distances (you could refine this for better performance)
+        return kingDistance + rookDistance
 
-        # Heuristic for the rook, with three different cases
-        if rookPosition[0] == 0 and (rookPosition[1] < 3 or rookPosition[1] > 5):
-            hRook = 0
-        elif rookPosition[0] != 0 and 3 <= rookPosition[1] <= 5:
-            hRook = 2
-        else:
-            hRook = 1
 
-        # Total heuristic is the sum of king and rook heuristics
-        return hKing + hRook
 
     def changeState(self, start, to):
         # Determine which piece has moved from the start state to the next state
@@ -503,11 +491,38 @@ class Aichess():
             depthCurrentState = depthNode
             
     def AStarSearch(self, currentState):
-        
-        frontera = []
-        frontera.append((self.h(currentState),currentState))
+        import heapq
 
-	# your code here...
+        frontera = []
+        heapq.heappush(frontera, (self.h(currentState), currentState, 0))  # f(n), state, g(n)
+
+        visited = set()
+        visited.add(str(currentState))
+
+        while frontera:
+            f, node, g = heapq.heappop(frontera)  # Get the state with the lowest f(n)
+
+            # Debug print for current state
+            print(f"Exploring state: {node}")
+
+            # Check if it's checkmate
+            if self.isCheckMate(node):
+                print("Checkmate found!")
+                self.pathToTarget.append(node)  # Add the checkmate node to the path
+                self.reconstructPath(node, g)   # Reconstruct the full path
+                break
+
+            # Generate successors (next possible states)
+            for son in self.getListNextStatesW(node):
+                if str(son) not in visited:
+                    visited.add(str(son))
+                    heapq.heappush(frontera, (g + 1 + self.h(son), son, g + 1))
+
+        # Print visited states and depth
+        print("Visited states:", visited)
+        print("Minimal depth to checkmate:", len(self.pathToTarget) - 1)
+
+        # your code here...
 
 
 if __name__ == "__main__":
