@@ -192,7 +192,7 @@ class Chess():
             # AI state change - identify change to make in state
             for m in range(len(self.boardSim.currentStateW)):
 
-                # print("piece to move",self.board.currentStateW[m])
+                print("piece to move",self.board.currentStateW[m])
                 aa = self.boardSim.currentStateW[m]               
                 # only the one to move and only for whites so far
                 if self.boardSim.listNames[int(aa[2]-1)] == str(target_piece) and target_piece.color:
@@ -209,7 +209,7 @@ class Chess():
             # AI state change - identify change to make in state
             for m in range(len(self.board.currentStateB)):
 
-                # print("piece to move",self.board.currentStateW[m])
+                print("piece to move",self.board.currentStateW[m])
                 aa = self.board.currentStateB[m]
                 # only the one to move and only for whites so far
                 if self.board.listNames[int(aa[2] - 1)] == str(target_piece) and not target_piece.color:
@@ -218,7 +218,7 @@ class Chess():
                     self.board.currentStateB[m][1] = to[1]
                     print("->piece to state ", self.board.currentStateB[m])
 
-    #                   print("Next States: ",self.board.getListNextStatesW(self.board.currentStateW[m]))
+        print("Next States: ",self.board.getListNextStatesW(self.board.currentStateW[m]))
 
 
     def move(self, start, to):
@@ -315,7 +315,7 @@ class Chess():
             # AI state change - identify change to make in state
             for m in range(len(self.board.currentStateW)):
    
-                # print("piece to move",self.board.currentStateW[m])
+                print("piece to move",self.board.currentStateW[m])
                 aa = self.board.currentStateW[m]
                 # only the one to move and only for whites so far
                 if self.board.listNames[int(aa[2]-1)] == str(target_piece) and target_piece.color:
@@ -336,7 +336,7 @@ class Chess():
             # AI state change - identify change to make in state
             for m in range(len(self.board.currentStateB)):
 
-               # print("piece to move",self.board.currentStateW[m])
+               print("piece to move",self.board.currentStateW[m])
                aa = self.board.currentStateB[m]
                # only the one to move and only for whites so far
                if self.board.listNames[int(aa[2] - 1)] == target_piece.name and not target_piece.color:
@@ -415,8 +415,7 @@ if __name__ == "__main__":
     chess = Chess(TA)
 #  chess = Chess([],False)
         
-    
-    # print board
+
     chess.board.print_board()
 
     while True:
