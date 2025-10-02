@@ -80,11 +80,280 @@ class Aichess():
             return False
 
     def isCheckMate(self, mystate):
-        listCheckMateStates = [[[0,0,2],[2,4,6]],[[0,1,2],[2,4,6]],[[0,2,2],[2,4,6]],[[0,6,2],[2,4,6]],[[0,7,2],[2,4,6]]]
-        for permState in list(permutations(mystate)):
-            if list(permState) in listCheckMateStates:
-                return True
-        return False   
+        board_sim = self.chess.boardSim
+
+        # pure attack detector (no side-effects) to avoid calling piece.is_valid_move
+        def square_attacked_pure(r, c):
+            b = board_sim.board
+            # scan all white pieces and check if they attack (r,c)
+            for i in range(8):
+                for j in range(8):
+                    p = b[i][j]
+                    if p is None or not p.color:
+                        continue
+                    name = p.name
+                    di = r - i
+                    dj = c - j
+                    adi = abs(di)
+                    adj = abs(dj)
+                    # white pawn attacks one up-left or up-right (row-1)
+                    if name == 'P':
+                        if (i - 1 == r) and (j - 1 == c or j + 1 == c):
+                            return True
+                        continue
+                    if name == 'N':
+                        if (adi == 2 and adj == 1) or (adi == 1 and adj == 2):
+                            return True
+                        continue
+                    if name == 'K':
+                        if max(adi, adj) == 1:
+                            return True
+                        continue
+                    if name == 'R' or name == 'Q':
+                        # same row or same column
+                        if i == r:
+                            step = 1 if j < c else -1
+                            blocked = False
+                            x = j + step
+                            while x != c:
+                                if b[i][x] is not None:
+                                    blocked = True
+                                    break
+                                x += step
+                            if not blocked:
+                                return True
+                        if j == c:
+                            step = 1 if i < r else -1
+                            blocked = False
+                            x = i + step
+                            while x != r:
+                                if b[x][j] is not None:
+                                    blocked = True
+                                    break
+                                x += step
+                            if not blocked:
+                                return True
+                    if name == 'B' or name == 'Q':
+                        # diagonal
+                        if adi == adj and adi != 0:
+                            step_i = 1 if i < r else -1
+                            step_j = 1 if j < c else -1
+                            x = i + step_i
+                            y = j + step_j
+                            blocked = False
+                            while x != r and y != c:
+                                if b[x][y] is not None:
+                                    blocked = True
+                                    break
+                                x += step_i
+                                y += step_j
+                            if not blocked:
+                                return True
+            return False
+
+        # find black king position
+        bk_pos = None
+        for i in range(8):
+            for j in range(8):
+                p = board_sim.board[i][j]
+                if p is not None and p.name == 'K' and not p.color:
+                    bk_pos = (i, j)
+                    break
+            if bk_pos is not None:
+                break
+
+        if bk_pos is None:
+            return False
+
+        # if king not in check, not checkmate (use pure detector)
+        if not square_attacked_pure(bk_pos[0], bk_pos[1]):
+            return False
+
+        # simulate every legal black move (including captures and king moves).
+        for i in range(8):
+            for j in range(8):
+                bp = board_sim.board[i][j]
+                if bp is None or bp.color:
+                    continue
+                # try all destination squares
+                for r in range(8):
+                    for c in range(8):
+                        dest = board_sim.board[r][c]
+                        # can't capture own piece
+                        if dest is not None and dest.color == False:
+                            continue
+                        try:
+                            if not bp.is_valid_move(board_sim, (i, j), (r, c)):
+                                continue
+                        except Exception:
+                            continue
+
+                        # simulate
+                        orig_from = board_sim.board[i][j]
+                        orig_to = board_sim.board[r][c]
+                        board_sim.board[i][j] = None
+                        board_sim.board[r][c] = bp
+
+                        # find black king pos after move
+                        if bp.name == 'K':
+                            new_bk_pos = (r, c)
+                        else:
+                            new_bk_pos = None
+                            for x in range(8):
+                                for y in range(8):
+                                    p = board_sim.board[x][y]
+                                    if p is not None and p.name == 'K' and not p.color:
+                                        new_bk_pos = (x, y)
+                                        break
+                                if new_bk_pos is not None:
+                                    break
+
+                        attacked_after = True
+                        if new_bk_pos is not None:
+                            attacked_after = square_attacked_pure(new_bk_pos[0], new_bk_pos[1])
+
+                        # revert
+                        board_sim.board[i][j] = orig_from
+                        board_sim.board[r][c] = orig_to
+
+                        if not attacked_after:
+                            return False
+
+        # no legal move removes check -> checkmate
+        return True
+
+    def list_black_legal_escapes(self):
+        """Diagnostic: return a list of black moves that would result in the king not being in check.
+        Each move is ((r_from,c_from),(r_to,c_to))."""
+        board_sim = self.chess.boardSim
+        escapes = []
+
+        # reuse same pure detector as in isCheckMate
+        def square_attacked(r, c):
+            b = board_sim.board
+            for i in range(8):
+                for j in range(8):
+                    p = b[i][j]
+                    if p is None or not p.color:
+                        continue
+                    name = p.name
+                    di = r - i
+                    dj = c - j
+                    adi = abs(di)
+                    adj = abs(dj)
+                    if name == 'P':
+                        if (i - 1 == r) and (j - 1 == c or j + 1 == c):
+                            return True
+                        continue
+                    if name == 'N':
+                        if (adi == 2 and adj == 1) or (adi == 1 and adj == 2):
+                            return True
+                        continue
+                    if name == 'K':
+                        if max(adi, adj) == 1:
+                            return True
+                        continue
+                    if name == 'R' or name == 'Q':
+                        if i == r:
+                            step = 1 if j < c else -1
+                            blocked = False
+                            x = j + step
+                            while x != c:
+                                if b[i][x] is not None:
+                                    blocked = True
+                                    break
+                                x += step
+                            if not blocked:
+                                return True
+                        if j == c:
+                            step = 1 if i < r else -1
+                            blocked = False
+                            x = i + step
+                            while x != r:
+                                if b[x][j] is not None:
+                                    blocked = True
+                                    break
+                                x += step
+                            if not blocked:
+                                return True
+                    if name == 'B' or name == 'Q':
+                        if adi == adj and adi != 0:
+                            step_i = 1 if i < r else -1
+                            step_j = 1 if j < c else -1
+                            x = i + step_i
+                            y = j + step_j
+                            blocked = False
+                            while x != r and y != c:
+                                if b[x][y] is not None:
+                                    blocked = True
+                                    break
+                                x += step_i
+                                y += step_j
+                            if not blocked:
+                                return True
+            return False
+
+        # find current black king pos
+        bk_pos = None
+        for i in range(8):
+            for j in range(8):
+                p = board_sim.board[i][j]
+                if p is not None and p.name == 'K' and not p.color:
+                    bk_pos = (i, j)
+                    break
+            if bk_pos is not None:
+                break
+        if bk_pos is None:
+            return escapes
+
+        # try all black moves
+        for i in range(8):
+            for j in range(8):
+                bp = board_sim.board[i][j]
+                if bp is None or bp.color:
+                    continue
+                for r in range(8):
+                    for c in range(8):
+                        dest = board_sim.board[r][c]
+                        if dest is not None and dest.color == False:
+                            continue
+                        try:
+                            if not bp.is_valid_move(board_sim, (i, j), (r, c)):
+                                continue
+                        except Exception:
+                            continue
+
+                        # simulate
+                        orig_from = board_sim.board[i][j]
+                        orig_to = board_sim.board[r][c]
+                        board_sim.board[i][j] = None
+                        board_sim.board[r][c] = bp
+
+                        # find new black king pos
+                        if bp.name == 'K':
+                            new_bk_pos = (r, c)
+                        else:
+                            new_bk_pos = None
+                            for x in range(8):
+                                for y in range(8):
+                                    p = board_sim.board[x][y]
+                                    if p is not None and p.name == 'K' and not p.color:
+                                        new_bk_pos = (x, y)
+                                        break
+                                if new_bk_pos is not None:
+                                    break
+
+                        attacked_after = True
+                        if new_bk_pos is not None:
+                            attacked_after = square_attacked(new_bk_pos[0], new_bk_pos[1])
+
+                        # revert
+                        board_sim.board[i][j] = orig_from
+                        board_sim.board[r][c] = orig_to
+
+                        if not attacked_after:
+                            escapes.append(((i, j), (r, c)))
+        return escapes
 
     def newBoardSim(self, listStates):
         TA = np.zeros((8, 8))
@@ -322,6 +591,14 @@ class Aichess():
                 print("Checkmate found!")
                 # reconstruct path using dictPath; node is normalized
                 self.reconstructPath(node, g)
+                # diagnostic: check for any legal black escapes in this boardSim
+                escapes = self.list_black_legal_escapes()
+                if len(escapes) == 0:
+                    print("No legal black escapes found by diagnostic (confirmed mate)")
+                else:
+                    print("Diagnostic found black escape moves (not mate):")
+                    for mv in escapes:
+                        print(mv)
                 found = True
                 break
 
@@ -348,7 +625,7 @@ if __name__ == "__main__":
     TA = np.zeros((8, 8))
     TA[7][0] = 2  
     TA[7][5] = 6   
-    TA[0][5] = 12  
+    TA[0][4] = 12  
     print("Starting AI chess...")
     aichess = Aichess(TA, True)
     print("Printing board:")

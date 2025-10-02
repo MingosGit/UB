@@ -9,7 +9,7 @@ def check_knight(color, board, pos):
 
 def check_diag_castle(color, board, start, to):
     if abs(start[0] - to[0]) != abs(start[1] - to[1]):
-        print(incorrect_path)
+        # path not diagonal
         return False
     x_pos =  1 if to[0] - start[0] > 0 else -1
     y_pos = 1 if to[1] - start[1] > 0 else -1
@@ -33,7 +33,7 @@ def check_diag_castle(color, board, start, to):
 
 def check_diag(board, start, to):
     if abs(start[0] - to[0]) != abs(start[1] - to[1]):
-        print(incorrect_path)
+        # not a diagonal move
         return False
     x_pos =  1 if to[0] - start[0] > 0 else -1
     y_pos = 1 if to[1] - start[1] > 0 else -1
@@ -70,8 +70,8 @@ def check_updown(board, start, to):
         bigger_y = max(start[1], to[1])
         for i in range(smaller_y + 1, bigger_y):
             if board.board[start[0]][i] != None:
-                print(blocked_path)
-                print("At: " + str(start[0], i))
+                # path blocked
+                return False
                 return False
         return True
     else:
@@ -79,7 +79,7 @@ def check_updown(board, start, to):
         bigger_x = max(start[0], to[0])
         for i in range(smaller_x + 1, bigger_x):
             if board.board[i][start[1]] != None:
-                print(blocked_path)
+                # path blocked
                 return False
         return True
 
@@ -117,7 +117,7 @@ class Knight(Piece):
             return True
         if abs(start[0] - to[0]) == 1 and abs(start[1] - to[1]) == 2:
             return True
-        print(incorrect_path)
+        # invalid knight pattern
         return False
 
 class Bishop(Piece):
@@ -136,7 +136,7 @@ class Queen(Piece):
             return check_diag(board, start, to)
         elif start[0] == to[0] or start[1] == to[1]:
             return check_updown(board, start, to)
-        print(incorrect_path)
+    # invalid queen pattern
         return False
 
 class King(Piece):
@@ -144,7 +144,22 @@ class King(Piece):
         super().__init__(color)
         self.name = "K"
         self.first_move = first_move 
-    #... resto de la clase King permanece igual, sin comentarios
+    def is_valid_move(self, board, start, to):
+        # normal one-square king move
+        dx = abs(start[0] - to[0])
+        dy = abs(start[1] - to[1])
+        # castling: two-square horizontal move
+        if start[0] == to[0] and abs(start[1] - to[1]) == 2:
+            return check_updown_castle(self.color, board, start, to)
+        if dx <= 1 and dy <= 1 and not (dx == 0 and dy == 0):
+            dest = board.board[to[0]][to[1]]
+            if dest is None or dest.color != self.color:
+                return True
+            # can't capture own piece
+            # destination occupied by own piece
+            return False
+        # invalid king pattern
+        return False
 
 class GhostPawn(Piece):
     def __init__(self, color):
@@ -164,7 +179,7 @@ class Pawn(Piece):
                 if board.board[to[0]][to[1]] != None:
                     self.first_move = False
                     return True
-                print("Cannot move diagonally unless taking.")
+                # cannot move diagonally unless capturing
                 return False
             if start[1] == to[1]:
                 if (start[0] - to[0] == 2 and self.first_move) or (start[0] - to[0] == 1):
@@ -177,7 +192,7 @@ class Pawn(Piece):
                         board.white_ghost_piece = (start[0] - 1, start[1])
                     self.first_move = False
                     return True
-                print("Invalid move" + " or " + "Cannot move forward twice if not first move.")
+                # invalid pawn forward move or double move when not allowed
                 return False
             print(incorrect_path)
             return False
@@ -186,20 +201,20 @@ class Pawn(Piece):
                 if board.board[to[0]][to[1]] != None:
                     self.first_move = False
                     return True
-                print(blocked_path)
+                # cannot move diagonally unless capturing
                 return False
             if start[1] == to[1]:
                 if (to[0] - start[0] == 2 and self.first_move) or (to[0] - start[0] == 1):
                     for i in range(start[0] + 1, to[0] + 1):
                         if board.board[i][start[1]] != None:
-                            print(blocked_path)
+                            # path blocked for pawn
                             return False
                     if to[0] - start[0] == 2:
                         board.board[start[0] + 1][start[1]] = GhostPawn(self.color)
                         board.black_ghost_piece = (start[0] + 1, start[1])
                     self.first_move = False
                     return True
-                print("Invalid move" + " or " + "Cannot move forward twice if not first move.")
+                # invalid pawn forward move or double move when not allowed
                 return False
-            print(incorrect_path)
+            # invalid pawn pattern
             return False
