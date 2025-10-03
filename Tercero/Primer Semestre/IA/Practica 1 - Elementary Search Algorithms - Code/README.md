@@ -51,12 +51,41 @@ Notas sobre rendimiento y consistencia
 - Reconstruir `boardSim` en cada expansión es seguro y sencillo, pero más lento que aplicar diffs. Si la búsqueda crece mucho, conviene implementar una sincronización incremental robusta (aplicar y deshacer moves) en vez de reconstrucciones completas.
 - He dejado varios prints de depuración en el código para que puedas ver el proceso de A*. Si prefieres que los quite o que los haga opcionales con un flag `verbose`, dímelo.
 
-Siguientes pasos (opcional)
---------------------------
-- Añadir pruebas unitarias (pytest) que validen la ruta para esta posición inicial.
-- Mejorar la heurística o hacer que A* limite profundidad/tiempo.
-- Implementar una sincronización incremental segura para `boardSim` (más eficiente).
+Cambios menores recientes
+------------------------
+Se han eliminado mensajes ruidosos del archivo `piece.py` (por ejemplo: "This piece does not move in this pattern.") que imprimían durante la comprobación de patrones de movimiento. Estos mensajes se reemplazaron por retornos silenciosos para evitar saturar la salida durante la búsqueda y el diagnóstico. La lógica de validación de movimientos no ha cambiado; sólo se suprimió el logging intrusivo. Si prefieres mantener estos mensajes en modo debug, puedo modificar el código para que sean condicionales con un flag `verbose`.
 
-Contacto
---------
-Si quieres que haga alguno de los pasos opcionales, dime cuál y lo implemento.
+Cambios técnicos recientes (detallado)
+-----------------------------------
+Además de la supresión de mensajes ruidosos, se añadieron y/o mejoraron las siguientes funcionalidades para garantizar resultados correctos y facilitar el diagnóstico:
+
+- isCheckMate dinámico: El detector ya no usa listas hardcodeadas; en su lugar inspecciona la posición en `boardSim`, detecta si el rey negro está en jaque y simula todas las jugadas legales negras (incluyendo capturas) para comprobar si alguna elimina el jaque. Si ninguna lo hace, se considera mate.
+
+- Detector puro de ataques: Para evitar efectos secundarios (por ejemplo, `Pawn.is_valid_move` que crea un `GhostPawn` al validar), la detección de ataques se realiza con una función pura que calcula si una casilla está atacada por blancas sin modificar `boardSim`.
+
+- Diagnóstico de escapes negros: Cuando A* detecta mate, se ejecuta una rutina diagnóstica que lista todas las jugadas negras que, de existir, eliminarían el jaque. Esto facilita verificar casos en los que el resultado pueda parecer incorrecto.
+
+- Heurística mejorada en A*: La función heurística `h(state)` ahora combina la distancia Manhattan del rey blanco a la casilla objetivo y la distancia mínima necesaria para que la torre se alinee con esa casilla; se usa el máximo de estas dos medidas para un estimador admisible más ajustado (reduce nodos explorados en muchos casos).
+
+Todos estos cambios fueron implementados con cuidado para mantener la semántica original del juego y facilitar la depuración; si quieres que documente ejemplos de salida o que agregue tests unitarios que validen las propiedades (admisibilidad, detección de mate), puedo agregarlos a continuación.
+
+Archivos modificados (resumen por fichero)
+-----------------------------------------
+- `aichess.py`
+  - A*: añadido frontier (heapq), `cost_so_far` y `dictPath` para reconstruir la ruta final.
+  - Normalización de estados blancos (`getWhiteState`) para consistencia en heurística y almacenamiento.
+  - `isCheckMate`: reemplazado por una versión dinámica que detecta jaque, usa un detector puro de ataques y simula todas las jugadas negras para confirmar mate.
+  - Añadida función diagnóstica `list_black_legal_escapes()` que lista jugadas negras que eliminarían el jaque si existen.
+  - Heurística `h(state)` mejorada (max(kingDistance, rookAlignDist)).
+
+- `chess.py`
+  - Correcciones en `move`/`moveSim` (en-passant, indexación de ghost pawns) y limpieza de prints problemáticos.
+  - Asegurada la consistencia entre `board` y `boardSim` en actualizaciones de estado.
+
+- `piece.py`
+  - Suprimidos prints ruidosos (p.ej. "This piece does not move in this pattern.") reemplazándolos por retornos silenciosos o comentarios; la lógica de validación no cambió.
+
+- `board.py`
+  - Sin cambios funcionales significativos; sirve como generador de sucesores para A* y DFS/BFS.
+
+Si quieres, puedo añadir un pequeño ejemplo de ejecución (salida típica) o crear pruebas unitarias que comprueben los casos de mate/no-mate automáticamente.

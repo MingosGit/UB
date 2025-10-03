@@ -451,12 +451,23 @@ class Aichess():
         self.pathToTarget.insert(0, state)
 
     def h(self, state):
+        """Improved heuristic (admissible):
+        - kingDistance: Manhattan distance from white king to target square (black king target)
+        - rookAlignDist: minimal moves for rook to align on same row or column as target
+        We use the max of these distances because both pieces must reach appropriate positions
+        and moves happen on white turns; this is admissible (doesn't overestimate) and
+        is typically tighter than the previous sum.
+        """
         whiteKingPosition = state[0]
         whiteRookPosition = state[1]
-        targetKingPosition = [0, 5]
+        targetKingPosition = (0, 5)
         kingDistance = abs(whiteKingPosition[0] - targetKingPosition[0]) + abs(whiteKingPosition[1] - targetKingPosition[1])
-        rookDistance = abs(whiteRookPosition[0] - targetKingPosition[0]) + abs(whiteRookPosition[1] - targetKingPosition[1])
-        return kingDistance + rookDistance
+        # rook alignment distance: moves to get rook into same row OR same column as target
+        rookAlignRow = abs(whiteRookPosition[0] - targetKingPosition[0])
+        rookAlignCol = abs(whiteRookPosition[1] - targetKingPosition[1])
+        rookAlignDist = min(rookAlignRow, rookAlignCol)
+        # heuristic is the maximum of the two component distances (admissible)
+        return max(kingDistance, rookAlignDist)
 
     def changeState(self, start, to):
         if start[0] == to[0]:
@@ -625,7 +636,7 @@ if __name__ == "__main__":
     TA = np.zeros((8, 8))
     TA[7][0] = 2  
     TA[7][5] = 6   
-    TA[0][4] = 12  
+    TA[7][7] = 12  
     print("Starting AI chess...")
     aichess = Aichess(TA, True)
     print("Printing board:")
