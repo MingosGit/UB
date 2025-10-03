@@ -33,19 +33,6 @@ He realizado cambios mínimos y específicos para que la búsqueda A* funcione y
 3) Otros
 - No se cambiaron los algoritmos de `Board.getListNextStatesW/B` salvo una limpieza menor en `chess.py` para evitar debug prints problemáticos. La lógica de sucesores sigue siendo la del código original.
 
-Notas de ejecución
-------------------
-- Cómo ejecutar el ejemplo usado para pruebas:
-
-  1) Abre un terminal en Windows (PowerShell). Asegúrate de usar el Python adecuado (en mi entorno ejecuté con Anaconda).
-  2) Ejecuta:
-
-```powershell
-& C:/Users/josea/anaconda3/python.exe "c:/Users/josea/Desktop/Github/UB/Tercero/Primer Semestre/IA/Practica 1 - Elementary Search Algorithms - Code/aichess.py"
-```
-
-- Resultado esperado (según la posición inicial en el script): A* explorará estados y, si encuentra mate dentro de los límites, imprimirá "Checkmate found!" y un `pathToTarget` con la secuencia de estados normalizados desde la situación inicial hasta la mate.
-
 Notas sobre rendimiento y consistencia
 ------------------------------------
 - Reconstruir `boardSim` en cada expansión es seguro y sencillo, pero más lento que aplicar diffs. Si la búsqueda crece mucho, conviene implementar una sincronización incremental robusta (aplicar y deshacer moves) en vez de reconstrucciones completas.
