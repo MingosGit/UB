@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Created on Thu Sep  8 11:22:03 2022
+
+@author: ignasi
+
+Edited and completed by: Jose Candon and Daniel Barceló on Fri Oct 03 14:04 2025
+
+"""
 import copy
 import math
 import chess
@@ -12,6 +20,92 @@ RawStateType = List[List[List[int]]]
 from itertools import permutations
 
 class Aichess():
+    """
+    A class to represent the game of chess.
+
+    ...
+
+    Attributes:
+    -----------
+    chess : Chess
+        represents the chess game
+        
+    listNextStates : list
+        List of next possible states for the current player.
+
+    listVisitedStates : list
+        List of all visited states during A*.
+
+    listVisitedSituations : list
+        List of visited game situations (state + color) for minimax/alpha-beta pruning.
+
+    pathToTarget : list
+        Sequence of states from the initial state to the target (used by A*).
+
+    depthMax : int
+        Maximum search depth for minimax/alpha-beta searches.
+
+    dictPath : dict
+        Dictionary used to reconstruct the path in A* search.
+
+    Methods:
+    --------
+    copyState(state) -> list
+        Returns a deep copy of the given state.
+
+    isVisitedSituation(color, mystate) -> bool
+        Checks whether a given state with a specific color has already been visited.
+
+    getListNextStatesW(myState) -> list
+        Returns a list of possible next states for the white pieces.
+
+    getListNextStatesB(myState) -> list
+        Returns a list of possible next states for the black pieces.
+
+    isSameState(a, b) -> bool
+        Checks whether two states represent the same board configuration.
+
+    isVisited(mystate) -> bool
+        Checks if a given state has been visited in search algorithms.
+
+    getCurrentState() -> list
+        Returns the combined state of both white and black pieces.
+
+    isCheckMate(mystate) -> bool
+        Determines if a state represents a checkmate configuration.
+
+    heuristica(currentState, color) -> int
+        Calculates a heuristic value for the current state from the perspective of the given color.
+
+    movePieces(start, depthStart, to, depthTo) -> None
+        Moves all pieces along the path between two states.
+
+    changeState(start, to) -> None
+        Moves a single piece from start state to to state.
+
+    reconstructPath(state, depth) -> None
+        Reconstructs the path from initial state to the target state for A*.
+
+    h(state) -> int       
+        Heuristic function for A* search.
+
+    DepthFirstSearch(currentState, depth) -> bool
+        Depth-first search algorithm.
+
+    worthExploring(state, depth) -> bool
+        Checks if a state is worth exploring during search using the optimised DFS algorithm.
+
+    DepthFirstSearchOptimized(currentState, depth) -> bool
+        Optimized depth-first search algorithm.
+
+    BreadthFirstSearch(currentState, depth) -> None
+        Breadth-first search algorithm.
+
+    AStarSearch(currentState) 
+        A* search algorithm -> To be implemented by you
+
+    """
+
 
     def __init__(self, TA, myinit=True):
         if myinit:
@@ -24,6 +118,8 @@ class Aichess():
         self.pathToTarget = []
         self.depthMax = 8
         self.dictPath = {}
+        # Prepare a dictionary to control the visited state and at which
+        # depth they were found for DepthFirstSearchOptimized
         self.dictVisitedStates = {}
 
     def copyState(self, state):
@@ -57,10 +153,12 @@ class Aichess():
 
     def isSameState(self, a, b):
         isSameState1 = True
+        # a and b are lists
         for k in range(len(a)):
             if a[k] not in b:
                 isSameState1 = False
         isSameState2 = True
+        # a and b are lists
         for k in range(len(b)):
             if b[k] not in a:
                 isSameState2 = False
@@ -78,10 +176,10 @@ class Aichess():
             return isVisited
         else:
             return False
-
+        
+    # Function for check mate for exercise 1 (white king is missing)
     def isCheckMate(self, mystate):
         board_sim = self.chess.boardSim
-
         # pure attack detector (no side-effects) to avoid calling piece.is_valid_move
         def square_attacked_pure(r, c):
             b = board_sim.board
@@ -356,6 +454,7 @@ class Aichess():
         return escapes
 
     def newBoardSim(self, listStates):
+        # We create a  new boardSim
         TA = np.zeros((8, 8))
         for state in listStates:
             TA[state[0]][state[1]] = state[2]
@@ -378,6 +477,8 @@ class Aichess():
         return listStates
 
     def getNextPositions(self, state):
+        # Given a state, we check the next possible states
+        # From these, we return a list with position, i.e., [row, column]
         if state == None:
             return None
         if state[2] > 6:
@@ -421,13 +522,22 @@ class Aichess():
         return [pieceState, pieceNextState]
 
     def movePieces(self, start, depthStart, to, depthTo):
+        # To move from one state to the next we will need to find
+        # the state in common, and then move until the node 'to'
         moveList = []
+        # We want that the depths are equal to find a common ancestor
+
         nodeTo = to
         nodeStart = start
+        # if the depth of the node To is larger than that of start, 
+        # we pick the ancesters of the node until being at the same
+        # depth
         while(depthTo > depthStart):
             moveList.insert(0,to)
             nodeTo = self.dictPath[str(nodeTo)][0]
             depthTo-=1
+        # Analogous to the previous case, but we trace back the ancestors
+        #until the node 'start'
         while(depthStart > depthTo):
             ancestreStart = self.dictPath[str(nodeStart)][0]
             self.changeState(nodeStart, ancestreStart)
@@ -445,9 +555,12 @@ class Aichess():
                 self.changeState(moveList[i],moveList[i+1])
 
     def reconstructPath(self, state, depth):
+        # Once the solution is found, reconstruct the path taken to reach it
         for i in range(depth):
             self.pathToTarget.insert(0, state)
+            # For each node, retrieve its parent from dictPath
             state = self.dictPath[str(state)][0]
+        # Insert the root node at the beginning
         self.pathToTarget.insert(0, state)
 
     def h(self, state):
@@ -633,17 +746,25 @@ class Aichess():
         else:
             print("No checkmate found within search limits.")
 if __name__ == "__main__":
+    # Initialize an empty 8x8 chess board
     TA = np.zeros((8, 8))
+    # Load initial positions of the pieces
+    # White pieces
     TA[7][0] = 2  
     TA[7][5] = 6   
-    TA[7][7] = 12  
+
+    # REY NEGRO
+    TA[4][0] = 12  
     print("Starting AI chess...")
     aichess = Aichess(TA, True)
+    # Print initial board
     print("Printing board:")
     aichess.chess.boardSim.print_board()
     # Normalizar el estado blanco: asegurarse rey en índice 0, torre en índice 1
     currentState = aichess.getWhiteState(aichess.getCurrentState())
     print("Current State:", currentState, "\n")
+
+    # Run A* search
     aichess.AStarSearch(currentState)
     print("#A* move sequence:", aichess.pathToTarget)
     print("A* End\n")
