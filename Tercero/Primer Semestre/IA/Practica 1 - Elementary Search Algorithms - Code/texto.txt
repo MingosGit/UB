@@ -1,0 +1,46 @@
+
+1) isCheckMate(self, mystate)
+- Qué se implementó/modificó:
+  - Reemplazo del chequeo estático por un detector dinámico que usa el `boardSim` actual.
+  - Añadido un detector puro de ataques (`square_attacked_pure(r,c)`) que no tiene efectos secundarios.
+  - Búsqueda dinámica de la posición del rey negro y simulación de todas las jugadas legales del bando negro para comprobar si alguna elimina el jaque (simulación + revert).
+- Por qué era necesario:
+  - Permite detectar mate en posiciones arbitrarias, no solo en casos predefinidos. Es imprescindible para validar objetivos en búsquedas automáticas (ej. A*), evitando falsos positivos.
+
+2) list_black_legal_escapes(self)
+- Qué se implementó/modificó:
+  - Nuevo método que calcula y devuelve jugadas negras que eliminarían el jaque (representadas como pares de coordenadas).
+- Por qué era necesario:
+  - Sirve como diagnóstico al comprobar soluciones: confirma si existen defensas legales y ayuda a validar que una posición es realmente mate.
+
+3) newBoardSim(self, listStates) — uso e integración ampliada
+- Qué se implementó/modificó:
+  - La función (reconstrucción de `boardSim` desde una lista compacta de estados) se emplea de forma central en la búsqueda; se utiliza para reconstruir el tablero a partir de estados blancos normalizados más las piezas negras.
+- Por qué era necesario:
+  - Reconstruir el tablero por nodo garantiza que la generación de sucesores (`getListNextStatesW/B`) sea coherente con la posición exacta del nodo, evitando errores de sincronización incremental.
+
+4) h(self, state)
+- Qué se implementó/modificó:
+  - Heurística rediseñada a una medida admisible y más informativa:
+    - distancia Manhattan del rey blanco al objetivo;
+    - `rookAlignDist` para medir la alineación mínima de la torre con el objetivo;
+    - la heurística final es el máximo de las componentes, para mantener admisibilidad.
+- Por qué era necesario:
+  - Mejora la eficiencia de búsqueda (menos expansiones) y mantiene la garantía de optimalidad de A* evitando sobreestimaciones.
+
+5) AStarSearch(self, currentState)
+- Qué se implementó/modificó:
+  - Implementación completa de A* sobre estados normalizados:
+    - frontera con `heapq` (f,g), gestión de `cost_so_far` y `dictPath` con claves canónicas;
+    - por cada nodo extraído se reconstruye `boardSim` (usando `newBoardSim`) para generar sucesores válidos;
+    - usa `isCheckMate` para la condición objetivo y `list_black_legal_escapes` como comprobación diagnóstica;
+    - normaliza sucesores con `getWhiteState` y actualiza frontera con `g + h`.
+- Por qué era necesario:
+  - Proporciona la búsqueda heurística requerida para encontrar secuencias mínimas hasta mate; integra heurística admisible y mecanismos de verificación para resultados correctos.
+
+6) Uso centralizado de getWhiteState/getBlackState en el flujo de búsqueda
+- Qué se implementó/modificó:
+  - Empleo sistemático de representaciones normalizadas (solo blancas) en la frontera y en `dictPath`, con conversiones puntuales a `full_state` para reconstrucción de `boardSim`.
+- Por qué era necesario:
+  - Reduce el tamaño del estado almacenado, facilita comparaciones canónicas y evita duplicidades en la frontera.
+

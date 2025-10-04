@@ -785,7 +785,7 @@ class Aichess():
         # Estrategia principal:
         # 1) Normalizar estado de inicio y usar `heapq` para la frontera con (f, estado, g).
         # 2) Al extraer un nodo, reconstruir `boardSim` a partir del estado blanco
-        #    y las piezas negras iniciales para generar sucesores sin inconsistencias.
+        #    y las piezas negras iniciales para generar sucesores.
         # 3) Usar `isCheckMate` dinámico como condición objetivo y `dictPath`
         #    para reconstruir la ruta cuando se encuentre mate.
         
@@ -871,13 +871,13 @@ if __name__ == "__main__":
     TA[7][5] = 6   
 
     # REY NEGRO
-    TA[4][0] = 12  
+    TA[6][7] = 12  
     print("Starting AI chess...")
     aichess = Aichess(TA, True)
     # Print initial board
     print("Printing board:")
     aichess.chess.boardSim.print_board()
-    # Normalizar el estado blanco: asegurarse rey en índice 0, torre en índice 1
+    # Normalizar el estado blanco (rey en índice 0, torre en índice 1)
     currentState = aichess.getWhiteState(aichess.getCurrentState())
     print("Current State:", currentState, "\n")
 

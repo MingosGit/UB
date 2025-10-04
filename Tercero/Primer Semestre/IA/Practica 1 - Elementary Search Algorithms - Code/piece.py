@@ -295,6 +295,22 @@ class King(Piece):
         super().__init__(color)
         self.name = "K"
         self.first_move = first_move 
+    def is_valid_move(self, board, start, to):
+        # Enroque
+        dx = abs(start[0] - to[0])
+        dy = abs(start[1] - to[1])
+        # enroque: dos casillas horizontal
+        if start[0] == to[0] and abs(start[1] - to[1]) == 2:
+            return check_updown_castle(self.color, board, start, to)
+        if dx <= 1 and dy <= 1 and not (dx == 0 and dy == 0):
+            dest = board.board[to[0]][to[1]]
+            if dest is None or dest.color != self.color:
+                return True
+            # No puedes capturar tu propia pieza
+            # Ocupado por nuestra propia pieza
+            return False
+        # Patrin incorrecto
+        return False
         
     def can_castle(self, board, start, to, right):
         """
