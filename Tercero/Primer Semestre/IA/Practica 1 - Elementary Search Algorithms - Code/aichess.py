@@ -106,17 +106,169 @@ class Aichess():
 
     """
 
+    # ============================== NO MODIFICADAS ==============================
+    
+    def changeState(self, start, to):
+        # Determine which piece has moved from the start state to the next state
+        if start[0] == to[0]:
+            movedPieceStart = 1
+            movedPieceTo = 1
+        elif start[0] == to[1]:
+            movedPieceStart = 1
+            movedPieceTo = 0
+        elif start[1] == to[0]:
+            movedPieceStart = 0
+            movedPieceTo = 1
+        else:
+            movedPieceStart = 0
+            movedPieceTo = 0
+        # Move the piece that changed
+        self.chess.moveSim(start[movedPieceStart], to[movedPieceTo])       
+
+    def DepthFirstSearch(self, currentState, depth):
+        # We visited the node, therefore we add it to the list
+        # In DF, when we add a node to the list of visited, and when we have
+        # visited all nodes, we remove it from the list of visited ones
+        self.listVisitedStates.append(currentState)
+
+        # is it checkmate?
+        if self.isCheckMate(currentState):
+            self.pathToTarget.append(currentState)
+            return True
+
+        if depth + 1 <= self.depthMax:
+            for son in self.getListNextStatesW(currentState):
+                if not self.isVisited(son):
+                    # in the state 'son', the first piece is the one just moved
+                    # We check which piece in currentState matches the one moved
+                    if son[0][2] == currentState[0][2]:
+                        movedPieceIndex = 0
+                    else:
+                        movedPieceIndex = 1
+
+                    # we move the piece to the new position
+                    self.chess.moveSim(currentState[movedPieceIndex], son[0])
+                    # We call the method again with 'son', increasing depth
+                    if self.DepthFirstSearch(son, depth + 1):
+                        # If the method returns True, this means that there has
+                        # been a checkmate
+                        # We add the state to the pathToTarget
+                        self.pathToTarget.insert(0, currentState)
+                        return True
+                    # we reset the board to the previous state
+                    self.chess.moveSim(son[0], currentState[movedPieceIndex])
+
+        # We remove the node from the list of visited nodes
+        # since we explored all successors
+        self.listVisitedStates.remove(currentState)
+
+    def worthExploring(self, state, depth):
+        # First of all, check that the depth is not bigger than depthMax
+        if depth > self.depthMax:
+            return False
+        visited = False
+        # check if the state has been visited
+        for perm in list(permutations(state)):
+            permStr = str(perm)
+            if permStr in list(self.dictVisitedStates.keys()):
+                visited = True
+                # If the state has been visited at a larger depth,
+                # we are interested in visiting it again
+                if depth < self.dictVisitedStates[perm]:
+                    # Update the depth associated with the state
+                    self.dictVisitedStates[permStr] = depth
+                    return True
+        # If never visited, add it to the dictionary at the current depth
+        if not visited:
+            permStr = str(state)
+            self.dictVisitedStates[permStr] = depth
+            return True
+
+    def DepthFirstSearchOptimized(self, currentState, depth):
+        # is it checkmate?
+        if self.isCheckMate(currentState):
+            self.pathToTarget.append(currentState)
+            return True
+
+        for son in self.getListNextStatesW(currentState):
+            if self.worthExploring(son, depth + 1):
+                # in state 'son', the first piece is the one just moved
+                # we check which piece of currentState matches the one just moved
+                if son[0][2] == currentState[0][2]:
+                    movedPieceIndex = 0
+                else:
+                    movedPieceIndex = 1
+                # move the piece to the new position
+                self.chess.moveSim(currentState[movedPieceIndex], son[0])
+                # recursive call with increased depth
+                if self.DepthFirstSearchOptimized(son, depth + 1):
+                    # If the method returns True, this means there was a checkmate
+                    # add the state to the pathToTarget
+                    self.pathToTarget.insert(0, currentState)
+                    return True
+                # restore the board to its previous state
+                self.chess.moveSim(son[0], currentState[movedPieceIndex])
+
+    def BreadthFirstSearch(self, currentState, depth):
+        """
+        Checkmate from currentStateW
+        """
+        BFSQueue = queue.Queue()
+        # The root node has no parent, thus we add None, and -1 as the parent's depth
+        self.dictPath[str(currentState)] = (None, -1)
+        depthCurrentState = 0
+        BFSQueue.put(currentState)
+        self.listVisitedStates.append(currentState)
+        # iterate until there are no more candidate nodes
+        while BFSQueue.qsize() > 0:
+            # Get the next node
+            node = BFSQueue.get()
+            depthNode = self.dictPath[str(node)][1] + 1
+            if depthNode > self.depthMax:
+                break
+            # If not the root node, move the pieces from the previous to the current state
+            if depthNode > 0:
+                self.movePieces(currentState, depthCurrentState, node, depthNode)
+            if self.isCheckMate(node):
+                # If it is checkmate, reconstruct the optimal path found
+                self.reconstructPath(node, depthNode)
+                break
+            for son in self.getListNextStatesW(node):
+                if not self.isVisited(son):
+                    self.listVisitedStates.append(son)
+                    BFSQueue.put(son)
+                    self.dictPath[str(son)] = (node, depthNode)
+            currentState = node
+            depthCurrentState = depthNode
+
+    # getListNextStatesW: Wrapper que llama a la generación de sucesores sobre
+    # `boardSim` y devuelve una copia segura de la lista de sucesores.
+    def getListNextStatesW(self, myState):
+        self.chess.boardSim.getListNextStatesW(myState)
+        self.listNextStates = self.chess.boardSim.listNextStates.copy()
+        return self.listNextStates
+
+
+    # getListNextStatesB: Igual que su versión blanca, pero para piezas negras.
+    def getListNextStatesB(self, myState):
+        self.chess.boardSim.getListNextStatesB(myState)
+        self.listNextStates = self.chess.boardSim.listNextStates.copy()
+        return self.listNextStates
+
 
     def __init__(self, TA, myinit=True):
+
         if myinit:
             self.chess = chess.Chess(TA, True)
         else:
             self.chess = chess.Chess([], False)
+
         self.listNextStates = []
         self.listVisitedStates = []
         self.listVisitedSituations = []
         self.pathToTarget = []
         self.depthMax = 8
+        # Dictionary to reconstruct the visited path
         self.dictPath = {}
         # Prepare a dictionary to control the visited state and at which
         # depth they were found for DepthFirstSearchOptimized
@@ -140,16 +292,6 @@ class Aichess():
             return isVisited
         else:
             return False
-
-    def getListNextStatesW(self, myState):
-        self.chess.boardSim.getListNextStatesW(myState)
-        self.listNextStates = self.chess.boardSim.listNextStates.copy()
-        return self.listNextStates
-
-    def getListNextStatesB(self, myState):
-        self.chess.boardSim.getListNextStatesB(myState)
-        self.listNextStates = self.chess.boardSim.listNextStates.copy()
-        return self.listNextStates
 
     def isSameState(self, a, b):
         isSameState1 = True
@@ -176,14 +318,158 @@ class Aichess():
             return isVisited
         else:
             return False
+
+    # newBoardSim(listStates)
+    # Reconstruye `boardSim` a partir de una lista de estados compacta [row,col,code].
+    # Usado por A* para evitar sincronizar movimientos incrementalmente.
+    def newBoardSim(self, listStates):
+        # crear un nuevo `boardSim` a partir del mapa codificado
+        TA = np.zeros((8, 8))
+        for state in listStates:
+            TA[state[0]][state[1]] = state[2]
+        self.chess.newBoardSim(TA)
+
+    # getCurrentState()
+    # Devuelve la lista combinada de estados actuales de blancas y negras
+    # (formato usado por las funciones de búsqueda).
+    def getCurrentState(self):
+        listStates = []
+        for i in self.chess.board.currentStateW:
+            listStates.append(i)
+        for j in self.chess.board.currentStateB:
+            listStates.append(j)
+        return listStates
+
+    def getNextPositions(self, state):
+        # Given a state, we check the next possible states
+        # From these, we return a list with position, i.e., [row, column]
+        if state == None:
+            return None
+        if state[2] > 6:
+            nextStates = self.getListNextStatesB([state])
+        else:
+            nextStates = self.getListNextStatesW([state])
+        nextPositions = []
+        for i in nextStates:
+            nextPositions.append(i[0][0:2])
+        return nextPositions
+
+    def movePieces(self, start, depthStart, to, depthTo):
         
-    # Function for check mate for exercise 1 (white king is missing)
+        # To move from one state to the next we will need to find
+        # the state in common, and then move until the node 'to'
+        moveList = []
+        # We want that the depths are equal to find a common ancestor
+        nodeTo = to
+        nodeStart = start
+        # if the depth of the node To is larger than that of start, 
+        # we pick the ancesters of the node until being at the same
+        # depth
+        while(depthTo > depthStart):
+            moveList.insert(0,to)
+            nodeTo = self.dictPath[str(nodeTo)][0]
+            depthTo-=1
+        # Analogous to the previous case, but we trace back the ancestors
+        #until the node 'start'
+        while(depthStart > depthTo):
+            ancestreStart = self.dictPath[str(nodeStart)][0]
+            # We move the piece the the parerent state of nodeStart
+            self.changeState(nodeStart, ancestreStart)
+            nodeStart = ancestreStart
+            depthStart -= 1
+
+        moveList.insert(0,nodeTo)
+        # We seek for common node
+        while nodeStart != nodeTo:
+            ancestreStart = self.dictPath[str(nodeStart)][0]
+            # Move the piece the the parerent state of nodeStart
+            self.changeState(nodeStart,ancestreStart)
+            # pick the parent of nodeTo
+            nodeTo = self.dictPath[str(nodeTo)][0]
+            # store in the list
+            moveList.insert(0,nodeTo)
+            nodeStart = ancestreStart
+        # Move the pieces from the node in common
+        # until the node 'to'
+        for i in range(len(moveList)):
+            if i < len(moveList) - 1:
+                self.changeState(moveList[i],moveList[i+1])
+
+    def reconstructPath(self, state, depth):
+        # Once the solution is found, reconstruct the path taken to reach it
+        for i in range(depth):
+            self.pathToTarget.insert(0, state)
+            # For each node, retrieve its parent from dictPath
+            state = self.dictPath[str(state)][0]
+        # Insert the root node at the beginning
+        self.pathToTarget.insert(0, state)
+
+    # getWhiteState(currentState)
+    # Normaliza y extrae la representación canónica de blancas: [rey, torre]
+    # (sirve para A* que trabaja con un estado reducido y consistente).
+
+    def getWhiteState(self, currentState):
+        whiteState = []
+        wkState = self.getPieceState(currentState, 6)
+        whiteState.append(wkState)
+        wrState = self.getPieceState(currentState, 2)
+        if wrState != None:
+            whiteState.append(wrState)
+        return whiteState
+
+    # getBlackState(currentState)
+    # Igual que `getWhiteState` pero para negras (rey y torre si existe).
+
+    def getBlackState(self, currentState):
+        blackState = []
+        bkState = self.getPieceState(currentState, 12)
+        blackState.append(bkState)
+        brState = self.getPieceState(currentState, 8)
+        if brState != None:
+            blackState.append(brState)
+        return blackState
+
+
+    def getMovement(self, state, nextState):
+        # Given a state and a successor state, return the postiion of the piece that has been moved in both states
+        pieceState = None
+        pieceNextState = None
+        for piece in state:
+            if piece not in nextState:
+                movedPiece = piece[2]
+                pieceNext = self.getPieceState(nextState, movedPiece)
+                if pieceNext != None:
+                    pieceState = piece
+                    pieceNextState = pieceNext
+                    break
+        return [pieceState, pieceNextState]
+
+# ============================== FIN NO MODIFICADAS ==============================
+
+
+
+
+
+
+
+
+
+
+        
+    # Función para detectar jaque mate (ejercicio 1)
     def isCheckMate(self, mystate):
         board_sim = self.chess.boardSim
-        # pure attack detector (no side-effects) to avoid calling piece.is_valid_move
+        # isCheckMate (dinámico): determina si `mystate` es mate para las negras.
+        # Estrategia:
+        # 1) localizar la posición del rey negro en `boardSim`.
+        # 2) usar un detector puro de ataques (sin efectos secundarios)
+        #    para comprobar si la casilla del rey está en jaque.
+        # 3) simular todas las jugadas legales negras (incluidas capturas).
+        # 4) si ninguna jugada elimina el jaque, devolver True (mate).
+        # Detector puro de ataques: evitamos llamar a `piece.is_valid_move`
         def square_attacked_pure(r, c):
             b = board_sim.board
-            # scan all white pieces and check if they attack (r,c)
+            # recorrer todas las piezas blancas y comprobar si atacan (r,c)
             for i in range(8):
                 for j in range(8):
                     p = b[i][j]
@@ -194,7 +480,7 @@ class Aichess():
                     dj = c - j
                     adi = abs(di)
                     adj = abs(dj)
-                    # white pawn attacks one up-left or up-right (row-1)
+                    # el peón blanco ataca en diagonal una casilla hacia arriba (fila-1)
                     if name == 'P':
                         if (i - 1 == r) and (j - 1 == c or j + 1 == c):
                             return True
@@ -208,12 +494,13 @@ class Aichess():
                             return True
                         continue
                     if name == 'R' or name == 'Q':
-                        # same row or same column
+                        # torre/rey dama: misma fila o misma columna
                         if i == r:
                             step = 1 if j < c else -1
                             blocked = False
                             x = j + step
                             while x != c:
+                                # comprobar si hay piezas intermedias en la fila
                                 if b[i][x] is not None:
                                     blocked = True
                                     break
@@ -225,6 +512,7 @@ class Aichess():
                             blocked = False
                             x = i + step
                             while x != r:
+                                # comprobar si hay piezas intermedias en la columna
                                 if b[x][j] is not None:
                                     blocked = True
                                     break
@@ -232,7 +520,7 @@ class Aichess():
                             if not blocked:
                                 return True
                     if name == 'B' or name == 'Q':
-                        # diagonal
+                        # alfil/rey dama: ataques en diagonal
                         if adi == adj and adi != 0:
                             step_i = 1 if i < r else -1
                             step_j = 1 if j < c else -1
@@ -240,6 +528,7 @@ class Aichess():
                             y = j + step_j
                             blocked = False
                             while x != r and y != c:
+                                # comprobar si hay piezas intermedias en la diagonal
                                 if b[x][y] is not None:
                                     blocked = True
                                     break
@@ -249,7 +538,7 @@ class Aichess():
                                 return True
             return False
 
-        # find black king position
+    # buscar la posición del rey negro
         bk_pos = None
         for i in range(8):
             for j in range(8):
@@ -263,36 +552,38 @@ class Aichess():
         if bk_pos is None:
             return False
 
-        # if king not in check, not checkmate (use pure detector)
+        # si el rey no está en jaque, no es mate
         if not square_attacked_pure(bk_pos[0], bk_pos[1]):
             return False
 
-        # simulate every legal black move (including captures and king moves).
+        # simular todas las jugadas legales negras (incluye capturas y movimientos del rey)
         for i in range(8):
             for j in range(8):
                 bp = board_sim.board[i][j]
                 if bp is None or bp.color:
                     continue
-                # try all destination squares
+                # probar todos los destinos posibles
                 for r in range(8):
                     for c in range(8):
                         dest = board_sim.board[r][c]
-                        # can't capture own piece
+                        # no puedes capturar una pieza propia
                         if dest is not None and dest.color == False:
                             continue
+                        # comprobar si la pieza negra puede moverse legalmente a (r,c)
                         try:
                             if not bp.is_valid_move(board_sim, (i, j), (r, c)):
                                 continue
                         except Exception:
+                            # ignorar excepciones de validación y tratar la jugada como no legal
                             continue
 
-                        # simulate
+                        # simular movimiento en boardSim
                         orig_from = board_sim.board[i][j]
                         orig_to = board_sim.board[r][c]
                         board_sim.board[i][j] = None
                         board_sim.board[r][c] = bp
 
-                        # find black king pos after move
+                        # localizar posición del rey negro tras la simulación
                         if bp.name == 'K':
                             new_bk_pos = (r, c)
                         else:
@@ -308,25 +599,28 @@ class Aichess():
 
                         attacked_after = True
                         if new_bk_pos is not None:
+                            # comprobar si, tras la jugada simulada, el rey sigue en jaque
                             attacked_after = square_attacked_pure(new_bk_pos[0], new_bk_pos[1])
 
-                        # revert
+                        # revertir la simulación para restaurar `boardSim`
                         board_sim.board[i][j] = orig_from
                         board_sim.board[r][c] = orig_to
 
                         if not attacked_after:
+                            # existe una defensa que quita el jaque -> no es mate
                             return False
 
-        # no legal move removes check -> checkmate
+        # no hay defensa posible -> es mate
         return True
 
+
+    # Devuelve una lista de jugadas negras que eliminarían el jaque al rey.
+    # Cada jugada se representa como ((r_from,c_from),(r_to,c_to)).
     def list_black_legal_escapes(self):
-        """Diagnostic: return a list of black moves that would result in the king not being in check.
-        Each move is ((r_from,c_from),(r_to,c_to))."""
         board_sim = self.chess.boardSim
         escapes = []
 
-        # reuse same pure detector as in isCheckMate
+        # reutiliza el detector puro de ataques usado en isCheckMate
         def square_attacked(r, c):
             b = board_sim.board
             for i in range(8):
@@ -391,7 +685,7 @@ class Aichess():
                                 return True
             return False
 
-        # find current black king pos
+    # localizar la posición actual del rey negro
         bk_pos = None
         for i in range(8):
             for j in range(8):
@@ -404,7 +698,7 @@ class Aichess():
         if bk_pos is None:
             return escapes
 
-        # try all black moves
+    # probar todas las jugadas negras
         for i in range(8):
             for j in range(8):
                 bp = board_sim.board[i][j]
@@ -415,19 +709,20 @@ class Aichess():
                         dest = board_sim.board[r][c]
                         if dest is not None and dest.color == False:
                             continue
+                        # comprobar si la jugada es legal (ignoramos excepciones)
                         try:
                             if not bp.is_valid_move(board_sim, (i, j), (r, c)):
                                 continue
                         except Exception:
                             continue
 
-                        # simulate
+                        # simular movimiento en `boardSim`
                         orig_from = board_sim.board[i][j]
                         orig_to = board_sim.board[r][c]
                         board_sim.board[i][j] = None
                         board_sim.board[r][c] = bp
 
-                        # find new black king pos
+                        # localizar nueva posición del rey negro tras la simulación
                         if bp.name == 'K':
                             new_bk_pos = (r, c)
                         else:
@@ -445,21 +740,15 @@ class Aichess():
                         if new_bk_pos is not None:
                             attacked_after = square_attacked(new_bk_pos[0], new_bk_pos[1])
 
-                        # revert
+                        # revertir la simulación
                         board_sim.board[i][j] = orig_from
                         board_sim.board[r][c] = orig_to
 
                         if not attacked_after:
                             escapes.append(((i, j), (r, c)))
         return escapes
-
-    def newBoardSim(self, listStates):
-        # We create a  new boardSim
-        TA = np.zeros((8, 8))
-        for state in listStates:
-            TA[state[0]][state[1]] = state[2]
-        self.chess.newBoardSim(TA)
-
+    
+    # Busca y devuelve la entrada de `state` correspondiente al identificador `piece`.
     def getPieceState(self, state, piece):
         pieceState = None
         for i in state:
@@ -468,254 +757,80 @@ class Aichess():
                 break
         return pieceState
 
-    def getCurrentState(self):
-        listStates = []
-        for i in self.chess.board.currentStateW:
-            listStates.append(i)
-        for j in self.chess.board.currentStateB:
-            listStates.append(j)
-        return listStates
-
-    def getNextPositions(self, state):
-        # Given a state, we check the next possible states
-        # From these, we return a list with position, i.e., [row, column]
-        if state == None:
-            return None
-        if state[2] > 6:
-            nextStates = self.getListNextStatesB([state])
-        else:
-            nextStates = self.getListNextStatesW([state])
-        nextPositions = []
-        for i in nextStates:
-            nextPositions.append(i[0][0:2])
-        return nextPositions
-
-    def getWhiteState(self, currentState):
-        whiteState = []
-        wkState = self.getPieceState(currentState, 6)
-        whiteState.append(wkState)
-        wrState = self.getPieceState(currentState, 2)
-        if wrState != None:
-            whiteState.append(wrState)
-        return whiteState
-
-    def getBlackState(self, currentState):
-        blackState = []
-        bkState = self.getPieceState(currentState, 12)
-        blackState.append(bkState)
-        brState = self.getPieceState(currentState, 8)
-        if brState != None:
-            blackState.append(brState)
-        return blackState
-
-    def getMovement(self, state, nextState):
-        pieceState = None
-        pieceNextState = None
-        for piece in state:
-            if piece not in nextState:
-                movedPiece = piece[2]
-                pieceNext = self.getPieceState(nextState, movedPiece)
-                if pieceNext != None:
-                    pieceState = piece
-                    pieceNextState = pieceNext
-                    break
-        return [pieceState, pieceNextState]
-
-    def movePieces(self, start, depthStart, to, depthTo):
-        # To move from one state to the next we will need to find
-        # the state in common, and then move until the node 'to'
-        moveList = []
-        # We want that the depths are equal to find a common ancestor
-
-        nodeTo = to
-        nodeStart = start
-        # if the depth of the node To is larger than that of start, 
-        # we pick the ancesters of the node until being at the same
-        # depth
-        while(depthTo > depthStart):
-            moveList.insert(0,to)
-            nodeTo = self.dictPath[str(nodeTo)][0]
-            depthTo-=1
-        # Analogous to the previous case, but we trace back the ancestors
-        #until the node 'start'
-        while(depthStart > depthTo):
-            ancestreStart = self.dictPath[str(nodeStart)][0]
-            self.changeState(nodeStart, ancestreStart)
-            nodeStart = ancestreStart
-            depthStart -= 1
-        moveList.insert(0,nodeTo)
-        while nodeStart != nodeTo:
-            ancestreStart = self.dictPath[str(nodeStart)][0]
-            self.changeState(nodeStart,ancestreStart)
-            nodeTo = self.dictPath[str(nodeTo)][0]
-            moveList.insert(0,nodeTo)
-            nodeStart = ancestreStart
-        for i in range(len(moveList)):
-            if i < len(moveList) - 1:
-                self.changeState(moveList[i],moveList[i+1])
-
-    def reconstructPath(self, state, depth):
-        # Once the solution is found, reconstruct the path taken to reach it
-        for i in range(depth):
-            self.pathToTarget.insert(0, state)
-            # For each node, retrieve its parent from dictPath
-            state = self.dictPath[str(state)][0]
-        # Insert the root node at the beginning
-        self.pathToTarget.insert(0, state)
 
     def h(self, state):
-        """Improved heuristic (admissible):
-        - kingDistance: Manhattan distance from white king to target square (black king target)
-        - rookAlignDist: minimal moves for rook to align on same row or column as target
-        We use the max of these distances because both pieces must reach appropriate positions
-        and moves happen on white turns; this is admissible (doesn't overestimate) and
-        is typically tighter than the previous sum.
+        """Heurística mejorada:
+        - kingDistance: distancia de Manhattan desde el rey blanco hasta la casilla objetivo (rey negro).
+        - rookAlignDist: movimientos mínimos para que la torre se alinee en la misma fila o columna que el objetivo.
+        Se devuelve el máximo de ambas medidas para mantener admisibilidad y dar una estimación
+        más informativa que favorezca la coordinación rey+torre.
         """
+
         whiteKingPosition = state[0]
         whiteRookPosition = state[1]
         targetKingPosition = (0, 5)
         kingDistance = abs(whiteKingPosition[0] - targetKingPosition[0]) + abs(whiteKingPosition[1] - targetKingPosition[1])
-        # rook alignment distance: moves to get rook into same row OR same column as target
+        # distancia de alineación de la torre: movimientos para que la torre esté en la misma fila O columna que el objetivo
         rookAlignRow = abs(whiteRookPosition[0] - targetKingPosition[0])
         rookAlignCol = abs(whiteRookPosition[1] - targetKingPosition[1])
         rookAlignDist = min(rookAlignRow, rookAlignCol)
-        # heuristic is the maximum of the two component distances (admissible)
+        # la heurística es el máximo de las dos distancias componentes
         return max(kingDistance, rookAlignDist)
 
-    def changeState(self, start, to):
-        if start[0] == to[0]:
-            movedPieceStart = 1
-            movedPieceTo = 1
-        elif start[0] == to[1]:
-            movedPieceStart = 1
-            movedPieceTo = 0
-        elif start[1] == to[0]:
-            movedPieceStart = 0
-            movedPieceTo = 1
-        else:
-            movedPieceStart = 0
-            movedPieceTo = 0
-        self.chess.moveSim(start[movedPieceStart], to[movedPieceTo])       
-
-    def DepthFirstSearch(self, currentState, depth):
-        self.listVisitedStates.append(currentState)
-        if self.isCheckMate(currentState):
-            self.pathToTarget.append(currentState)
-            return True
-        if depth + 1 <= self.depthMax:
-            for son in self.getListNextStatesW(currentState):
-                if not self.isVisited(son):
-                    if son[0][2] == currentState[0][2]:
-                        movedPieceIndex = 0
-                    else:
-                        movedPieceIndex = 1
-                    self.chess.moveSim(currentState[movedPieceIndex], son[0])
-                    if self.DepthFirstSearch(son, depth + 1):
-                        self.pathToTarget.insert(0, currentState)
-                        return True
-                    self.chess.moveSim(son[0], currentState[movedPieceIndex])
-        self.listVisitedStates.remove(currentState)
-
-    def worthExploring(self, state, depth):
-        if depth > self.depthMax:
-            return False
-        visited = False
-        for perm in list(permutations(state)):
-            permStr = str(perm)
-            if permStr in list(self.dictVisitedStates.keys()):
-                visited = True
-                if depth < self.dictVisitedStates[perm]:
-                    self.dictVisitedStates[permStr] = depth
-                    return True
-        if not visited:
-            permStr = str(state)
-            self.dictVisitedStates[permStr] = depth
-            return True
-
-    def DepthFirstSearchOptimized(self, currentState, depth):
-        if self.isCheckMate(currentState):
-            self.pathToTarget.append(currentState)
-            return True
-        for son in self.getListNextStatesW(currentState):
-            if self.worthExploring(son, depth + 1):
-                if son[0][2] == currentState[0][2]:
-                    movedPieceIndex = 0
-                else:
-                    movedPieceIndex = 1
-                self.chess.moveSim(currentState[movedPieceIndex], son[0])
-                if self.DepthFirstSearchOptimized(son, depth + 1):
-                    self.pathToTarget.insert(0, currentState)
-                    return True
-                self.chess.moveSim(son[0], currentState[movedPieceIndex])
-
-    def BreadthFirstSearch(self, currentState, depth):
-        BFSQueue = queue.Queue()
-        self.dictPath[str(currentState)] = (None, -1)
-        depthCurrentState = 0
-        BFSQueue.put(currentState)
-        self.listVisitedStates.append(currentState)
-        while BFSQueue.qsize() > 0:
-            node = BFSQueue.get()
-            depthNode = self.dictPath[str(node)][1] + 1
-            if depthNode > self.depthMax:
-                break
-            if depthNode > 0:
-                self.movePieces(currentState, depthCurrentState, node, depthNode)
-            if self.isCheckMate(node):
-                self.reconstructPath(node, depthNode)
-                break
-            for son in self.getListNextStatesW(node):
-                if not self.isVisited(son):
-                    self.listVisitedStates.append(son)
-                    BFSQueue.put(son)
-                    self.dictPath[str(son)] = (node, depthNode)
-            currentState = node
-            depthCurrentState = depthNode
 
     def AStarSearch(self, currentState):
         import heapq
-        # Normalize the start state to (king, rook)
+        # AStarSearch(currentState)
+        # Implementa búsqueda A* sobre estados normalizados (blancas: [rey, torre]).
+        # Estrategia principal:
+        # 1) Normalizar estado de inicio y usar `heapq` para la frontera con (f, estado, g).
+        # 2) Al extraer un nodo, reconstruir `boardSim` a partir del estado blanco
+        #    y las piezas negras iniciales para generar sucesores sin inconsistencias.
+        # 3) Usar `isCheckMate` dinámico como condición objetivo y `dictPath`
+        #    para reconstruir la ruta cuando se encuentre mate.
+        
+        # Normalizar el estado de inicio a (rey, torre)
         currentState = self.getWhiteState(currentState)
-        # frontier entries are tuples: (f_score, state, g_cost)
+        # las entradas de la frontera son tuplas (f_score, estado, g_cost)
         frontier = []
         start_key = str(currentState)
         heapq.heappush(frontier, (self.h(currentState), currentState, 0))
 
-        # cost-so-far (g) and parent map for reconstruction (store normalized states)
+        # coste hasta ahora (g) y mapa de padres para reconstrucción (almacenar estados normalizados)
         cost_so_far = {start_key: 0}
         self.dictPath[start_key] = (None, 0)
 
         found = False
-        # while expanding nodes, rebuild boardSim from the normalized white node
-        # plus the original black pieces to avoid complex move synchronization
+        # mientras expandimos nodos, reconstruir boardSim desde el nodo blanco normalizado
+        # más las piezas negras originales para evitar sincronizaciones complejas de movimientos
         while frontier:
             f, node, g = heapq.heappop(frontier)
             # debug
             print(f"Exploring state: {node}")
 
-            # rebuild boardSim so successor generation is accurate
+            # reconstruir boardSim para que la generación de sucesores sea precisa
             try:
-                # node is normalized white-state (list of white piece states)
-                # combine with the original black state from self.chess.board.currentStateB
+                # node es el estado blanco normalizado (lista de estados de piezas blancas)
+                # combinar con el estado negro original desde self.chess.board.currentStateB
                 full_state = []
-                # white pieces from node
+                # piezas blancas del nodo
                 for w in node:
                     full_state.append(w)
-                # black pieces from initial board (unchanged during A* search)
+                # piezas negras del tablero inicial (sin cambios durante la búsqueda A*)
                 for b in self.chess.board.currentStateB:
                     full_state.append(b)
-                # rebuild simulation board
+                # reconstruir tablero de simulación
                 self.newBoardSim(full_state)
             except Exception as e:
                 print(f"Failed to rebuild boardSim for node {node}: {e}")
                 continue
 
-            # goal check
+            # comprobación de objetivo
             if self.isCheckMate(node):
                 print("Checkmate found!")
-                # reconstruct path using dictPath; node is normalized
+                # reconstruir ruta usando dictPath; node está normalizado
                 self.reconstructPath(node, g)
-                # diagnostic: check for any legal black escapes in this boardSim
+                # diagnóstico: comprobar posibles escapes legales de las negras en este boardSim
                 escapes = self.list_black_legal_escapes()
                 if len(escapes) == 0:
                     print("No legal black escapes found by diagnostic (confirmed mate)")
@@ -726,25 +841,27 @@ class Aichess():
                 found = True
                 break
 
-            # expand successors; ensure node passed to successor generator is in normalized form
+            # expandir sucesores; asegurar que el nodo pasado al generador de sucesores está normalizado
             for son in self.getListNextStatesW(node):
-                # normalize successor to canonical (king, rook)
+                # normalizar sucesor a forma canónica (rey, torre)
                 son_norm = self.getWhiteState(son)
                 son_key = str(son_norm)
                 tentative_g = g + 1
-                # if we already have a better path to son, skip
+                # si ya tenemos un camino mejor hacia son, saltar
                 if son_key in cost_so_far and tentative_g >= cost_so_far[son_key]:
                     continue
                 cost_so_far[son_key] = tentative_g
-                # parent pointer and depth (store parent as normalized state)
+                # puntero al padre y profundidad (almacenar padre como estado normalizado)
                 self.dictPath[son_key] = (node, tentative_g)
                 heapq.heappush(frontier, (tentative_g + self.h(son_norm), son_norm, tentative_g))
 
-        # diagnostic output
         if found:
             print("Minimal depth to checkmate:", len(self.pathToTarget) - 1)
         else:
             print("No checkmate found within search limits.")
+
+
+
 if __name__ == "__main__":
     # Initialize an empty 8x8 chess board
     TA = np.zeros((8, 8))
