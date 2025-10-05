@@ -564,23 +564,52 @@ class Aichess():
 
 
     def h(self, state):
-        """Heurística mejorada:
-        - kingDistance: distancia de Manhattan desde el rey blanco hasta la casilla objetivo (rey negro).
-        - rookAlignDist: movimientos mínimos para que la torre se alinee en la misma fila o columna que el objetivo.
-        Se devuelve el máximo de ambas medidas para mantener admisibilidad y dar una estimación
-        más informativa que favorezca la coordinación rey+torre.
+        """Heurística admisible para K+R vs K.
+
+        Estrategia:
+        - Usar la posición real del rey negro (desde self.chess.board.currentStateB) en lugar de una constante.
+        - kingDistance: mínima distancia de Manhattan desde el rey blanco hasta cualquier casilla adyacente
+          al rey negro (el rey blanco debe acercarse para ayudar al mate).
+        - rookAlignDist: lower bound para que la torre quede en la misma fila o columna que el rey negro: 0 si
+          ya está alineada, 1 en caso contrario (la torre puede alinearse en al menos una jugada si no está alineada).
+        La heurística devuelve el máximo de ambas cantidades (cota inferior admisible del número de jugadas necesarias).
         """
 
+        # estado: state[0] = [wr, wc, code] for white king; state[1] = [rr, rc, code] for white rook
         whiteKingPosition = state[0]
         whiteRookPosition = state[1]
-        targetKingPosition = (0, 5)
-        kingDistance = abs(whiteKingPosition[0] - targetKingPosition[0]) + abs(whiteKingPosition[1] - targetKingPosition[1])
-        # distancia de alineación de la torre: movimientos para que la torre esté en la misma fila O columna que el objetivo
-        rookAlignRow = abs(whiteRookPosition[0] - targetKingPosition[0])
-        rookAlignCol = abs(whiteRookPosition[1] - targetKingPosition[1])
-        rookAlignDist = min(rookAlignRow, rookAlignCol)
-        # la heurística es el máximo de las dos distancias componentes
-        return max(kingDistance, rookAlignDist)
+
+        # obtener posición del rey negro desde el tablero inicial/current (A* mantiene piezas negras constantes)
+        bk_list = self.chess.board.currentStateB
+        if len(bk_list) == 0:
+            # sin información del rey negro, caer de vuelta a una cota simple
+            targetKingPosition = (0, 5)
+        else:
+            bk = bk_list[0]
+            targetKingPosition = (bk[0], bk[1])
+
+        # calcular distancia mínima del rey blanco a cualquier casilla adyacente al rey negro
+        bk_r, bk_c = targetKingPosition
+        min_king_dist = math.inf
+        for ar in range(max(0, bk_r - 1), min(7, bk_r + 1) + 1):
+            for ac in range(max(0, bk_c - 1), min(7, bk_c + 1) + 1):
+                if ar == bk_r and ac == bk_c:
+                    continue
+                dist = abs(whiteKingPosition[0] - ar) + abs(whiteKingPosition[1] - ac)
+                if dist < min_king_dist:
+                    min_king_dist = dist
+
+        if min_king_dist == math.inf:
+            min_king_dist = 0
+
+        # rook alignment lower bound: 0 if same row or same column as black king, else 1
+        if whiteRookPosition[0] == bk_r or whiteRookPosition[1] == bk_c:
+            rookAlignDist = 0
+        else:
+            rookAlignDist = 1
+
+        # la heurística es el máximo de ambas componentes (cota admisible)
+        return int(max(min_king_dist, rookAlignDist))
 
 
     def AStarSearch(self, currentState):
@@ -660,6 +689,15 @@ class Aichess():
             for son in self.getListNextStatesW(node):
                 # normalizar sucesor a forma canónica (rey, torre)
                 son_norm = self.getWhiteState(son)
+                # evitar estados ilegales donde los reyes quedan adyacentes (no permitido)
+                bk_list_local = self.chess.board.currentStateB
+                if len(bk_list_local) > 0:
+                    bk_local = bk_list_local[0]
+                    bk_r_local, bk_c_local = bk_local[0], bk_local[1]
+                    wk_local = son_norm[0]
+                    if abs(wk_local[0] - bk_r_local) <= 1 and abs(wk_local[1] - bk_c_local) <= 1:
+                        # descartamos este sucesor
+                        continue
                 son_key = str(son_norm)
                 tentative_g = g + 1
                 # si ya tenemos un camino mejor hacia son, saltar
@@ -686,7 +724,7 @@ if __name__ == "__main__":
     TA[7][5] = 6   
 
     # REY NEGRO
-    TA[6][7] = 12  
+    TA[1][0] = 12  
     print("Starting AI chess...")
     aichess = Aichess(TA, True)
     # Print initial board
