@@ -444,32 +444,24 @@ class Aichess():
                     break
         return [pieceState, pieceNextState]
 
+
+# ================================================================================
 # ============================== FIN NO MODIFICADAS ==============================
-
-
-
-
-
-
-
-
-
+# ================================================================================
 
         
-    # Función para detectar jaque mate (ejercicio 1)
-    def isCheckMate(self, mystate):
+    # Función para detectar jaque mate
+    def isCheckMate(self, mystate=None, return_escapes=False):
+        """
+        Comprueba si la posición actual en `self.chess.boardSim` es mate para las negras.
+        Si `return_escapes` es True devuelve una tupla (is_mate, escapes) donde `escapes` es
+        la lista de jugadas negras que eliminan el jaque; si es False devuelve solo el booleano.
+        """
         board_sim = self.chess.boardSim
-        # isCheckMate (dinámico): determina si `mystate` es mate para las negras.
-        # Estrategia:
-        # 1) localizar la posición del rey negro en `boardSim`.
-        # 2) usar un detector puro de ataques (sin efectos secundarios)
-        #    para comprobar si la casilla del rey está en jaque.
-        # 3) simular todas las jugadas legales negras (incluidas capturas).
-        # 4) si ninguna jugada elimina el jaque, devolver True (mate).
-        # Detector puro de ataques: evitamos llamar a `piece.is_valid_move`
+
+        # Detector puro de ataques (sin efectos secundarios)
         def square_attacked_pure(r, c):
             b = board_sim.board
-            # recorrer todas las piezas blancas y comprobar si atacan (r,c)
             for i in range(8):
                 for j in range(8):
                     p = b[i][j]
@@ -480,7 +472,6 @@ class Aichess():
                     dj = c - j
                     adi = abs(di)
                     adj = abs(dj)
-                    # el peón blanco ataca en diagonal una casilla hacia arriba (fila-1)
                     if name == 'P':
                         if (i - 1 == r) and (j - 1 == c or j + 1 == c):
                             return True
@@ -494,13 +485,11 @@ class Aichess():
                             return True
                         continue
                     if name == 'R' or name == 'Q':
-                        # torre/rey dama: misma fila o misma columna
                         if i == r:
                             step = 1 if j < c else -1
                             blocked = False
                             x = j + step
                             while x != c:
-                                # comprobar si hay piezas intermedias en la fila
                                 if b[i][x] is not None:
                                     blocked = True
                                     break
@@ -512,7 +501,6 @@ class Aichess():
                             blocked = False
                             x = i + step
                             while x != r:
-                                # comprobar si hay piezas intermedias en la columna
                                 if b[x][j] is not None:
                                     blocked = True
                                     break
@@ -520,7 +508,6 @@ class Aichess():
                             if not blocked:
                                 return True
                     if name == 'B' or name == 'Q':
-                        # alfil/rey dama: ataques en diagonal
                         if adi == adj and adi != 0:
                             step_i = 1 if i < r else -1
                             step_j = 1 if j < c else -1
@@ -528,7 +515,6 @@ class Aichess():
                             y = j + step_j
                             blocked = False
                             while x != r and y != c:
-                                # comprobar si hay piezas intermedias en la diagonal
                                 if b[x][y] is not None:
                                     blocked = True
                                     break
@@ -538,7 +524,7 @@ class Aichess():
                                 return True
             return False
 
-    # buscar la posición del rey negro
+        # localizar la posición del rey negro
         bk_pos = None
         for i in range(8):
             for j in range(8):
@@ -550,40 +536,41 @@ class Aichess():
                 break
 
         if bk_pos is None:
+            if return_escapes:
+                return (False, [])
             return False
 
         # si el rey no está en jaque, no es mate
         if not square_attacked_pure(bk_pos[0], bk_pos[1]):
+            if return_escapes:
+                return (False, [])
             return False
 
-        # simular todas las jugadas legales negras (incluye capturas y movimientos del rey)
+        # simular todas las jugadas legales negras y coleccionar escapes
+        escapes = []
         for i in range(8):
             for j in range(8):
                 bp = board_sim.board[i][j]
                 if bp is None or bp.color:
                     continue
-                # probar todos los destinos posibles
                 for r in range(8):
                     for c in range(8):
                         dest = board_sim.board[r][c]
-                        # no puedes capturar una pieza propia
                         if dest is not None and dest.color == False:
                             continue
-                        # comprobar si la pieza negra puede moverse legalmente a (r,c)
                         try:
                             if not bp.is_valid_move(board_sim, (i, j), (r, c)):
                                 continue
                         except Exception:
-                            # ignorar excepciones de validación y tratar la jugada como no legal
                             continue
 
-                        # simular movimiento en boardSim
+                        # simular movimiento
                         orig_from = board_sim.board[i][j]
                         orig_to = board_sim.board[r][c]
                         board_sim.board[i][j] = None
                         board_sim.board[r][c] = bp
 
-                        # localizar posición del rey negro tras la simulación
+                        # localizar nueva posición del rey negro si cambia
                         if bp.name == 'K':
                             new_bk_pos = (r, c)
                         else:
@@ -599,154 +586,27 @@ class Aichess():
 
                         attacked_after = True
                         if new_bk_pos is not None:
-                            # comprobar si, tras la jugada simulada, el rey sigue en jaque
                             attacked_after = square_attacked_pure(new_bk_pos[0], new_bk_pos[1])
 
-                        # revertir la simulación para restaurar `boardSim`
-                        board_sim.board[i][j] = orig_from
-                        board_sim.board[r][c] = orig_to
-
-                        if not attacked_after:
-                            # existe una defensa que quita el jaque -> no es mate
-                            return False
-
-        # no hay defensa posible -> es mate
-        return True
-
-
-    # Devuelve una lista de jugadas negras que eliminarían el jaque al rey.
-    # Cada jugada se representa como ((r_from,c_from),(r_to,c_to)).
-    def list_black_legal_escapes(self):
-        board_sim = self.chess.boardSim
-        escapes = []
-
-        # reutiliza el detector puro de ataques usado en isCheckMate
-        def square_attacked(r, c):
-            b = board_sim.board
-            for i in range(8):
-                for j in range(8):
-                    p = b[i][j]
-                    if p is None or not p.color:
-                        continue
-                    name = p.name
-                    di = r - i
-                    dj = c - j
-                    adi = abs(di)
-                    adj = abs(dj)
-                    if name == 'P':
-                        if (i - 1 == r) and (j - 1 == c or j + 1 == c):
-                            return True
-                        continue
-                    if name == 'N':
-                        if (adi == 2 and adj == 1) or (adi == 1 and adj == 2):
-                            return True
-                        continue
-                    if name == 'K':
-                        if max(adi, adj) == 1:
-                            return True
-                        continue
-                    if name == 'R' or name == 'Q':
-                        if i == r:
-                            step = 1 if j < c else -1
-                            blocked = False
-                            x = j + step
-                            while x != c:
-                                if b[i][x] is not None:
-                                    blocked = True
-                                    break
-                                x += step
-                            if not blocked:
-                                return True
-                        if j == c:
-                            step = 1 if i < r else -1
-                            blocked = False
-                            x = i + step
-                            while x != r:
-                                if b[x][j] is not None:
-                                    blocked = True
-                                    break
-                                x += step
-                            if not blocked:
-                                return True
-                    if name == 'B' or name == 'Q':
-                        if adi == adj and adi != 0:
-                            step_i = 1 if i < r else -1
-                            step_j = 1 if j < c else -1
-                            x = i + step_i
-                            y = j + step_j
-                            blocked = False
-                            while x != r and y != c:
-                                if b[x][y] is not None:
-                                    blocked = True
-                                    break
-                                x += step_i
-                                y += step_j
-                            if not blocked:
-                                return True
-            return False
-
-    # localizar la posición actual del rey negro
-        bk_pos = None
-        for i in range(8):
-            for j in range(8):
-                p = board_sim.board[i][j]
-                if p is not None and p.name == 'K' and not p.color:
-                    bk_pos = (i, j)
-                    break
-            if bk_pos is not None:
-                break
-        if bk_pos is None:
-            return escapes
-
-    # probar todas las jugadas negras
-        for i in range(8):
-            for j in range(8):
-                bp = board_sim.board[i][j]
-                if bp is None or bp.color:
-                    continue
-                for r in range(8):
-                    for c in range(8):
-                        dest = board_sim.board[r][c]
-                        if dest is not None and dest.color == False:
-                            continue
-                        # comprobar si la jugada es legal (ignoramos excepciones)
-                        try:
-                            if not bp.is_valid_move(board_sim, (i, j), (r, c)):
-                                continue
-                        except Exception:
-                            continue
-
-                        # simular movimiento en `boardSim`
-                        orig_from = board_sim.board[i][j]
-                        orig_to = board_sim.board[r][c]
-                        board_sim.board[i][j] = None
-                        board_sim.board[r][c] = bp
-
-                        # localizar nueva posición del rey negro tras la simulación
-                        if bp.name == 'K':
-                            new_bk_pos = (r, c)
-                        else:
-                            new_bk_pos = None
-                            for x in range(8):
-                                for y in range(8):
-                                    p = board_sim.board[x][y]
-                                    if p is not None and p.name == 'K' and not p.color:
-                                        new_bk_pos = (x, y)
-                                        break
-                                if new_bk_pos is not None:
-                                    break
-
-                        attacked_after = True
-                        if new_bk_pos is not None:
-                            attacked_after = square_attacked(new_bk_pos[0], new_bk_pos[1])
-
-                        # revertir la simulación
+                        # revertir simulación
                         board_sim.board[i][j] = orig_from
                         board_sim.board[r][c] = orig_to
 
                         if not attacked_after:
                             escapes.append(((i, j), (r, c)))
-        return escapes
+                            if not return_escapes:
+                                # existe una defensa -> no es mate
+                                return False
+
+        is_mate = len(escapes) == 0
+        if return_escapes:
+            return (is_mate, escapes)
+        return is_mate
+
+
+    # Devuelve una lista de jugadas negras que eliminarían el jaque al rey.
+    # Cada jugada se representa como ((r_from,c_from),(r_to,c_to)).
+    # list_black_legal_escapes removed: its logic is now integrated into isCheckMate
     
     # Busca y devuelve la entrada de `state` correspondiente al identificador `piece`.
     def getPieceState(self, state, piece):
@@ -799,14 +659,19 @@ class Aichess():
         # coste hasta ahora (g) y mapa de padres para reconstrucción (almacenar estados normalizados)
         cost_so_far = {start_key: 0}
         self.dictPath[start_key] = (None, 0)
-
         found = False
+
+        # Guarda lista de nodos visitados
+        self.listVisitedStates = []
+        
+        
         # mientras expandimos nodos, reconstruir boardSim desde el nodo blanco normalizado
         # más las piezas negras originales para evitar sincronizaciones complejas de movimientos
         while frontier:
             f, node, g = heapq.heappop(frontier)
             # debug
             print(f"Exploring state: {node}")
+            self.listVisitedStates.append(node)   # ← estado normalizado [rey, torre]
 
             # reconstruir boardSim para que la generación de sucesores sea precisa
             try:
@@ -825,13 +690,18 @@ class Aichess():
                 print(f"Failed to rebuild boardSim for node {node}: {e}")
                 continue
 
-            # comprobación de objetivo
-            if self.isCheckMate(node):
+            # comprobación de objetivo (ahora devuelve escapes si se solicita)
+            is_mate_result = self.isCheckMate(node, return_escapes=True)
+            if isinstance(is_mate_result, tuple):
+                is_mate, escapes = is_mate_result
+            else:
+                is_mate = is_mate_result
+                escapes = []
+            if is_mate:
                 print("Checkmate found!")
                 # reconstruir ruta usando dictPath; node está normalizado
                 self.reconstructPath(node, g)
-                # diagnóstico: comprobar posibles escapes legales de las negras en este boardSim
-                escapes = self.list_black_legal_escapes()
+                # diagnóstico: mostrar posibles escapes si los hubiera
                 if len(escapes) == 0:
                     print("No legal black escapes found by diagnostic (confirmed mate)")
                 else:
@@ -883,6 +753,10 @@ if __name__ == "__main__":
 
     # Run A* search
     aichess.AStarSearch(currentState)
+    # Mostrar nodos visitados por A*
+    print("\n#A* visited nodes:")
+    for idx, node in enumerate(aichess.listVisitedStates):
+        print(f"{idx}: {node}")
     print("#A* move sequence:", aichess.pathToTarget)
     print("A* End\n")
     print("Printing final board after A*:")
