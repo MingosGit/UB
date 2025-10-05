@@ -452,79 +452,14 @@ class Aichess():
         
     # Función para detectar jaque mate
     def isCheckMate(self, mystate=None, return_escapes=False):
-        """
-        Comprueba si la posición actual en `self.chess.boardSim` es mate para las negras.
-        Si `return_escapes` es True devuelve una tupla (is_mate, escapes) donde `escapes` es
-        la lista de jugadas negras que eliminan el jaque; si es False devuelve solo el booleano.
-        """
+        # - Siempre hay 3 piezas: rey blanco (color True), torre blanca (color True), rey negro (color False).
+        # - La posición del rey negro se considera fija para la generación de movimientos por parte del usuario,
+        #   pero aún debemos comprobar si el rey negro tendría algún movimiento legal para escapar del jaque.
+        # La función devuelve un booleano o (es_mate, escapes) cuando return_escapes es True.
+
         board_sim = self.chess.boardSim
 
-        # Detector puro de ataques (sin efectos secundarios)
-        def square_attacked_pure(r, c):
-            b = board_sim.board
-            for i in range(8):
-                for j in range(8):
-                    p = b[i][j]
-                    if p is None or not p.color:
-                        continue
-                    name = p.name
-                    di = r - i
-                    dj = c - j
-                    adi = abs(di)
-                    adj = abs(dj)
-                    if name == 'P':
-                        if (i - 1 == r) and (j - 1 == c or j + 1 == c):
-                            return True
-                        continue
-                    if name == 'N':
-                        if (adi == 2 and adj == 1) or (adi == 1 and adj == 2):
-                            return True
-                        continue
-                    if name == 'K':
-                        if max(adi, adj) == 1:
-                            return True
-                        continue
-                    if name == 'R' or name == 'Q':
-                        if i == r:
-                            step = 1 if j < c else -1
-                            blocked = False
-                            x = j + step
-                            while x != c:
-                                if b[i][x] is not None:
-                                    blocked = True
-                                    break
-                                x += step
-                            if not blocked:
-                                return True
-                        if j == c:
-                            step = 1 if i < r else -1
-                            blocked = False
-                            x = i + step
-                            while x != r:
-                                if b[x][j] is not None:
-                                    blocked = True
-                                    break
-                                x += step
-                            if not blocked:
-                                return True
-                    if name == 'B' or name == 'Q':
-                        if adi == adj and adi != 0:
-                            step_i = 1 if i < r else -1
-                            step_j = 1 if j < c else -1
-                            x = i + step_i
-                            y = j + step_j
-                            blocked = False
-                            while x != r and y != c:
-                                if b[x][y] is not None:
-                                    blocked = True
-                                    break
-                                x += step_i
-                                y += step_j
-                            if not blocked:
-                                return True
-            return False
-
-        # localizar la posición del rey negro
+        # buscar rey negro
         bk_pos = None
         for i in range(8):
             for j in range(8):
@@ -536,67 +471,79 @@ class Aichess():
                 break
 
         if bk_pos is None:
+            # no hay rey negro -> no es mate
             if return_escapes:
                 return (False, [])
             return False
 
-        # si el rey no está en jaque, no es mate
-        if not square_attacked_pure(bk_pos[0], bk_pos[1]):
+        # auxiliar: ¿está la casilla atacada por alguna pieza blanca (rey o torre)?
+        def square_attacked(r, c):
+            b = board_sim.board
+            # comprobar ataques de torre (líneas rectas)
+            # mirar en las cuatro direcciones
+            dirs = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+            for di, dj in dirs:
+                x, y = r + di, c + dj
+                while 0 <= x < 8 and 0 <= y < 8:
+                    p = b[x][y]
+                    if p is None:
+                        x += di; y += dj
+                        continue
+                    # si la pieza es torre blanca, ataca
+                    if p.color and p.name == 'R':
+                        return True
+                    # cualquier otra pieza bloquea
+                    break
+
+            # comprobar adyacencia del rey blanco
+            for x in range(max(0, r - 1), min(7, r + 1) + 1):
+                for y in range(max(0, c - 1), min(7, c + 1) + 1):
+                    if x == r and y == c:
+                        continue
+                    p = b[x][y]
+                    if p is not None and p.color and p.name == 'K':
+                        return True
+            return False
+
+        # si el rey negro no está actualmente en jaque -> no es mate
+        if not square_attacked(bk_pos[0], bk_pos[1]):
             if return_escapes:
                 return (False, [])
             return False
 
-        # simular todas las jugadas legales negras y coleccionar escapes
+        # generar movimientos del rey negro (8 casillas circundantes) y comprobar si alguno es legal y no está atacado
         escapes = []
-        for i in range(8):
-            for j in range(8):
-                bp = board_sim.board[i][j]
-                if bp is None or bp.color:
+        for di in (-1, 0, 1):
+            for dj in (-1, 0, 1):
+                if di == 0 and dj == 0:
                     continue
-                for r in range(8):
-                    for c in range(8):
-                        dest = board_sim.board[r][c]
-                        if dest is not None and dest.color == False:
-                            continue
-                        try:
-                            if not bp.is_valid_move(board_sim, (i, j), (r, c)):
-                                continue
-                        except Exception:
-                            continue
+                ni = bk_pos[0] + di
+                nj = bk_pos[1] + dj
+                if not (0 <= ni < 8 and 0 <= nj < 8):
+                    continue
+                dest = board_sim.board[ni][nj]
+                # no puede moverse a una casilla ocupada por otra pieza negra (no existen en este escenario)
+                if dest is not None and dest.color == False:
+                    continue
+                # no puede moverse a una casilla adyacente al rey blanco
+                # pero confiaremos en square_attacked para incluir ataques del rey
 
-                        # simular movimiento
-                        orig_from = board_sim.board[i][j]
-                        orig_to = board_sim.board[r][c]
-                        board_sim.board[i][j] = None
-                        board_sim.board[r][c] = bp
+                # simular movimiento: colocar rey negro en (ni, nj), vaciar la casilla original
+                orig_from = board_sim.board[bk_pos[0]][bk_pos[1]]
+                orig_to = board_sim.board[ni][nj]
+                board_sim.board[bk_pos[0]][bk_pos[1]] = None
+                board_sim.board[ni][nj] = orig_from
 
-                        # localizar nueva posición del rey negro si cambia
-                        if bp.name == 'K':
-                            new_bk_pos = (r, c)
-                        else:
-                            new_bk_pos = None
-                            for x in range(8):
-                                for y in range(8):
-                                    p = board_sim.board[x][y]
-                                    if p is not None and p.name == 'K' and not p.color:
-                                        new_bk_pos = (x, y)
-                                        break
-                                if new_bk_pos is not None:
-                                    break
+                attacked = square_attacked(ni, nj)
 
-                        attacked_after = True
-                        if new_bk_pos is not None:
-                            attacked_after = square_attacked_pure(new_bk_pos[0], new_bk_pos[1])
+                # revertir
+                board_sim.board[bk_pos[0]][bk_pos[1]] = orig_from
+                board_sim.board[ni][nj] = orig_to
 
-                        # revertir simulación
-                        board_sim.board[i][j] = orig_from
-                        board_sim.board[r][c] = orig_to
-
-                        if not attacked_after:
-                            escapes.append(((i, j), (r, c)))
-                            if not return_escapes:
-                                # existe una defensa -> no es mate
-                                return False
+                if not attacked:
+                    escapes.append(((bk_pos[0], bk_pos[1]), (ni, nj)))
+                    if not return_escapes:
+                        return False
 
         is_mate = len(escapes) == 0
         if return_escapes:
@@ -604,9 +551,7 @@ class Aichess():
         return is_mate
 
 
-    # Devuelve una lista de jugadas negras que eliminarían el jaque al rey.
-    # Cada jugada se representa como ((r_from,c_from),(r_to,c_to)).
-    # list_black_legal_escapes removed: its logic is now integrated into isCheckMate
+
     
     # Busca y devuelve la entrada de `state` correspondiente al identificador `piece`.
     def getPieceState(self, state, piece):
