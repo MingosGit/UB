@@ -496,6 +496,17 @@ class Aichess():
         wrState = self.getPieceState(currentState, 2)   # White Rook
         brState = self.getPieceState(currentState, 8)   # Black Rook
 
+        # If any king is captured, return terminal-like scores
+        if bkState is None and wkState is None:
+            # Extremely rare/impossible, treat as draw
+            return 0
+        if bkState is None:
+            # White wins
+            return 10000 if color else -10000
+        if wkState is None:
+            # Black wins
+            return -10000 if color else 10000
+
         filaBk, columnaBk = bkState[0], bkState[1]
         filaWk, columnaWk = wkState[0], wkState[1]
 
@@ -551,19 +562,74 @@ class Aichess():
             else:
                 value -= (max(abs(filaWk - 3.5), abs(columnaWk - 3.5))) * 10
 
-        # If the black king is in check, reward this state.
-        if self.isWatchedBk(currentState):
-            value += 20
-
-        # If the white king is in check, penalize this state.
-        if self.isWatchedWk(currentState):
-            value -= 20
+        # Note: avoid expensive board reconstructions here for speed.
+        # If desired, check conditions can be incorporated with fast checks below.
 
         # If the current player is Black, invert the heuristic value.
         if not color:
             value *= -1
 
         return value
+
+    # --------- Fast threat detection for this reduced piece set (K+R vs K+R) ---------
+    def _extract_positions(self, state):
+        wk = self.getPieceState(state, 6)
+        wr = self.getPieceState(state, 2)
+        bk = self.getPieceState(state, 12)
+        br = self.getPieceState(state, 8)
+        return wk, wr, bk, br
+
+    def _rook_attacks(self, from_pos, to_pos, occupied):
+        if from_pos is None or to_pos is None:
+            return False
+        r1, c1 = from_pos
+        r2, c2 = to_pos
+        if r1 != r2 and c1 != c2:
+            return False
+        # collect positions strictly between
+        if r1 == r2:
+            rng = range(min(c1, c2) + 1, max(c1, c2))
+            for y in rng:
+                if (r1, y) in occupied:
+                    return False
+            return True
+        else:
+            rng = range(min(r1, r2) + 1, max(r1, r2))
+            for x in rng:
+                if (x, c1) in occupied:
+                    return False
+            return True
+
+    def _king_adjacent(self, k1, k2):
+        if k1 is None or k2 is None:
+            return False
+        return max(abs(k1[0] - k2[0]), abs(k1[1] - k2[1])) == 1
+
+    def isWatchedBk_fast(self, state):
+        wk, wr, bk, br = self._extract_positions(state)
+        if bk is None:
+            return False
+        occ = set()
+        for p in state:
+            occ.add((p[0], p[1]))
+        if wk is not None and self._king_adjacent((wk[0], wk[1]), (bk[0], bk[1])):
+            return True
+        if wr is not None and self._rook_attacks((wr[0], wr[1]), (bk[0], bk[1]), occ - {(wr[0], wr[1]), (bk[0], bk[1])}):
+            return True
+        return False
+
+    def isWatchedWk_fast(self, state):
+        wk, wr, bk, br = self._extract_positions(state)
+        if wk is None:
+            return False
+        occ = set()
+        for p in state:
+            occ.add((p[0], p[1]))
+        if bk is not None and self._king_adjacent((bk[0], bk[1]), (wk[0], wk[1])):
+            return True
+        if br is not None and self._rook_attacks((br[0], br[1]), (wk[0], wk[1]), occ - {(br[0], br[1]), (wk[0], wk[1])}):
+            return True
+        return False
     
     def mean(self, values):
         # Calculate the arithmetic mean (average) of a list of numeric values.
@@ -578,13 +644,13 @@ class Aichess():
 
     def standard_deviation(self, values, mean_value):
         # Calculate the standard deviation of a list of values.
-            total = 0
-            n = len(values)
+        total = 0
+        n = len(values)
 
-            for i in range(n):
-                total += pow(values[i] - mean_value, 2)
+        for i in range(n):
+            total += pow(values[i] - mean_value, 2)
 
-            return pow(total / n, 1 / 2)
+        return pow(total / n, 1 / 2)
 
 
     def calculateValue(self, values):
@@ -617,9 +683,207 @@ class Aichess():
         return expected_value / total_weight
 
     def minimaxGame(self, depthWhite,depthBlack):
-        
-        currentState = self.getCurrentState()        
-        # Your code here
+        # Play a full game where White and Black both use Minimax with the given depths.
+        # Whites always move first.
+
+        # Helpers
+        WIN_SCORE = 10_000
+        LOSE_SCORE = -10_000
+
+        def is_terminal(state):
+            # King captured ends immediately
+            wk = self.getPieceState(state, 6)
+            bk = self.getPieceState(state, 12)
+            if wk is None or bk is None:
+                return True
+            # Optional: detect checkmates strictly would require move generation + checks; skip here
+            return False
+
+        def terminal_value(state, perspective_white):
+            # perspective_white: True if evaluating for White to move
+            wk = self.getPieceState(state, 6)
+            bk = self.getPieceState(state, 12)
+            if bk is None:
+                # Black king captured -> White wins
+                return WIN_SCORE if perspective_white else LOSE_SCORE
+            if wk is None:
+                # White king captured -> Black wins
+                return LOSE_SCORE if perspective_white else WIN_SCORE
+            # Not terminal
+            return None
+
+        def combine_with_opponent(mover_only_state, mover_is_white, opponent_state):
+            # Remove captured opponent piece if moved piece lands on it
+            moved_pos = mover_only_state[0][0:2]
+            new_opp = []
+            for p in opponent_state:
+                if [p[0], p[1]] == moved_pos:
+                    # captured
+                    continue
+                new_opp.append(p)
+            if mover_is_white:
+                return mover_only_state + new_opp
+            else:
+                return new_opp + mover_only_state
+
+        succ_cache = {}
+        check_cache = {}
+        def successors(state, white_to_move):
+            # Build next full states combining moving side's states with opponent pieces, handling captures
+            key = (tuple(sorted((p[0], p[1], p[2]) for p in state)), white_to_move)
+            if key in succ_cache:
+                return succ_cache[key]
+            self.newBoardSim(state)  # ensure generators see the right board
+            if white_to_move:
+                w_state = self.getWhiteState(state)
+                b_state = self.getBlackState(state)
+                next_w_only = self.getListNextStatesW(w_state)
+                combined = [combine_with_opponent(s, True, b_state) for s in next_w_only]
+                # filter moves that leave white in check
+                res = []
+                for ns in combined:
+                    kt2 = ('wk', tuple(sorted((p[0], p[1], p[2]) for p in ns)))
+                    if kt2 in check_cache:
+                        wcheck = check_cache[kt2]
+                    else:
+                        wcheck = self.isWatchedWk_fast(ns)
+                        check_cache[kt2] = wcheck
+                    if not wcheck:
+                        res.append(ns)
+                succ_cache[key] = res
+                return res
+            else:
+                w_state = self.getWhiteState(state)
+                b_state = self.getBlackState(state)
+                next_b_only = self.getListNextStatesB(b_state)
+                combined = [combine_with_opponent(s, False, w_state) for s in next_b_only]
+                # filter moves that leave black in check
+                res = []
+                for ns in combined:
+                    kt2 = ('bk', tuple(sorted((p[0], p[1], p[2]) for p in ns)))
+                    if kt2 in check_cache:
+                        bcheck = check_cache[kt2]
+                    else:
+                        bcheck = self.isWatchedBk_fast(ns)
+                        check_cache[kt2] = bcheck
+                    if not bcheck:
+                        res.append(ns)
+                succ_cache[key] = res
+                return res
+
+        # Transposition table: key -> (value, best_state)
+        tt = {}
+
+        def state_key(state, depth, white_to_move):
+            # Sort pieces by id to normalize ordering
+            tup = tuple(sorted((p[0], p[1], p[2]) for p in state))
+            return (tup, depth, white_to_move)
+
+        def minimax(state, depth, white_to_move, alpha=-math.inf, beta=math.inf):
+            # Returns (value, best_state)
+            term = terminal_value(state, white_to_move)
+            if term is not None:
+                return term, state
+            if depth == 0:
+                # Heuristic from the current player's perspective
+                return self.heuristica(state, color=white_to_move), state
+
+            key = state_key(state, depth, white_to_move)
+            if key in tt:
+                return tt[key]
+
+            next_states = successors(state, white_to_move)
+            if not next_states:
+                # No legal moves -> treat as very bad for player to move
+                val = (LOSE_SCORE if white_to_move else WIN_SCORE)
+                res = (val, state)
+                tt[key] = res
+                return res
+
+            # basic move ordering: evaluate heuristic shallowly to order (with caching)
+            scored = []
+            h_cache = {}
+            for ns in next_states:
+                kt = tuple(sorted((p[0], p[1], p[2]) for p in ns))
+                if kt in h_cache:
+                    h = h_cache[kt]
+                else:
+                    h = self.heuristica(ns, color=white_to_move)
+                    h_cache[kt] = h
+                scored.append((h, ns))
+            scored.sort(key=lambda x: x[0], reverse=white_to_move)
+            ordered_states = [ns for _, ns in scored]
+
+            if white_to_move:
+                best_val = -math.inf
+                best_state = ordered_states[0]
+                for ns in ordered_states:
+                    val, _ = minimax(ns, depth - 1, False, alpha, beta)
+                    if val > best_val:
+                        best_val = val
+                        best_state = ns
+                    alpha = max(alpha, best_val)
+                    if beta <= alpha:
+                        break
+                res = (best_val, best_state)
+                tt[key] = res
+                return res
+            else:
+                best_val = math.inf
+                best_state = ordered_states[0]
+                for ns in ordered_states:
+                    val, _ = minimax(ns, depth - 1, True, alpha, beta)
+                    if val < best_val:
+                        best_val = val
+                        best_state = ns
+                    beta = min(beta, best_val)
+                    if beta <= alpha:
+                        break
+                res = (best_val, best_state)
+                tt[key] = res
+                return res
+
+        # Initialize from the simulation board (not the main board), then play
+        currentState = []
+        for i in self.chess.boardSim.currentStateW:
+            currentState.append(i)
+        for j in self.chess.boardSim.currentStateB:
+            currentState.append(j)
+
+        white_turn = True
+        visited_path = [self.copyState(currentState)]
+        max_moves = 200
+        moves_done = 0
+
+        while not is_terminal(currentState) and moves_done < max_moves:
+            self.newBoardSim(currentState)
+            depth = depthWhite if white_turn else depthBlack
+            _, best_state = minimax(currentState, depth, white_turn)
+            currentState = self.copyState(best_state)
+            visited_path.append(self.copyState(currentState))
+            self.newBoardSim(currentState)
+            moves_done += 1
+            white_turn = not white_turn
+
+        # Report
+        winner = None
+        if self.getPieceState(currentState, 12) is None or self.isBlackInCheckMate(currentState):
+            winner = 'white'
+        elif self.getPieceState(currentState, 6) is None or self.isWhiteInCheckMate(currentState):
+            winner = 'black'
+        else:
+            winner = 'draw'
+
+        print("Game finished. Winner:", winner)
+        print("Minimal depth (plies) to reach target:", len(visited_path) - 1)
+        print("Visited states from origin to target (sequence):")
+        for idx, st in enumerate(visited_path):
+            print(f"Step {idx}: {st}")
+        # Show final board
+        self.newBoardSim(currentState)
+        self.chess.boardSim.print_board()
+
+        return winner, visited_path
 
 
     def alphaBetaPoda(self, depthWhite,depthBlack):
@@ -649,11 +913,28 @@ if __name__ == "__main__":
     TA[0][5] = 12  
 
     # Initialise board and print
-    print("stating AI chess... ")
-    aichess = Aichess(TA, True)
-    print("printing board")
-    aichess.chess.boardSim.print_board()
-    
-    # Run exercise 1
-    aichess.minimaxGame(4,4)
-    # Add code to save results and continue with other exercises
+    num_runs = 3
+    white_wins = 0
+    black_wins = 0
+    draws = 0
+
+    for run in range(1, num_runs + 1):
+        print(f"\n=== Run {run} ===")
+        print("starting AI chess...")
+        aichess = Aichess(TA, True)
+        print("initial board")
+        aichess.chess.boardSim.print_board()
+        winner, _path = aichess.minimaxGame(4, 4)
+        if winner == 'white':
+            white_wins += 1
+        elif winner == 'black':
+            black_wins += 1
+        else:
+            draws += 1
+
+    print("\nSummary across runs:")
+    print("White wins:", white_wins)
+    print("Black wins:", black_wins)
+    print("Draws:", draws)
+    if num_runs > 0:
+        print("White win rate:", white_wins / num_runs)
