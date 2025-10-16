@@ -892,6 +892,221 @@ class Aichess():
 
         return winner, visited_path
 
+    def alphaBetaPoda(self, depthWhite, depthBlack, verbose: bool = True):
+        # Mixed strategy game: White chooses moves via plain Minimax (no pruning),
+        # Black chooses moves via Alpha-Beta pruning. Whites move first.
+
+        WIN_SCORE = 10_000
+        LOSE_SCORE = -10_000
+
+        def is_terminal(state):
+            wk = self.getPieceState(state, 6)
+            bk = self.getPieceState(state, 12)
+            if wk is None or bk is None:
+                return True
+            if self.isBlackInCheckMate(state) or self.isWhiteInCheckMate(state):
+                return True
+            return False
+
+        def terminal_value(state, perspective_white):
+            wk = self.getPieceState(state, 6)
+            bk = self.getPieceState(state, 12)
+            if bk is None:
+                return WIN_SCORE if perspective_white else LOSE_SCORE
+            if wk is None:
+                return LOSE_SCORE if perspective_white else WIN_SCORE
+            if self.isBlackInCheckMate(state):
+                return WIN_SCORE if perspective_white else LOSE_SCORE
+            if self.isWhiteInCheckMate(state):
+                return LOSE_SCORE if perspective_white else WIN_SCORE
+            return None
+
+        def combine_with_opponent(mover_only_state, mover_is_white, opponent_state):
+            moved_pos = mover_only_state[0][0:2]
+            new_opp = []
+            for p in opponent_state:
+                if [p[0], p[1]] == moved_pos:
+                    continue
+                new_opp.append(p)
+            return mover_only_state + new_opp if mover_is_white else new_opp + mover_only_state
+
+        succ_cache = {}
+        check_cache = {}
+
+        def successors(state, white_to_move):
+            key = (tuple(sorted((p[0], p[1], p[2]) for p in state)), white_to_move)
+            if key in succ_cache:
+                return succ_cache[key]
+            self.newBoardSim(state)
+            if white_to_move:
+                w_state = self.getWhiteState(state)
+                b_state = self.getBlackState(state)
+                next_w_only = self.getListNextStatesW(w_state)
+                combined = [combine_with_opponent(s, True, b_state) for s in next_w_only]
+                res = []
+                for ns in combined:
+                    kt2 = ('wk', tuple(sorted((p[0], p[1], p[2]) for p in ns)))
+                    if kt2 in check_cache:
+                        wcheck = check_cache[kt2]
+                    else:
+                        wcheck = self.isWatchedWk_fast(ns)
+                        check_cache[kt2] = wcheck
+                    if not wcheck:
+                        res.append(ns)
+                succ_cache[key] = res
+                return res
+            else:
+                w_state = self.getWhiteState(state)
+                b_state = self.getBlackState(state)
+                next_b_only = self.getListNextStatesB(b_state)
+                combined = [combine_with_opponent(s, False, w_state) for s in next_b_only]
+                res = []
+                for ns in combined:
+                    kt2 = ('bk', tuple(sorted((p[0], p[1], p[2]) for p in ns)))
+                    if kt2 in check_cache:
+                        bcheck = check_cache[kt2]
+                    else:
+                        bcheck = self.isWatchedBk_fast(ns)
+                        check_cache[kt2] = bcheck
+                    if not bcheck:
+                        res.append(ns)
+                succ_cache[key] = res
+                return res
+
+        # Transposition tables for speed (do not change decision semantics)
+        tt_plain = {}
+        tt_ab = {}
+
+        # Plain Minimax (no pruning)
+        def minimax_plain(state, depth, white_to_move):
+            tv = terminal_value(state, white_to_move)
+            if tv is not None:
+                return tv, state
+            if depth == 0:
+                return self.heuristica(state, color=white_to_move), state
+            key = (tuple(sorted((p[0], p[1], p[2]) for p in state)), depth, white_to_move, 'plain')
+            if key in tt_plain:
+                return tt_plain[key]
+            next_states = successors(state, white_to_move)
+            if not next_states:
+                val = (LOSE_SCORE if white_to_move else WIN_SCORE)
+                res = (val, state)
+                tt_plain[key] = res
+                return res
+            # simple ordering for speed only
+            scored = [(self.heuristica(ns, color=white_to_move), ns) for ns in next_states]
+            scored.sort(key=lambda x: x[0], reverse=white_to_move)
+            ordered = [ns for _, ns in scored]
+            if white_to_move:
+                best_val = -math.inf
+                best_state = ordered[0]
+                for ns in ordered:
+                    val, _ = minimax_plain(ns, depth - 1, False)
+                    if val > best_val:
+                        best_val, best_state = val, ns
+                res = (best_val, best_state)
+                tt_plain[key] = res
+                return res
+            else:
+                best_val = math.inf
+                best_state = ordered[0]
+                for ns in ordered:
+                    val, _ = minimax_plain(ns, depth - 1, True)
+                    if val < best_val:
+                        best_val, best_state = val, ns
+                res = (best_val, best_state)
+                tt_plain[key] = res
+                return res
+
+        # Alpha-Beta (full pruning within this search)
+        def alphabeta(state, depth, white_to_move, alpha=-math.inf, beta=math.inf):
+            tv = terminal_value(state, white_to_move)
+            if tv is not None:
+                return tv, state
+            if depth == 0:
+                return self.heuristica(state, color=white_to_move), state
+            key = (tuple(sorted((p[0], p[1], p[2]) for p in state)), depth, white_to_move, 'ab')
+            if key in tt_ab:
+                return tt_ab[key]
+            next_states = successors(state, white_to_move)
+            if not next_states:
+                val = (LOSE_SCORE if white_to_move else WIN_SCORE)
+                res = (val, state)
+                tt_ab[key] = res
+                return res
+            scored = [(self.heuristica(ns, color=white_to_move), ns) for ns in next_states]
+            scored.sort(key=lambda x: x[0], reverse=white_to_move)
+            ordered = [ns for _, ns in scored]
+            if white_to_move:
+                best_val = -math.inf
+                best_state = ordered[0]
+                for ns in ordered:
+                    val, _ = alphabeta(ns, depth - 1, False, alpha, beta)
+                    if val > best_val:
+                        best_val, best_state = val, ns
+                    alpha = max(alpha, best_val)
+                    if beta <= alpha:
+                        break
+                res = (best_val, best_state)
+                tt_ab[key] = res
+                return res
+            else:
+                best_val = math.inf
+                best_state = ordered[0]
+                for ns in ordered:
+                    val, _ = alphabeta(ns, depth - 1, True, alpha, beta)
+                    if val < best_val:
+                        best_val, best_state = val, ns
+                    beta = min(beta, best_val)
+                    if beta <= alpha:
+                        break
+                res = (best_val, best_state)
+                tt_ab[key] = res
+                return res
+
+        # Initialize state from boardSim
+        currentState = []
+        for i in self.chess.boardSim.currentStateW:
+            currentState.append(i)
+        for j in self.chess.boardSim.currentStateB:
+            currentState.append(j)
+
+        white_turn = True
+        visited_path = [self.copyState(currentState)]
+        max_moves = 200
+        moves_done = 0
+
+        while not is_terminal(currentState) and moves_done < max_moves:
+            self.newBoardSim(currentState)
+            if white_turn:
+                _, best_state = minimax_plain(currentState, depthWhite, True)
+            else:
+                _, best_state = alphabeta(currentState, depthBlack, False)
+            currentState = self.copyState(best_state)
+            visited_path.append(self.copyState(currentState))
+            self.newBoardSim(currentState)
+            moves_done += 1
+            white_turn = not white_turn
+
+        winner = None
+        if self.getPieceState(currentState, 12) is None or self.isBlackInCheckMate(currentState):
+            winner = 'white'
+        elif self.getPieceState(currentState, 6) is None or self.isWhiteInCheckMate(currentState):
+            winner = 'black'
+        else:
+            winner = 'draw'
+
+        if verbose:
+            print("Game finished. Winner:", winner)
+            print("Minimal depth (plies) to reach target:", len(visited_path) - 1)
+            print("Visited states from origin to target (sequence):")
+            for idx, st in enumerate(visited_path):
+                print(f"Step {idx}: {st}")
+            self.newBoardSim(currentState)
+            self.chess.boardSim.print_board()
+
+        return winner, visited_path
+
 def run_depth_grid(TA: np.ndarray, repeats: int = 3, depth_values=(3,4), verbose: bool = False):
     # Run all combinations of white/black depths and compute white win rates. Plot if matplotlib is available.
     results = {}
@@ -952,10 +1167,198 @@ def run_depth_grid(TA: np.ndarray, repeats: int = 3, depth_values=(3,4), verbose
     return results, heat, depth_values, saved
 
 
-    def alphaBetaPoda(self, depthWhite,depthBlack):
-        
-        currentState = self.getCurrentState()
-        # Your code here  
+    def alphaBetaPoda(self, depthWhite, depthBlack, verbose: bool = True):
+        # Mixed strategy game: White chooses moves via plain Minimax (no pruning),
+        # Black chooses moves via Alpha-Beta pruning. Whites move first.
+
+        WIN_SCORE = 10_000
+        LOSE_SCORE = -10_000
+
+        def is_terminal(state):
+            wk = self.getPieceState(state, 6)
+            bk = self.getPieceState(state, 12)
+            if wk is None or bk is None:
+                return True
+            if self.isBlackInCheckMate(state) or self.isWhiteInCheckMate(state):
+                return True
+            return False
+
+        def terminal_value(state, perspective_white):
+            wk = self.getPieceState(state, 6)
+            bk = self.getPieceState(state, 12)
+            if bk is None:
+                return WIN_SCORE if perspective_white else LOSE_SCORE
+            if wk is None:
+                return LOSE_SCORE if perspective_white else WIN_SCORE
+            if self.isBlackInCheckMate(state):
+                return WIN_SCORE if perspective_white else LOSE_SCORE
+            if self.isWhiteInCheckMate(state):
+                return LOSE_SCORE if perspective_white else WIN_SCORE
+            return None
+
+        def combine_with_opponent(mover_only_state, mover_is_white, opponent_state):
+            moved_pos = mover_only_state[0][0:2]
+            new_opp = []
+            for p in opponent_state:
+                if [p[0], p[1]] == moved_pos:
+                    continue
+                new_opp.append(p)
+            return mover_only_state + new_opp if mover_is_white else new_opp + mover_only_state
+
+        succ_cache = {}
+        check_cache = {}
+
+        def successors(state, white_to_move):
+            key = (tuple(sorted((p[0], p[1], p[2]) for p in state)), white_to_move)
+            if key in succ_cache:
+                return succ_cache[key]
+            self.newBoardSim(state)
+            if white_to_move:
+                w_state = self.getWhiteState(state)
+                b_state = self.getBlackState(state)
+                next_w_only = self.getListNextStatesW(w_state)
+                combined = [combine_with_opponent(s, True, b_state) for s in next_w_only]
+                res = []
+                for ns in combined:
+                    kt2 = ('wk', tuple(sorted((p[0], p[1], p[2]) for p in ns)))
+                    if kt2 in check_cache:
+                        wcheck = check_cache[kt2]
+                    else:
+                        wcheck = self.isWatchedWk_fast(ns)
+                        check_cache[kt2] = wcheck
+                    if not wcheck:
+                        res.append(ns)
+                succ_cache[key] = res
+                return res
+            else:
+                w_state = self.getWhiteState(state)
+                b_state = self.getBlackState(state)
+                next_b_only = self.getListNextStatesB(b_state)
+                combined = [combine_with_opponent(s, False, w_state) for s in next_b_only]
+                res = []
+                for ns in combined:
+                    kt2 = ('bk', tuple(sorted((p[0], p[1], p[2]) for p in ns)))
+                    if kt2 in check_cache:
+                        bcheck = check_cache[kt2]
+                    else:
+                        bcheck = self.isWatchedBk_fast(ns)
+                        check_cache[kt2] = bcheck
+                    if not bcheck:
+                        res.append(ns)
+                succ_cache[key] = res
+                return res
+
+        # Plain Minimax (no pruning)
+        def minimax_plain(state, depth, white_to_move):
+            tv = terminal_value(state, white_to_move)
+            if tv is not None:
+                return tv, state
+            if depth == 0:
+                return self.heuristica(state, color=white_to_move), state
+            next_states = successors(state, white_to_move)
+            if not next_states:
+                val = (LOSE_SCORE if white_to_move else WIN_SCORE)
+                return val, state
+            # simple ordering for speed only
+            scored = [(self.heuristica(ns, color=white_to_move), ns) for ns in next_states]
+            scored.sort(key=lambda x: x[0], reverse=white_to_move)
+            ordered = [ns for _, ns in scored]
+            if white_to_move:
+                best_val = -math.inf
+                best_state = ordered[0]
+                for ns in ordered:
+                    val, _ = minimax_plain(ns, depth - 1, False)
+                    if val > best_val:
+                        best_val, best_state = val, ns
+                return best_val, best_state
+            else:
+                best_val = math.inf
+                best_state = ordered[0]
+                for ns in ordered:
+                    val, _ = minimax_plain(ns, depth - 1, True)
+                    if val < best_val:
+                        best_val, best_state = val, ns
+                return best_val, best_state
+
+        # Alpha-Beta (full pruning both sides within this search)
+        def alphabeta(state, depth, white_to_move, alpha=-math.inf, beta=math.inf):
+            tv = terminal_value(state, white_to_move)
+            if tv is not None:
+                return tv, state
+            if depth == 0:
+                return self.heuristica(state, color=white_to_move), state
+            next_states = successors(state, white_to_move)
+            if not next_states:
+                val = (LOSE_SCORE if white_to_move else WIN_SCORE)
+                return val, state
+            scored = [(self.heuristica(ns, color=white_to_move), ns) for ns in next_states]
+            scored.sort(key=lambda x: x[0], reverse=white_to_move)
+            ordered = [ns for _, ns in scored]
+            if white_to_move:
+                best_val = -math.inf
+                best_state = ordered[0]
+                for ns in ordered:
+                    val, _ = alphabeta(ns, depth - 1, False, alpha, beta)
+                    if val > best_val:
+                        best_val, best_state = val, ns
+                    alpha = max(alpha, best_val)
+                    if beta <= alpha:
+                        break
+                return best_val, best_state
+            else:
+                best_val = math.inf
+                best_state = ordered[0]
+                for ns in ordered:
+                    val, _ = alphabeta(ns, depth - 1, True, alpha, beta)
+                    if val < best_val:
+                        best_val, best_state = val, ns
+                    beta = min(beta, best_val)
+                    if beta <= alpha:
+                        break
+                return best_val, best_state
+
+        # Initialize state from boardSim
+        currentState = []
+        for i in self.chess.boardSim.currentStateW:
+            currentState.append(i)
+        for j in self.chess.boardSim.currentStateB:
+            currentState.append(j)
+
+        white_turn = True
+        visited_path = [self.copyState(currentState)]
+        max_moves = 200
+        moves_done = 0
+
+        while not is_terminal(currentState) and moves_done < max_moves:
+            self.newBoardSim(currentState)
+            if white_turn:
+                _, best_state = minimax_plain(currentState, depthWhite, True)
+            else:
+                _, best_state = alphabeta(currentState, depthBlack, False)
+            currentState = self.copyState(best_state)
+            visited_path.append(self.copyState(currentState))
+            self.newBoardSim(currentState)
+            moves_done += 1
+            white_turn = not white_turn
+
+        winner = None
+        if self.getPieceState(currentState, 12) is None or self.isBlackInCheckMate(currentState):
+            winner = 'white'
+        elif self.getPieceState(currentState, 6) is None or self.isWhiteInCheckMate(currentState):
+            winner = 'black'
+        else:
+            winner = 'draw'
+
+        if verbose:
+            print("Game finished. Winner:", winner)
+            print("Minimal depth (plies) to reach target:", len(visited_path) - 1)
+            print("Visited states from origin to target (sequence):")
+            for idx, st in enumerate(visited_path):
+                print(f"Step {idx}: {st}")
+            self.newBoardSim(currentState)
+            self.chess.boardSim.print_board()
+
+        return winner, visited_path  
         
     def expectimax(self, depthWhite, depthBlack):
         
@@ -964,33 +1367,29 @@ def run_depth_grid(TA: np.ndarray, repeats: int = 3, depth_values=(3,4), verbose
         
 
 if __name__ == "__main__":
-    # if len(sys.argv) < 2:
-    #     sys.exit(usage())
-
     # Initialize an empty 8x8 chess board
     TA = np.zeros((8, 8))
 
+    # Load initial positions of the pieces (K+R vs K+R)
+    TA[7][0] = 2   # White Rook
+    TA[7][5] = 6   # White King
+    TA[0][7] = 8   # Black Rook
+    TA[0][5] = 12  # Black King
 
-    # Load initial positions of the pieces
-    TA = np.zeros((8, 8))
-    TA[7][0] = 2   
-    TA[7][5] = 6   
-    TA[0][7] = 8   
-    TA[0][5] = 12  
+    print("Initial board:")
+    Aichess(TA, True).chess.boardSim.print_board()
 
-    # Single sanity run (optional)
-    aichess = Aichess(TA, True)
-    print("initial board")
-    aichess.chess.boardSim.print_board()
-    aichess.minimaxGame(4, 4, verbose=True)
+    # 3 runs, depth = 4 for both. White uses Minimax, Black uses Alpha-Beta.
+    winners = []
+    for i in range(3):
+        print(f"\nSimulation {i+1} (White=minimax d4, Black=alpha-beta d4)")
+        aich = Aichess(TA, True)
+        winner, _ = aich.alphaBetaPoda(4, 4, verbose=False)
+        print("Winner:", winner)
+        winners.append(winner)
 
-    # Depth grid 3..4 for both colors, a few repeats each
-    print("\nRunning depth grid (3..4) repeats=3 ...")
-    results, heat, depths, saved = run_depth_grid(TA, repeats=3, depth_values=(3,4), verbose=False)
-    print("Results (white_win_rate) by (white_depth, black_depth):")
-    for dw in depths:
-        for db in depths:
-            r = results[(dw,db)]
-            print(f" W{dw} vs B{db}: rate={r['white_win_rate']:.2f}  (W:{r['white']} B:{r['black']} D:{r['draw']})")
-    if saved:
-        print("Saved heatmap to:", saved)
+    print("\nSummary of 3 simulations:")
+    for i, w in enumerate(winners, 1):
+        print(f"  Sim {i}: {w}")
+
+    print("\nNote: With equal depth and identical evaluation, alpha-beta is a pruning optimization and should not change the chosen move compared to plain minimax. In K+R vs K+R, optimal play is a draw, so repeated runs typically end in draws.")
