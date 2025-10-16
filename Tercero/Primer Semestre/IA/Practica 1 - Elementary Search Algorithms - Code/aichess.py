@@ -720,7 +720,7 @@ if __name__ == "__main__":
     TA = np.zeros((8, 8))
     # Load initial positions of the pieces
     # White pieces
-    TA[7][0] = 2  
+    TA[7][6] = 2  
     TA[7][5] = 6   
 
     # REY NEGRO
