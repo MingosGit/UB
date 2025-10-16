@@ -426,7 +426,8 @@ class Aichess():
 
         # If the black rook has been captured
         if brState is None:
-            value += 50
+            # Strongly reward having rook advantage (aligns with K+R vs K being a forced win)
+            value += 1000
             fila = abs(filaBk - filaWk)
             columna = abs(columnaWk - columnaBk)
             distReis = min(fila, columna) + abs(fila - columna)
@@ -450,7 +451,8 @@ class Aichess():
         # If the white rook has been captured.
         # The logic is similar to the previous section but with reversed (negative) values.
         if wrState is None:
-            value -= 50
+            # Strongly penalize losing the rook
+            value -= 1000
             fila = abs(filaBk - filaWk)
             columna = abs(columnaWk - columnaBk)
             distReis = min(fila, columna) + abs(fila - columna)
@@ -591,6 +593,21 @@ class Aichess():
         # Final expected value (weighted average)
         return expected_value / total_weight
 
+    def adjudicate_winner(self, currentState, threshold: int = 200):
+        # Decide a winner when hitting move cap: prefer material edge (rook advantage), else heuristic margin.
+        wr = self.getPieceState(currentState, 2)
+        br = self.getPieceState(currentState, 8)
+        if wr is not None and br is None:
+            return 'white'
+        if br is not None and wr is None:
+            return 'black'
+        score = self.heuristica(currentState, color=True)
+        if score > threshold:
+            return 'white'
+        if score < -threshold:
+            return 'black'
+        return 'draw'
+
     def minimaxGame(self, depthWhite,depthBlack, verbose=True, max_moves: int = 200):
         # Play a full game where White and Black both use Minimax with the given depths.
         # Whites always move first.
@@ -603,7 +620,7 @@ class Aichess():
             # Fast terminal check for game loop: only king captures.
             wk = self.getPieceState(state, 6)
             bk = self.getPieceState(state, 12)
-            return (wk is None) or (bk is None)
+            return wk is None or bk is None
 
         def terminal_value(state, perspective_white):
             # FAST terminal check for recursion: only king captures.
@@ -769,11 +786,14 @@ class Aichess():
             white_turn = not white_turn
 
         # Report
+        ended_by_cap = (moves_done >= max_moves) and not ((self.getPieceState(currentState, 6) is None) or (self.getPieceState(currentState, 12) is None))
         winner = None
         if self.getPieceState(currentState, 12) is None or self.isBlackInCheckMate(currentState):
             winner = 'white'
         elif self.getPieceState(currentState, 6) is None or self.isWhiteInCheckMate(currentState):
             winner = 'black'
+        elif ended_by_cap:
+            winner = self.adjudicate_winner(currentState)
         else:
             winner = 'draw'
 
@@ -973,11 +993,14 @@ class Aichess():
             white_turn = not white_turn
 
         # Decide winner
+        ended_by_cap = (moves_done >= max_moves) and not (self.getPieceState(currentState, 6) is None or self.getPieceState(currentState, 12) is None or self.isBlackInCheckMate(currentState) or self.isWhiteInCheckMate(currentState))
         winner = None
         if self.getPieceState(currentState, 12) is None or self.isBlackInCheckMate(currentState):
             winner = 'white'
         elif self.getPieceState(currentState, 6) is None or self.isWhiteInCheckMate(currentState):
             winner = 'black'
+        elif ended_by_cap:
+            winner = self.adjudicate_winner(currentState)
         else:
             winner = 'draw'
 
@@ -1184,11 +1207,14 @@ class Aichess():
             moves_done += 1
             white_turn = not white_turn
 
+        ended_by_cap = (moves_done >= max_moves) and not (self.getPieceState(currentState, 6) is None or self.getPieceState(currentState, 12) is None or self.isBlackInCheckMate(currentState) or self.isWhiteInCheckMate(currentState))
         winner = None
         if self.getPieceState(currentState, 12) is None or self.isBlackInCheckMate(currentState):
             winner = 'white'
         elif self.getPieceState(currentState, 6) is None or self.isWhiteInCheckMate(currentState):
             winner = 'black'
+        elif ended_by_cap:
+            winner = self.adjudicate_winner(currentState)
         else:
             winner = 'draw'
 
@@ -1344,11 +1370,14 @@ class Aichess():
             moves_done += 1
             white_turn = not white_turn
 
+        ended_by_cap = (moves_done >= max_moves) and not (self.getPieceState(currentState, 6) is None or self.getPieceState(currentState, 12) is None or self.isBlackInCheckMate(currentState) or self.isWhiteInCheckMate(currentState))
         winner = None
         if self.getPieceState(currentState, 12) is None or self.isBlackInCheckMate(currentState):
             winner = 'white'
         elif self.getPieceState(currentState, 6) is None or self.isWhiteInCheckMate(currentState):
             winner = 'black'
+        elif ended_by_cap:
+            winner = self.adjudicate_winner(currentState)
         else:
             winner = 'draw'
 
@@ -1635,13 +1664,13 @@ if __name__ == "__main__":
     Aichess(TA, True).chess.boardSim.print_board()
 
     # ------- PART 1 -------
-    print("\n[Part 1] Plain Minimax: White and Black depth=4, repeats=3")
-    res1, demo1 = run_minimax_plain_repeats(TA, repeats=3, depthWhite=3, depthBlack=3, verbose_demo=True)
+    print("\n[Part 1]")
+    res1, demo1 = run_minimax_plain_repeats(TA, repeats=3, depthWhite=4, depthBlack=1, verbose_demo=True)
     print(f"Summary: White={res1['white']} Black={res1['black']} Draw={res1['draw']} (out of {res1['repeats']})")
 
     # ------- PART 2 -------
     print("\n[Part 2] Plain Minimax: Depth grid (3..4), repeats=3 per pair")
-    results2, heat2, depths2, saved2 = run_depth_grid_minimax_plain(TA, repeats=3, depth_values=(3,4), verbose_demo=False)
+    results2, heat2, depths2, saved2 = run_depth_grid_minimax_plain(TA, repeats=3, depth_values=(3,4), verbose_demo=True)
     print("White win rates by (WhiteDepth, BlackDepth):")
     for dw in depths2:
         for db in depths2:
