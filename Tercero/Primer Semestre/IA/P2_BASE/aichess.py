@@ -682,7 +682,7 @@ class Aichess():
         # Final expected value (weighted average)
         return expected_value / total_weight
 
-    def minimaxGame(self, depthWhite,depthBlack):
+    def minimaxGame(self, depthWhite,depthBlack, verbose=True):
         # Play a full game where White and Black both use Minimax with the given depths.
         # Whites always move first.
 
@@ -696,7 +696,9 @@ class Aichess():
             bk = self.getPieceState(state, 12)
             if wk is None or bk is None:
                 return True
-            # Optional: detect checkmates strictly would require move generation + checks; skip here
+            # Detect checkmates using provided methods (slower but more accurate)
+            if self.isBlackInCheckMate(state) or self.isWhiteInCheckMate(state):
+                return True
             return False
 
         def terminal_value(state, perspective_white):
@@ -708,6 +710,10 @@ class Aichess():
                 return WIN_SCORE if perspective_white else LOSE_SCORE
             if wk is None:
                 # White king captured -> Black wins
+                return LOSE_SCORE if perspective_white else WIN_SCORE
+            if self.isBlackInCheckMate(state):
+                return WIN_SCORE if perspective_white else LOSE_SCORE
+            if self.isWhiteInCheckMate(state):
                 return LOSE_SCORE if perspective_white else WIN_SCORE
             # Not terminal
             return None
@@ -874,16 +880,76 @@ class Aichess():
         else:
             winner = 'draw'
 
-        print("Game finished. Winner:", winner)
-        print("Minimal depth (plies) to reach target:", len(visited_path) - 1)
-        print("Visited states from origin to target (sequence):")
-        for idx, st in enumerate(visited_path):
-            print(f"Step {idx}: {st}")
-        # Show final board
-        self.newBoardSim(currentState)
-        self.chess.boardSim.print_board()
+        if verbose:
+            print("Game finished. Winner:", winner)
+            print("Minimal depth (plies) to reach target:", len(visited_path) - 1)
+            print("Visited states from origin to target (sequence):")
+            for idx, st in enumerate(visited_path):
+                print(f"Step {idx}: {st}")
+            # Show final board
+            self.newBoardSim(currentState)
+            self.chess.boardSim.print_board()
 
         return winner, visited_path
+
+def run_depth_grid(TA: np.ndarray, repeats: int = 3, depth_values=(3,4), verbose: bool = False):
+    # Run all combinations of white/black depths and compute white win rates. Plot if matplotlib is available.
+    results = {}
+    for dw in depth_values:
+        for db in depth_values:
+            white=black=draw=0
+            for r in range(repeats):
+                aich = Aichess(TA, True)
+                winner, _ = aich.minimaxGame(dw, db, verbose=verbose)
+                if winner == 'white':
+                    white += 1
+                elif winner == 'black':
+                    black += 1
+                else:
+                    draw += 1
+            rate = white / max(1, (white+black+draw))
+            results[(dw,db)] = {
+                'white': white,
+                'black': black,
+                'draw': draw,
+                'white_win_rate': rate
+            }
+
+    # Build a matrix for plotting
+    vals = list(depth_values)
+    size = len(vals)
+    heat = np.zeros((size,size), dtype=float)
+    for i,dw in enumerate(vals):
+        for j,db in enumerate(vals):
+            heat[i,j] = results[(dw,db)]['white_win_rate']
+
+    # Try plotting
+    saved = None
+    try:
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(figsize=(4,4))
+        im = ax.imshow(heat, cmap='Blues', vmin=0.0, vmax=1.0)
+        ax.set_xticks(range(size))
+        ax.set_yticks(range(size))
+        ax.set_xticklabels([str(d) for d in vals])
+        ax.set_yticklabels([str(d) for d in vals])
+        ax.set_xlabel('Black depth')
+        ax.set_ylabel('White depth')
+        ax.set_title('White win rate (Minimax)')
+        for i in range(size):
+            for j in range(size):
+                ax.text(j, i, f"{heat[i,j]*100:.0f}%", ha='center', va='center', color='black')
+        fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+        saved = 'white_win_rate_heatmap.png'
+        plt.tight_layout()
+        plt.savefig(saved)
+        # Optionally show if running interactively
+        # plt.show()
+    except Exception as e:
+        # Fallback: no plotting available
+        saved = None
+
+    return results, heat, depth_values, saved
 
 
     def alphaBetaPoda(self, depthWhite,depthBlack):
@@ -912,29 +978,19 @@ if __name__ == "__main__":
     TA[0][7] = 8   
     TA[0][5] = 12  
 
-    # Initialise board and print
-    num_runs = 3
-    white_wins = 0
-    black_wins = 0
-    draws = 0
+    # Single sanity run (optional)
+    aichess = Aichess(TA, True)
+    print("initial board")
+    aichess.chess.boardSim.print_board()
+    aichess.minimaxGame(4, 4, verbose=True)
 
-    for run in range(1, num_runs + 1):
-        print(f"\n=== Run {run} ===")
-        print("starting AI chess...")
-        aichess = Aichess(TA, True)
-        print("initial board")
-        aichess.chess.boardSim.print_board()
-        winner, _path = aichess.minimaxGame(4, 4)
-        if winner == 'white':
-            white_wins += 1
-        elif winner == 'black':
-            black_wins += 1
-        else:
-            draws += 1
-
-    print("\nSummary across runs:")
-    print("White wins:", white_wins)
-    print("Black wins:", black_wins)
-    print("Draws:", draws)
-    if num_runs > 0:
-        print("White win rate:", white_wins / num_runs)
+    # Depth grid 3..4 for both colors, a few repeats each
+    print("\nRunning depth grid (3..4) repeats=3 ...")
+    results, heat, depths, saved = run_depth_grid(TA, repeats=3, depth_values=(3,4), verbose=False)
+    print("Results (white_win_rate) by (white_depth, black_depth):")
+    for dw in depths:
+        for db in depths:
+            r = results[(dw,db)]
+            print(f" W{dw} vs B{db}: rate={r['white_win_rate']:.2f}  (W:{r['white']} B:{r['black']} D:{r['draw']})")
+    if saved:
+        print("Saved heatmap to:", saved)
