@@ -376,39 +376,35 @@ class Aichess():
         return False
 
     def allBkMovementsWatched(self, currentState):
-        # In this method, we check if the black king is threatened by the white pieces
+        # Check if ALL legal black moves still leave the black king in check.
+        # If there exists at least one move where the black king is safe, return False.
 
         self.newBoardSim(currentState)
-        # Get the current state of the black king
-        bkState = self.getPieceState(currentState, 12)
-        allWatched = False
 
-        # If the black king is on the edge of the board, all its moves might be under threat
-        if bkState[0] == 0 or bkState[0] == 7 or bkState[1] == 0 or bkState[1] == 7:
-            wrState = self.getPieceState(currentState, 2)
-            whiteState = self.getWhiteState(currentState)
-            allWatched = True
-            # Get the future states of the black pieces
-            nextBStates = self.getListNextStatesB(self.getBlackState(currentState))
+        whiteState = self.getWhiteState(currentState)
+        wrState = self.getPieceState(currentState, 2)
 
-            for state in nextBStates:
-                newWhiteState = whiteState.copy()
-                # Check if the white rook has been captured; if so, remove it from the state
-                if wrState is not None and wrState[0:2] == state[0][0:2]:
-                    newWhiteState.remove(wrState)
-                state = state + newWhiteState
-                # Move the black pieces to the new state
-                self.newBoardSim(state)
+        # Generate all legal next states for black (moving BK or BR)
+        nextBStates = self.getListNextStatesB(self.getBlackState(currentState))
 
-                # Check if in this position the black king is not threatened; 
-                # if so, not all its moves are under threat
-                if not self.isWatchedBk(state):
-                    allWatched = False
-                    break
+        for state in nextBStates:
+            # Build full position combining moved black state with (possibly reduced) white state
+            newWhiteState = whiteState.copy()
+            # If black's move lands on the white rook square, remove the rook from the next position
+            if wrState is not None and wrState[0:2] == state[0][0:2]:
+                newWhiteState.remove(wrState)
 
-        # Restore the original board state
+            candidate = state + newWhiteState
+            self.newBoardSim(candidate)
+
+            # If candidate position leaves black king NOT in check, then not all moves are watched
+            if not self.isWatchedBk(candidate):
+                self.newBoardSim(currentState)
+                return False
+
+        # Restore and report all moves keep king in check
         self.newBoardSim(currentState)
-        return allWatched
+        return True
 
     def isBlackInCheckMate(self, currentState):
         if self.isWatchedBk(currentState) and self.allBkMovementsWatched(currentState):
@@ -443,39 +439,35 @@ class Aichess():
         return False
 
     def allWkMovementsWatched(self, currentState):
+        # Check if ALL legal white moves still leave the white king in check.
+        # If there exists at least one move where the white king is safe, return False.
 
         self.newBoardSim(currentState)
-        # In this method, we check if the white king is threatened by black pieces
-        # Get the current state of the white king
-        wkState = self.getPieceState(currentState, 6)
-        allWatched = False
 
-        # If the white king is on the edge of the board, it may be more vulnerable
-        if wkState[0] == 0 or wkState[0] == 7 or wkState[1] == 0 or wkState[1] == 7:
-            # Get the state of the black pieces
-            brState = self.getPieceState(currentState, 8)
-            blackState = self.getBlackState(currentState)
-            allWatched = True
+        blackState = self.getBlackState(currentState)
+        brState = self.getPieceState(currentState, 8)
 
-            # Get the possible future states for the white pieces
-            nextWStates = self.getListNextStatesW(self.getWhiteState(currentState))
-            for state in nextWStates:
-                newBlackState = blackState.copy()
-                # Check if the black rook has been captured. If so, remove it from the state
-                if brState is not None and brState[0:2] == state[0][0:2]:
-                    newBlackState.remove(brState)
-                state = state + newBlackState
-                # Move the white pieces to their new state
-                self.newBoardSim(state)
-                # Check if the white king is not threatened in this position,
-                # which implies that not all of its possible moves are under threat
-                if not self.isWatchedWk(state):
-                    allWatched = False
-                    break
+        # Generate all legal next states for white (moving WK or WR)
+        nextWStates = self.getListNextStatesW(self.getWhiteState(currentState))
 
-        # Restore the original board state
+        for state in nextWStates:
+            # Build full position combining moved white state with (possibly reduced) black state
+            newBlackState = blackState.copy()
+            # If white's move lands on the black rook square, remove the rook from the next position
+            if brState is not None and brState[0:2] == state[0][0:2]:
+                newBlackState.remove(brState)
+
+            candidate = state + newBlackState
+            self.newBoardSim(candidate)
+
+            # If candidate position leaves white king NOT in check, then not all moves are watched
+            if not self.isWatchedWk(candidate):
+                self.newBoardSim(currentState)
+                return False
+
+        # Restore and report all moves keep king in check
         self.newBoardSim(currentState)
-        return allWatched
+        return True
 
 
     def isWhiteInCheckMate(self, currentState):
@@ -485,85 +477,124 @@ class Aichess():
     
 
     def heuristica(self, currentState, color):
-        # This method calculates the heuristic value for the current state.
-        # The value is initially computed from White's perspective.
-        # If the 'color' parameter indicates Black, the final value is multiplied by -1.
+        # Heuristic value from White's point of view. If color is Black, we invert at the end.
 
-        value = 0
+        # Helpers
+        def chebyshev(a, b):
+            return max(abs(a[0] - b[0]), abs(a[1] - b[1]))
 
+        def dist_to_edge_sq(pos):
+            # 0..7 indexes; 3.5 is board center. Higher is closer to edge.
+            return max(abs(pos[0] - 3.5), abs(pos[1] - 3.5))
+
+        # Material and positions
         bkState = self.getPieceState(currentState, 12)  # Black King
         wkState = self.getPieceState(currentState, 6)   # White King
         wrState = self.getPieceState(currentState, 2)   # White Rook
         brState = self.getPieceState(currentState, 8)   # Black Rook
 
-        filaBk, columnaBk = bkState[0], bkState[1]
-        filaWk, columnaWk = wkState[0], wkState[1]
+        value = 0.0
 
+        # Immediate draw detection: Kings only (K vs K)
+        if self.isKingsOnlyDraw(currentState):
+            return 0.0 if color else -0.0
+
+        # Material balance (only rooks exist besides kings in this variant)
         if wrState is not None:
-            filaWr, columnaWr = wrState[0], wrState[1]
+            value += 100
         if brState is not None:
-            filaBr, columnaBr = brState[0], brState[1]
+            value -= 100
 
-        # If the black rook has been captured
-        if brState is None:
-            value += 50
-            fila = abs(filaBk - filaWk)
-            columna = abs(columnaWk - columnaBk)
-            distReis = min(fila, columna) + abs(fila - columna)
+        # King vs King+Rook or Rook+King vs King
+        if wrState is not None and brState is None:
+            # Push BK to edge/corner
+            edge_pull = dist_to_edge_sq((bkState[0], bkState[1]))  # 0..3.5
+            value += edge_pull * 12
 
-            if distReis >= 3 and wrState is not None:
-                filaR = abs(filaBk - filaWr)
-                columnaR = abs(columnaWr - columnaBk)
-                value += (min(filaR, columnaR) + abs(filaR - columnaR)) / 10
-
-            # For White: the closer our king is to the opponent’s king, the better.
-            # Subtract 7 from the king-to-king distance since 7 is the maximum distance possible on the board.
-            value += (7 - distReis)
-
-            # If the black king is against a wall, prioritize pushing him into a corner (ideal for checkmate).
+            # Stronger bonus near corners when on edge
             if bkState[0] in (0, 7) or bkState[1] in (0, 7):
-                value += (abs(filaBk - 3.5) + abs(columnaBk - 3.5)) * 10
-            # Otherwise, encourage moving the black king closer to the wall.
-            else:
-                value += (max(abs(filaBk - 3.5), abs(columnaBk - 3.5))) * 10
+                corners = [(0, 0), (0, 7), (7, 0), (7, 7)]
+                min_corner = min(chebyshev((bkState[0], bkState[1]), c) for c in corners)
+                value += (3 - min_corner) * 5
 
-        # If the white rook has been captured.
-        # The logic is similar to the previous section but with reversed (negative) values.
-        if wrState is None:
-            value -= 50
-            fila = abs(filaBk - filaWk)
-            columna = abs(columnaWk - columnaBk)
-            distReis = min(fila, columna) + abs(fila - columna)
+            # King opposition (closer WK to BK is generally better)
+            kk = chebyshev((bkState[0], bkState[1]), (wkState[0], wkState[1]))
+            value += (7 - kk) * 2
 
-            if distReis >= 3 and brState is not None:
-                filaR = abs(filaWk - filaBr)
-                columnaR = abs(columnaBr - columnaWk)
-                value -= (min(filaR, columnaR) + abs(filaR - columnaR)) / 10
+            # Rook alignment and safety
+            if wrState is not None:
+                if wrState[0] == bkState[0] or wrState[1] == bkState[1]:
+                    value += 6  # cutting ranks/files
+                # Keep rook at safe distance from BK
+                rb = chebyshev((wrState[0], wrState[1]), (bkState[0], bkState[1]))
+                if rb <= 1:
+                    value -= 12
+                elif rb >= 3:
+                    value += 3
+                # Prefer rook protected by king
+                rw = chebyshev((wrState[0], wrState[1]), (wkState[0], wkState[1]))
+                if rw <= 1:
+                    value += 2
 
-            # For White: being closer to the opposing king is better.
-            # Subtract 7 from the distance since that’s the maximum possible distance.
-            value += (-7 + distReis)
+        elif wrState is None and brState is not None:
+            # Symmetric when White lacks rook and Black has it
+            edge_push_wk = dist_to_edge_sq((wkState[0], wkState[1]))
+            value -= edge_push_wk * 12
 
-            # If the white king is against a wall, penalize that position.
             if wkState[0] in (0, 7) or wkState[1] in (0, 7):
-                value -= (abs(filaWk - 3.5) + abs(columnaWk - 3.5)) * 10
-            # Otherwise, encourage the king to stay away from the wall.
-            else:
-                value -= (max(abs(filaWk - 3.5), abs(columnaWk - 3.5))) * 10
+                corners = [(0, 0), (0, 7), (7, 0), (7, 7)]
+                min_corner = min(chebyshev((wkState[0], wkState[1]), c) for c in corners)
+                value -= (3 - min_corner) * 5
 
-        # If the black king is in check, reward this state.
+            kk = chebyshev((bkState[0], bkState[1]), (wkState[0], wkState[1]))
+            value -= (7 - kk) * 2
+
+            if brState is not None:
+                if brState[0] == wkState[0] or brState[1] == wkState[1]:
+                    value -= 6
+                rw = chebyshev((brState[0], brState[1]), (wkState[0], wkState[1]))
+                if rw <= 1:
+                    value += 12  # good for White if enemy rook blunders near WK
+                elif rw >= 3:
+                    value -= 3
+                rb = chebyshev((brState[0], brState[1]), (bkState[0], bkState[1]))
+                if rb <= 1:
+                    value += 2  # enemy rook near its king is slightly worse for pressure
+
+        else:
+            # Both rooks on board (KR vs KR) tends to be drawish.
+            # Keep evaluation near 0 with small positional nudges.
+            # Prefer rook safety (not adjacent to enemy king), and central kings.
+            if wrState is not None:
+                rb = chebyshev((wrState[0], wrState[1]), (bkState[0], bkState[1]))
+                if rb <= 1:
+                    value -= 6
+            if brState is not None:
+                rw = chebyshev((brState[0], brState[1]), (wkState[0], wkState[1]))
+                if rw <= 1:
+                    value += 6
+            value += (3.5 - dist_to_edge_sq((wkState[0], wkState[1])))  # centralize WK
+            value -= (3.5 - dist_to_edge_sq((bkState[0], bkState[1])))  # push BK away from center
+
+        # Tactical bonuses/penalties
         if self.isWatchedBk(currentState):
             value += 20
-
-        # If the white king is in check, penalize this state.
         if self.isWatchedWk(currentState):
             value -= 20
 
-        # If the current player is Black, invert the heuristic value.
+        # Perspective
         if not color:
             value *= -1
 
         return value
+
+    def isKingsOnlyDraw(self, currentState):
+        """Return True if only both kings remain on the board (K vs K)."""
+        wkState = self.getPieceState(currentState, 6)
+        bkState = self.getPieceState(currentState, 12)
+        wrState = self.getPieceState(currentState, 2)
+        brState = self.getPieceState(currentState, 8)
+        return wkState is not None and bkState is not None and wrState is None and brState is None
     
     def mean(self, values):
         # Calculate the arithmetic mean (average) of a list of numeric values.
