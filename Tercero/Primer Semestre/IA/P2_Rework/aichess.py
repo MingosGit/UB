@@ -135,6 +135,18 @@ class Aichess():
         # depth they were found for DepthFirstSearchOptimized
         self.dictVisitedStates = {}
 
+        # Fast-lookup caches for visited checks (order-insensitive)
+        self._visited_state_signatures = set()
+        self._visited_situation_signatures = set()
+
+    # ---------- Internal helpers ----------
+    def _state_signature(self, state: RawStateType):
+        # Use frozenset of (piece, row, col) to ignore list ordering
+        return frozenset((p[2], p[0], p[1]) for p in state)
+
+    def _situation_signature(self, color: bool, state: RawStateType):
+        return (bool(color), self._state_signature(state))
+
     def copyState(self, state):
         
         copyState = []
@@ -143,21 +155,17 @@ class Aichess():
         return copyState
         
     def isVisitedSituation(self, color, mystate):
-        
-        if (len(self.listVisitedSituations) > 0):
-            perm_state = list(permutations(mystate))
-
-            isVisited = False
-            for j in range(len(perm_state)):
-
-                for k in range(len(self.listVisitedSituations)):
-                    if self.isSameState(list(perm_state[j]), self.listVisitedSituations.__getitem__(k)[1]) and color == \
-                            self.listVisitedSituations.__getitem__(k)[0]:
-                        isVisited = True
-
-            return isVisited
-        else:
-            return False
+        # Order-insensitive, O(N log N) using set signature
+        sig = self._situation_signature(color, mystate)
+        if sig in self._visited_situation_signatures:
+            return True
+        # Fallback for legacy entries stored in listVisitedSituations
+        for c, s in self.listVisitedSituations:
+            if c == color and self.isSameState(mystate, s):
+                # cache to speed up next time
+                self._visited_situation_signatures.add(sig)
+                return True
+        return False
 
     def getListNextStatesW(self, myState):
 
@@ -173,40 +181,20 @@ class Aichess():
         return self.listNextStates
 
     def isSameState(self, a, b):
-
-        isSameState1 = True
-        # a and b are lists
-        for k in range(len(a)):
-
-            if a[k] not in b:
-                isSameState1 = False
-
-        isSameState2 = True
-        # a and b are lists
-        for k in range(len(b)):
-
-            if b[k] not in a:
-                isSameState2 = False
-
-        isSameState = isSameState1 and isSameState2
-        return isSameState
+        # Fast, order-insensitive equality
+        return self._state_signature(a) == self._state_signature(b)
 
     def isVisited(self, mystate):
-
-        if (len(self.listVisitedStates) > 0):
-            perm_state = list(permutations(mystate))
-
-            isVisited = False
-            for j in range(len(perm_state)):
-
-                for k in range(len(self.listVisitedStates)):
-
-                    if self.isSameState(list(perm_state[j]), self.listVisitedStates[k]):
-                        isVisited = True
-
-            return isVisited
-        else:
-            return False 
+        # O(1) with signature caching, avoids factorial permutations
+        sig = self._state_signature(mystate)
+        if sig in self._visited_state_signatures:
+            return True
+        # Fallback: check legacy list and populate cache lazily
+        for s in self.listVisitedStates:
+            if self.isSameState(mystate, s):
+                self._visited_state_signatures.add(sig)
+                return True
+        return False 
 
     def newBoardSim(self, listStates):
         # We create a  new boardSim
@@ -247,37 +235,44 @@ class Aichess():
         return nextPositions
 
     def getWhiteState(self, currentState):
+        # Return all white pieces present in currentState (codes 1..6)
         whiteState = []
-        wkState = self.getPieceState(currentState, 6)
-        whiteState.append(wkState)
-        wrState = self.getPieceState(currentState, 2)
-        if wrState != None:
-            whiteState.append(wrState)
+        for p in currentState:
+            if 1 <= p[2] <= 6:
+                whiteState.append(p)
         return whiteState
 
     def getBlackState(self, currentState):
+        # Return all black pieces present in currentState (codes 7..12)
         blackState = []
-        bkState = self.getPieceState(currentState, 12)
-        blackState.append(bkState)
-        brState = self.getPieceState(currentState, 8)
-        if brState != None:
-            blackState.append(brState)
+        for p in currentState:
+            if 7 <= p[2] <= 12:
+                blackState.append(p)
         return blackState
 
     def getMovement(self, state, nextState):
-        # Given a state and a successor state, return the postiion of the piece that has been moved in both states
-        pieceState = None
-        pieceNextState = None
-        for piece in state:
-            if piece not in nextState:
-                movedPiece = piece[2]
-                pieceNext = self.getPieceState(nextState, movedPiece)
-                if pieceNext != None:
-                    pieceState = piece
-                    pieceNextState = pieceNext
-                    break
+        # Identify moved piece by comparing per-piece positions; handle captures.
+        start_map = {p[2]: (p[0], p[1]) for p in state}
+        to_map = {p[2]: (p[0], p[1]) for p in nextState}
 
-        return [pieceState, pieceNextState]
+        moved_code = None
+        moved_from = None
+        moved_to = None
+
+        # Prefer pieces present in both; moved piece changes coordinates
+        for code, pos in start_map.items():
+            if code in to_map and pos != to_map[code]:
+                moved_code = code
+                moved_from = pos
+                moved_to = to_map[code]
+                break
+
+        # Fallback: if none changed, there may be a piece that appears only in nextState (promotion-like),
+        # or disappears only in start (capture of that piece by another already accounted). Not expected here.
+        if moved_code is None:
+            return [None, None]
+
+        return [[moved_from[0], moved_from[1], moved_code], [moved_to[0], moved_to[1], moved_code]]
 
     def movePieces(self, start, depthStart, to, depthTo):
         
@@ -332,22 +327,14 @@ class Aichess():
 
 
     def changeState(self, start, to):
-        # Determine which piece has moved from the start state to the next state
-        if start[0] == to[0]:
-            movedPieceStart = 1
-            movedPieceTo = 1
-        elif start[0] == to[1]:
-            movedPieceStart = 1
-            movedPieceTo = 0
-        elif start[1] == to[0]:
-            movedPieceStart = 0
-            movedPieceTo = 1
-        else:
-            movedPieceStart = 0
-            movedPieceTo = 0
-
-        # Move the piece that changed
-        self.chess.moveSim(start[movedPieceStart], to[movedPieceTo])     
+        # Robustly detect moved piece between two arbitrary-sized states and move it on boardSim
+        # 'start' and 'to' are lists of piece states [row, col, code]
+        moved_from_to = self.getMovement(start, to)
+        if moved_from_to[0] is None or moved_from_to[1] is None:
+            return
+        start_pos = (moved_from_to[0][0], moved_from_to[0][1])
+        end_pos = (moved_from_to[1][0], moved_from_to[1][1])
+        self.chess.moveSim(start_pos, end_pos)
 
     def isWatchedBk(self, currentState):
 
@@ -609,43 +596,24 @@ class Aichess():
 
     def standard_deviation(self, values, mean_value):
         # Calculate the standard deviation of a list of values.
-            total = 0
-            n = len(values)
-
-            for i in range(n):
-                total += pow(values[i] - mean_value, 2)
-
-            return pow(total / n, 1 / 2)
+        total = 0
+        n = len(values)
+        for i in range(n):
+            total += pow(values[i] - mean_value, 2)
+        return pow(total / n, 1 / 2)
 
 
     def calculateValue(self, values):
-        # Calculate a weighted expected value based on normalized probabilities. - useful for Expectimax.
-        
-        # Compute mean and standard deviation
-        mean_value = self.mean(values)
-        std_dev = self.standard_deviation(values, mean_value)
+        # Softmax-weighted expected value (soft-max, not soft-min); numerically stable
+        if not values:
+            return 0.0
+        if all(v == values[0] for v in values):
+            return float(values[0])
 
-        # If all values are equal, the deviation is 0, equal probability
-        if std_dev == 0:
-            return values[0]
-
-        expected_value = 0
-        total_weight = 0
-        n = len(values)
-
-        for i in range(n):
-            # Normalize value using z-score
-            normalized_value = (values[i] - mean_value) / std_dev
-
-            # Convert to a positive weight using e^(-x)
-            positive_weight = pow(1 / math.e, normalized_value)
-
-            # Weighted sum
-            expected_value += positive_weight * values[i]
-            total_weight += positive_weight
-
-        # Final expected value (weighted average)
-        return expected_value / total_weight
+        m = max(values)
+        weights = [math.exp(v - m) for v in values]
+        total_w = sum(weights)
+        return sum(w * v for w, v in zip(weights, values)) / total_w
 
     def minimaxGame(self, depthWhite,depthBlack):
         
