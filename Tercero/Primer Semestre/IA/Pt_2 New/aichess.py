@@ -550,6 +550,12 @@ class Aichess():
         wrState = self.getPieceState(currentState, 2)   # White Rook
         brState = self.getPieceState(currentState, 8)   # Black Rook
 
+        # Check for checkmate states first (highest priority)
+        if self.isBlackInCheckMate(currentState):
+            return 10000 if color else -10000
+        if self.isWhiteInCheckMate(currentState):
+            return -10000 if color else 10000
+
         filaBk, columnaBk = bkState[0], bkState[1]
         filaWk, columnaWk = wkState[0], wkState[1]
 
@@ -558,67 +564,118 @@ class Aichess():
         if brState is not None:
             filaBr, columnaBr = brState[0], brState[1]
 
+        # Calculate king-to-king distance (Chebyshev distance)
+        fila = abs(filaBk - filaWk)
+        columna = abs(columnaWk - columnaBk)
+        distReis = max(fila, columna)
+
         # If the black rook has been captured
         if brState is None:
-            value += 50
-            fila = abs(filaBk - filaWk)
-            columna = abs(columnaWk - columnaBk)
-            distReis = min(fila, columna) + abs(fila - columna)
+            value += 500  # Significant material advantage
+            
+            # Encourage white king to approach black king (key for checkmate)
+            value += (7 - distReis) * 10
 
-            if distReis >= 3 and wrState is not None:
+            # If white rook exists, encourage coordination with king
+            if wrState is not None:
                 filaR = abs(filaBk - filaWr)
                 columnaR = abs(columnaWr - columnaBk)
-                value += (min(filaR, columnaR) + abs(filaR - columnaR)) / 10
+                distRookToBlackKing = max(filaR, columnaR)
+                # Rook should be at moderate distance (not too far, not blocking)
+                if distRookToBlackKing <= 3:
+                    value += 15
+                # Bonus for rook controlling same rank or file as black king
+                if filaWr == filaBk or columnaWr == columnaBk:
+                    value += 20
 
-            # For White: the closer our king is to the opponent’s king, the better.
-            # Subtract 7 from the king-to-king distance since 7 is the maximum distance possible on the board.
-            value += (7 - distReis)
-
-            # If the black king is against a wall, prioritize pushing him into a corner (ideal for checkmate).
+            # If the black king is on the edge, push toward corners
             if bkState[0] in (0, 7) or bkState[1] in (0, 7):
-                value += (abs(filaBk - 3.5) + abs(columnaBk - 3.5)) * 10
-            # Otherwise, encourage moving the black king closer to the wall.
+                # Distance from nearest corner
+                cornerDist = min(
+                    abs(filaBk - 0) + abs(columnaBk - 0),
+                    abs(filaBk - 0) + abs(columnaBk - 7),
+                    abs(filaBk - 7) + abs(columnaBk - 0),
+                    abs(filaBk - 7) + abs(columnaBk - 7)
+                )
+                value += (14 - cornerDist) * 15  # Reward proximity to corners
             else:
-                value += (max(abs(filaBk - 3.5), abs(columnaBk - 3.5))) * 10
+                # Push toward edges first (Manhattan distance to nearest edge)
+                distToEdge = min(filaBk, 7 - filaBk, columnaBk, 7 - columnaBk)
+                value += (3 - distToEdge) * 20
 
-        # If the white rook has been captured.
-        # The logic is similar to the previous section but with reversed (negative) values.
+        # If the white rook has been captured
         if wrState is None:
-            value -= 50
-            fila = abs(filaBk - filaWk)
-            columna = abs(columnaWk - columnaBk)
-            distReis = min(fila, columna) + abs(fila - columna)
+            value -= 500  # Significant material disadvantage
+            
+            # Encourage black king to approach white king
+            value -= (7 - distReis) * 10
 
-            if distReis >= 3 and brState is not None:
+            # If black rook exists, encourage coordination
+            if brState is not None:
                 filaR = abs(filaWk - filaBr)
                 columnaR = abs(columnaBr - columnaWk)
-                value -= (min(filaR, columnaR) + abs(filaR - columnaR)) / 10
+                distRookToWhiteKing = max(filaR, columnaR)
+                if distRookToWhiteKing <= 3:
+                    value -= 15
+                # Bonus for rook controlling same rank or file as white king
+                if filaBr == filaWk or columnaBr == columnaWk:
+                    value -= 20
 
-            # For White: being closer to the opposing king is better.
-            # Subtract 7 from the distance since that’s the maximum possible distance.
-            value += (-7 + distReis)
-
-            # If the white king is against a wall, penalize that position.
+            # If the white king is on the edge, it's vulnerable
             if wkState[0] in (0, 7) or wkState[1] in (0, 7):
-                value -= (abs(filaWk - 3.5) + abs(columnaWk - 3.5)) * 10
-            # Otherwise, encourage the king to stay away from the wall.
+                cornerDist = min(
+                    abs(filaWk - 0) + abs(columnaWk - 0),
+                    abs(filaWk - 0) + abs(columnaWk - 7),
+                    abs(filaWk - 7) + abs(columnaWk - 0),
+                    abs(filaWk - 7) + abs(columnaWk - 7)
+                )
+                value -= (14 - cornerDist) * 15
             else:
-                value -= (max(abs(filaWk - 3.5), abs(columnaWk - 3.5))) * 10
+                distToEdge = min(filaWk, 7 - filaWk, columnaWk, 7 - columnaWk)
+                value -= (3 - distToEdge) * 20
+
+        # Both rooks still on board - evaluate positional play
+        if brState is not None and wrState is not None:
+            # King activity: kings closer to center are more active
+            whiteKingCentrality = 3.5 - max(abs(filaWk - 3.5), abs(columnaWk - 3.5))
+            blackKingCentrality = 3.5 - max(abs(filaBk - 3.5), abs(columnaWk - 3.5))
+            value += (whiteKingCentrality - blackKingCentrality) * 2
+
+            # Rook activity: prefer 7th/2nd rank and central files
+            if wrState is not None:
+                # Reward white rook on 1st or 2nd rank (attacking position)
+                if filaWr <= 1:
+                    value += 5
+                # Central files are valuable
+                wrCentrality = 3.5 - abs(columnaWr - 3.5)
+                value += wrCentrality * 2
+
+            if brState is not None:
+                # Reward black rook on 6th or 7th rank
+                if filaBr >= 6:
+                    value -= 5
+                # Central files are valuable
+                brCentrality = 3.5 - abs(columnaBr - 3.5)
+                value -= brCentrality * 2
+
+            # Penalty if kings are too close (risk of perpetual check)
+            if distReis <= 2:
+                value -= 3
 
         # If the black king is in check, reward this state.
         if self.isWatchedBk(currentState):
-            value += 20
+            value += 30
 
         # If the white king is in check, penalize this state.
         if self.isWatchedWk(currentState):
-            value -= 20
+            value -= 30
 
         # If the current player is Black, invert the heuristic value.
         if not color:
             value *= -1
 
         return value
-    
+
     def mean(self, values):
         # Calculate the arithmetic mean (average) of a list of numeric values.
         total = 0
