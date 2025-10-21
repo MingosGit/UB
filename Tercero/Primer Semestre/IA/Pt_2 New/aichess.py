@@ -417,7 +417,11 @@ class Aichess():
 
         self.newBoardSim(currentState)
 
-        bkPosition = self.getPieceState(currentState, 12)[0:2]
+        bkState = self.getPieceState(currentState, 12)
+        # If the black king has been captured, this is not a valid state
+        if bkState is None:
+            return False
+        bkPosition = bkState[0:2]
         wkState = self.getPieceState(currentState, 6)
         wrState = self.getPieceState(currentState, 2)
 
@@ -495,7 +499,11 @@ class Aichess():
 
     def isWatchedWk(self, currentState):
         self.newBoardSim(currentState)
-        wkPosition = self.getPieceState(currentState, 6)[0:2]
+        wkState = self.getPieceState(currentState, 6)
+        # If the white king has been captured, this is not a valid state
+        if wkState is None:
+            return False
+        wkPosition = wkState[0:2]
         bkState = self.getPieceState(currentState, 12)
         brState = self.getPieceState(currentState, 8)
         # If the black king has been captured, this is not a valid configuration
@@ -717,12 +725,177 @@ class Aichess():
 
         return total / n
 
+    def minimax(self, state, depth, isWhite):
+        """
+        Minimax algorithm implementation
+        
+        Args:
+            state: Current board state
+            depth: Search depth remaining
+            isWhite: True if maximizing for White, False if minimizing for Black
+            
+        Returns:
+            (value, bestState) tuple
+        """
+        # Terminal conditions
+        if depth == 0:
+            # Always evaluate from White's perspective
+            return (self.heuristica(state, True), state)
+        
+        # Check for checkmate (always return from White's perspective)
+        if self.isWhiteInCheckMate(state):
+            return (-10000, state)
+        if self.isBlackInCheckMate(state):
+            return (10000, state)
+        
+        # Get possible next states
+        if isWhite:
+            nextStates = self.getListNextStatesW(self.getWhiteState(state))
+            if len(nextStates) == 0:
+                # No moves available (stalemate or checkmate)
+                return (self.heuristica(state, True), state)
+            
+            # Maximize for White
+            bestValue = float('-inf')
+            bestState = nextStates[0] + self.getBlackState(state)
+            
+            for whiteState in nextStates:
+                # Build full state, removing any captured black pieces
+                blackState = self.getBlackState(state).copy()
+                
+                # Check if any white piece occupies a black piece's square (capture)
+                whitePositions = [(s[0], s[1]) for s in whiteState]
+                blackState = [s for s in blackState if (s[0], s[1]) not in whitePositions]
+                
+                fullState = whiteState + blackState
+                
+                # Skip invalid states where king is captured
+                wkState = self.getPieceState(fullState, 6)
+                bkState = self.getPieceState(fullState, 12)
+                if wkState is None or bkState is None:
+                    continue
+                
+                # Skip moves that leave White King in check (illegal move)
+                if self.isWatchedWk(fullState):
+                    continue
+                
+                # Recurse
+                value, _ = self.minimax(fullState, depth - 1, False)
+                
+                if value > bestValue:
+                    bestValue = value
+                    bestState = fullState
+            
+            return (bestValue, bestState)
+        else:
+            nextStates = self.getListNextStatesB(self.getBlackState(state))
+            if len(nextStates) == 0:
+                # No moves available (stalemate or checkmate)
+                return (self.heuristica(state, True), state)
+            
+            # Minimize for Black
+            bestValue = float('inf')
+            bestState = self.getWhiteState(state) + nextStates[0]
+            
+            for blackState in nextStates:
+                # Build full state, removing any captured white pieces
+                whiteState = self.getWhiteState(state).copy()
+                
+                # Check if any black piece occupies a white piece's square (capture)
+                blackPositions = [(s[0], s[1]) for s in blackState]
+                whiteState = [s for s in whiteState if (s[0], s[1]) not in blackPositions]
+                
+                fullState = whiteState + blackState
+                
+                # Skip invalid states where king is captured
+                wkState = self.getPieceState(fullState, 6)
+                bkState = self.getPieceState(fullState, 12)
+                if wkState is None or bkState is None:
+                    continue
+                
+                # Skip moves that leave Black King in check (illegal move)
+                if self.isWatchedBk(fullState):
+                    continue
+                
+                # Recurse
+                value, _ = self.minimax(fullState, depth - 1, True)
+                
+                if value < bestValue:
+                    bestValue = value
+                    bestState = fullState
+            
+            return (bestValue, bestState)
+
+    def minimaxGame(self, depthWhite, depthBlack, verbose=True):
+        """
+        Play a complete game using minimax for both players
+        
+        Args:
+            depthWhite: Search depth for White
+            depthBlack: Search depth for Black
+            verbose: If True, print board state after each move
+            
+        Returns:
+            Winner string: "White", "Black", or "Draw"
+        """
+        currentState = self.getCurrentState()
+        
+        if verbose:
+            print("\n=== Starting Minimax Game ===")
+            print(f"White depth: {depthWhite}, Black depth: {depthBlack}")
+            self.chess.boardSim.print_board()
+        
+        moveCount = 0
+        maxMoves = 100  # Prevent infinite games
+        
+        while moveCount < maxMoves:
+            moveCount += 1
+            
+            # White's turn
+            if verbose:
+                print(f"\n--- Move {moveCount}: White's turn ---")
+            
+            _, bestStateWhite = self.minimax(currentState, depthWhite, True)
+            currentState = bestStateWhite
+            self.newBoardSim(currentState)
+            
+            if verbose:
+                self.chess.boardSim.print_board()
+            
+            # Check if Black is in checkmate
+            if self.isBlackInCheckMate(currentState):
+                if verbose:
+                    print("\n*** WHITE WINS BY CHECKMATE! ***")
+                return "White"
+            
+            # Black's turn
+            if verbose:
+                print(f"\n--- Move {moveCount}: Black's turn ---")
+            
+            _, bestStateBlack = self.minimax(currentState, depthBlack, False)
+            currentState = bestStateBlack
+            self.newBoardSim(currentState)
+            
+            if verbose:
+                self.chess.boardSim.print_board()
+            
+            # Check if White is in checkmate
+            if self.isWhiteInCheckMate(currentState):
+                if verbose:
+                    print("\n*** BLACK WINS BY CHECKMATE! ***")
+                return "Black"
+        
+        # Game reached max moves - it's a draw
+        if verbose:
+            print(f"\n*** DRAW (reached {maxMoves} moves) ***")
+        return "Draw"
+
 
 # =============================================================
 # ==================   OUR CODE ==== ==========================
 # =============================================================
 
-    def minimaxGame(self, depthWhite,depthBlack):
+    def minimaxGame_OLD(self, depthWhite,depthBlack):
         
         currentState = self.getCurrentState()        
         # Your code here
@@ -761,5 +934,7 @@ if __name__ == "__main__":
     aichess.chess.boardSim.print_board()
     
     # Run exercise 1
-    aichess.minimaxGame(4,4)
+    print("\n==== Ejercicio 1 ===== \n")
+    winner = aichess.minimaxGame(3, 3, verbose=True)
+    print(f"GAME RESULT: {winner} wins!")
     # Add code to save results and continue with other exercises
