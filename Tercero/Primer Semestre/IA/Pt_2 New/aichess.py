@@ -7,6 +7,7 @@ Created on Thu Sep  8 11:22:03 2022
 """
 import copy
 import math
+import random
 
 import chess
 import board
@@ -329,6 +330,8 @@ class Aichess():
         # Prepare a dictionary to control the visited state and at which
         # depth they were found for DepthFirstSearchOptimized
         self.dictVisitedStates = {}
+        # Transposition table for caching minimax evaluations
+        self.transpositionTable = {}
 
 
         
@@ -612,22 +615,32 @@ class Aichess():
         if brState is None:
             value += 500  # Significant material advantage
             
-            # Encourage white king to approach black king (key for checkmate)
-            value += (7 - distReis) * 10
+            # CRITICAL: VERY Strong incentive for White King to approach Black King
+            # This is THE MOST IMPORTANT factor for delivering checkmate!
+            value += (7 - distReis) * 30  # DOUBLED from 15 to 30 - Kings MUST get closer!
 
             # If white rook exists, encourage coordination with king
             if wrState is not None:
                 filaR = abs(filaBk - filaWr)
                 columnaR = abs(columnaWr - columnaBk)
                 distRookToBlackKing = max(filaR, columnaR)
-                # Rook should be at moderate distance (not too far, not blocking)
-                if distRookToBlackKing <= 3:
-                    value += 15
-                # Bonus for rook controlling same rank or file as black king
+                
+                # Strong bonus for rook controlling same rank or file as black king (cutting off escape)
                 if filaWr == filaBk or columnaWr == columnaBk:
-                    value += 20
+                    value += 40  # Increased further
+                    
+                # Additional bonus if rook is close but not adjacent (ideal mating distance)
+                if 1 < distRookToBlackKing <= 3:
+                    value += 30  # Increased
+                
+                # NEW: Heavily reward restricting Black King's mobility
+                # Count how many squares the black king can move to
+                self.newBoardSim(currentState)
+                blackKingMoves = len(self.getNextPositions(bkState))
+                # The fewer moves Black has, the better for White (closer to checkmate)
+                value += (8 - blackKingMoves) * 40  # CRITICAL: Restrict opponent mobility!
 
-            # If the black king is on the edge, push toward corners
+            # If the black king is on the edge, push toward corners (CHECKMATE POSITION)
             if bkState[0] in (0, 7) or bkState[1] in (0, 7):
                 # Distance from nearest corner
                 cornerDist = min(
@@ -636,11 +649,15 @@ class Aichess():
                     abs(filaBk - 7) + abs(columnaBk - 0),
                     abs(filaBk - 7) + abs(columnaBk - 7)
                 )
-                value += (14 - cornerDist) * 15  # Reward proximity to corners
+                value += (14 - cornerDist) * 25  # Increased from 20
+                
+                # Extra bonus if king is in corner or near corner (mating net)
+                if cornerDist <= 2:
+                    value += 60
             else:
                 # Push toward edges first (Manhattan distance to nearest edge)
                 distToEdge = min(filaBk, 7 - filaBk, columnaBk, 7 - columnaBk)
-                value += (3 - distToEdge) * 20
+                value += (3 - distToEdge) * 30  # Increased from 25
 
         # If the white rook has been captured
         if wrState is None:
@@ -709,6 +726,10 @@ class Aichess():
         if self.isWatchedWk(currentState):
             value -= 30
 
+        # Add small random tiebreaker to avoid loops when multiple moves have same value
+        # This is crucial to prevent perpetual repetition
+        value += random.uniform(-0.5, 0.5)
+
         # If the current player is Black, invert the heuristic value.
         if not color:
             value *= -1
@@ -725,22 +746,98 @@ class Aichess():
 
         return total / n
 
-    def minimax(self, state, depth, isWhite):
+    def stateToKey(self, state):
+        """Convert state to hashable key for transposition table"""
+        # Sort state to handle piece order variations
+        return tuple(sorted(tuple(piece) for piece in state))
+
+    def orderMoves(self, moveStates, currentState, isWhite):
         """
-        Minimax algorithm implementation
+        Order moves to improve alpha-beta pruning efficiency.
+        Prioritize: 1) Captures, 2) Checks, 3) Other moves
+        """
+        captures = []
+        checks = []
+        others = []
+        
+        if isWhite:
+            blackState = self.getBlackState(currentState)
+            blackPositions = set((s[0], s[1]) for s in blackState)
+            
+            for moveState in moveStates:
+                whitePositions = set((s[0], s[1]) for s in moveState)
+                
+                # Check if it's a capture
+                if whitePositions & blackPositions:
+                    captures.append(moveState)
+                else:
+                    # Quick check if it gives check (simplified)
+                    blackStateCopy = [s for s in blackState if (s[0], s[1]) not in whitePositions]
+                    fullState = moveState + blackStateCopy
+                    
+                    # Only check for valid states
+                    if self.getPieceState(fullState, 6) and self.getPieceState(fullState, 12):
+                        if self.isWatchedBk(fullState):
+                            checks.append(moveState)
+                        else:
+                            others.append(moveState)
+                    else:
+                        others.append(moveState)
+        else:
+            whiteState = self.getWhiteState(currentState)
+            whitePositions = set((s[0], s[1]) for s in whiteState)
+            
+            for moveState in moveStates:
+                blackPositions = set((s[0], s[1]) for s in moveState)
+                
+                # Check if it's a capture
+                if blackPositions & whitePositions:
+                    captures.append(moveState)
+                else:
+                    # Quick check if it gives check (simplified)
+                    whiteStateCopy = [s for s in whiteState if (s[0], s[1]) not in blackPositions]
+                    fullState = whiteStateCopy + moveState
+                    
+                    # Only check for valid states
+                    if self.getPieceState(fullState, 6) and self.getPieceState(fullState, 12):
+                        if self.isWatchedWk(fullState):
+                            checks.append(moveState)
+                        else:
+                            others.append(moveState)
+                    else:
+                        others.append(moveState)
+        
+        # Return in priority order: captures first, then checks, then others
+        return captures + checks + others
+
+    def minimax(self, state, depth, isWhite, alpha=float('-inf'), beta=float('inf')):
+        """
+        Minimax algorithm with Alpha-Beta pruning and transposition table
         
         Args:
             state: Current board state
             depth: Search depth remaining
             isWhite: True if maximizing for White, False if minimizing for Black
+            alpha: Alpha value for pruning
+            beta: Beta value for pruning
             
         Returns:
             (value, bestState) tuple
         """
+        # Check transposition table (DISABLED to prevent repetition loops)
+        # The transposition table causes deterministic behavior that leads to repetition
+        # With random tiebreaker in heuristic, we need fresh evaluations each time
+        stateKey = self.stateToKey(state)
+        # if stateKey in self.transpositionTable and depth < 4:  # Only use cache for non-root positions
+        #     cachedDepth, cachedValue, cachedState = self.transpositionTable[stateKey]
+        #     if cachedDepth >= depth:
+        #         return (cachedValue, cachedState)
+        
         # Terminal conditions
         if depth == 0:
             # Always evaluate from White's perspective
-            return (self.heuristica(state, True), state)
+            value = self.heuristica(state, True)
+            return (value, state)
         
         # Check for checkmate (always return from White's perspective)
         if self.isWhiteInCheckMate(state):
@@ -759,13 +856,34 @@ class Aichess():
             bestValue = float('-inf')
             bestState = nextStates[0] + self.getBlackState(state)
             
-            for whiteState in nextStates:
+            # Move ordering: prioritize captures and checks
+            orderedStates = self.orderMoves(nextStates, state, True)
+            
+            for whiteState in orderedStates:
                 # Build full state, removing any captured black pieces
                 blackState = self.getBlackState(state).copy()
                 
+                # Get the original black king position (before white's move)
+                origBkState = self.getPieceState(state, 12)
+                origBkPos = (origBkState[0], origBkState[1]) if origBkState else None
+                
+                # Check if white king is trying to capture a piece
+                wkNewState = self.getPieceState(whiteState, 6)
+                wkNewPos = (wkNewState[0], wkNewState[1]) if wkNewState else None
+                
                 # Check if any white piece occupies a black piece's square (capture)
                 whitePositions = [(s[0], s[1]) for s in whiteState]
+                capturedBlack = [s for s in blackState if (s[0], s[1]) in whitePositions]
                 blackState = [s for s in blackState if (s[0], s[1]) not in whitePositions]
+                
+                # If white king captured a black piece, check if it's protected by black king
+                if wkNewPos and capturedBlack and origBkPos:
+                    # Check if the captured piece's square is adjacent to black king (protected)
+                    for captured in capturedBlack:
+                        capturedPos = (captured[0], captured[1])
+                        if max(abs(capturedPos[0] - origBkPos[0]), abs(capturedPos[1] - origBkPos[1])) == 1:
+                            # White king is trying to capture a piece protected by black king - ILLEGAL!
+                            continue
                 
                 fullState = whiteState + blackState
                 
@@ -779,13 +897,20 @@ class Aichess():
                 if self.isWatchedWk(fullState):
                     continue
                 
-                # Recurse
-                value, _ = self.minimax(fullState, depth - 1, False)
+                # Recurse with alpha-beta
+                value, _ = self.minimax(fullState, depth - 1, False, alpha, beta)
                 
                 if value > bestValue:
                     bestValue = value
                     bestState = fullState
+                
+                # Alpha-Beta pruning
+                alpha = max(alpha, value)
+                if beta <= alpha:
+                    break  # Beta cutoff
             
+            # Store in transposition table (DISABLED to prevent repetition)
+            # self.transpositionTable[stateKey] = (depth, bestValue, bestState)
             return (bestValue, bestState)
         else:
             nextStates = self.getListNextStatesB(self.getBlackState(state))
@@ -797,13 +922,34 @@ class Aichess():
             bestValue = float('inf')
             bestState = self.getWhiteState(state) + nextStates[0]
             
-            for blackState in nextStates:
+            # Move ordering: prioritize captures and checks
+            orderedStates = self.orderMoves(nextStates, state, False)
+            
+            for blackState in orderedStates:
                 # Build full state, removing any captured white pieces
                 whiteState = self.getWhiteState(state).copy()
                 
+                # Get the original white king position (before black's move)
+                origWkState = self.getPieceState(state, 6)
+                origWkPos = (origWkState[0], origWkState[1]) if origWkState else None
+                
+                # Check if black king is trying to capture a piece
+                bkNewState = self.getPieceState(blackState, 12)
+                bkNewPos = (bkNewState[0], bkNewState[1]) if bkNewState else None
+                
                 # Check if any black piece occupies a white piece's square (capture)
                 blackPositions = [(s[0], s[1]) for s in blackState]
+                capturedWhite = [s for s in whiteState if (s[0], s[1]) in blackPositions]
                 whiteState = [s for s in whiteState if (s[0], s[1]) not in blackPositions]
+                
+                # If black king captured a white piece, check if it's protected by white king
+                if bkNewPos and capturedWhite and origWkPos:
+                    # Check if the captured piece's square is adjacent to white king (protected)
+                    for captured in capturedWhite:
+                        capturedPos = (captured[0], captured[1])
+                        if max(abs(capturedPos[0] - origWkPos[0]), abs(capturedPos[1] - origWkPos[1])) == 1:
+                            # Black king is trying to capture a piece protected by white king - ILLEGAL!
+                            continue
                 
                 fullState = whiteState + blackState
                 
@@ -817,13 +963,20 @@ class Aichess():
                 if self.isWatchedBk(fullState):
                     continue
                 
-                # Recurse
-                value, _ = self.minimax(fullState, depth - 1, True)
+                # Recurse with alpha-beta
+                value, _ = self.minimax(fullState, depth - 1, True, alpha, beta)
                 
                 if value < bestValue:
                     bestValue = value
                     bestState = fullState
+                
+                # Alpha-Beta pruning
+                beta = min(beta, value)
+                if beta <= alpha:
+                    break  # Alpha cutoff
             
+            # Store in transposition table (DISABLED to prevent repetition)
+            # self.transpositionTable[stateKey] = (depth, bestValue, bestState)
             return (bestValue, bestState)
 
     def minimaxGame(self, depthWhite, depthBlack, verbose=True):
@@ -838,11 +991,23 @@ class Aichess():
         Returns:
             Winner string: "White", "Black", or "Draw"
         """
+        # Clear transposition table for new game
+        self.transpositionTable.clear()
+        
         currentState = self.getCurrentState()
+        
+        # Track visited states (list of states from start to end)
+        visitedStates = [currentState.copy()]
+        
+        # Track position repetitions for draw detection
+        positionHistory = {}
+        posKey = self.stateToKey(currentState)
+        positionHistory[posKey] = 1
         
         if verbose:
             print("\n=== Starting Minimax Game ===")
             print(f"White depth: {depthWhite}, Black depth: {depthBlack}")
+            print(f"Initial state: {currentState}")
             self.chess.boardSim.print_board()
         
         moveCount = 0
@@ -851,21 +1016,56 @@ class Aichess():
         while moveCount < maxMoves:
             moveCount += 1
             
+            # Check for insufficient material (both rooks captured = draw)
+            wrState = self.getPieceState(currentState, 2)
+            brState = self.getPieceState(currentState, 8)
+            if wrState is None and brState is None:
+                if verbose:
+                    print("\n*** DRAW (insufficient material - King vs King) ***")
+                    print(f"\nGame Statistics:")
+                    print(f"  Total moves (half-moves): {len(visitedStates) - 1}")
+                    print(f"  Total full moves: {moveCount - 1}")
+                    print(f"  Minimax depth used: White={depthWhite}, Black={depthBlack}")
+                    print(f"  Total states visited: {len(visitedStates)}")
+                    print(f"  Transposition table entries: {len(self.transpositionTable)}")
+                return "Draw"
+            
             # White's turn
             if verbose:
                 print(f"\n--- Move {moveCount}: White's turn ---")
             
             _, bestStateWhite = self.minimax(currentState, depthWhite, True)
             currentState = bestStateWhite
+            visitedStates.append(currentState.copy())
             self.newBoardSim(currentState)
             
             if verbose:
                 self.chess.boardSim.print_board()
             
+            # Check for position repetition (threefold repetition = draw)
+            posKey = self.stateToKey(currentState)
+            positionHistory[posKey] = positionHistory.get(posKey, 0) + 1
+            if positionHistory[posKey] >= 3:
+                if verbose:
+                    print(f"\n*** DRAW (threefold repetition) ***")
+                    print(f"\nGame Statistics:")
+                    print(f"  Total moves (half-moves): {len(visitedStates) - 1}")
+                    print(f"  Total full moves: {moveCount}")
+                    print(f"  Minimax depth used: White={depthWhite}, Black={depthBlack}")
+                    print(f"  Total states visited: {len(visitedStates)}")
+                    print(f"  Transposition table entries: {len(self.transpositionTable)}")
+                return "Draw"
+            
             # Check if Black is in checkmate
             if self.isBlackInCheckMate(currentState):
                 if verbose:
                     print("\n*** WHITE WINS BY CHECKMATE! ***")
+                    print(f"\nGame Statistics:")
+                    print(f"  Total moves (half-moves): {len(visitedStates) - 1}")
+                    print(f"  Total full moves: {moveCount}")
+                    print(f"  Minimax depth used: White={depthWhite}, Black={depthBlack}")
+                    print(f"  Total states visited: {len(visitedStates)}")
+                    print(f"  Transposition table entries: {len(self.transpositionTable)}")
                 return "White"
             
             # Black's turn
@@ -874,20 +1074,47 @@ class Aichess():
             
             _, bestStateBlack = self.minimax(currentState, depthBlack, False)
             currentState = bestStateBlack
+            visitedStates.append(currentState.copy())
             self.newBoardSim(currentState)
             
             if verbose:
                 self.chess.boardSim.print_board()
             
+            # Check for position repetition (threefold repetition = draw)
+            posKey = self.stateToKey(currentState)
+            positionHistory[posKey] = positionHistory.get(posKey, 0) + 1
+            if positionHistory[posKey] >= 3:
+                if verbose:
+                    print(f"\n*** DRAW (threefold repetition) ***")
+                    print(f"\nGame Statistics:")
+                    print(f"  Total moves (half-moves): {len(visitedStates) - 1}")
+                    print(f"  Total full moves: {moveCount}")
+                    print(f"  Minimax depth used: White={depthWhite}, Black={depthBlack}")
+                    print(f"  Total states visited: {len(visitedStates)}")
+                    print(f"  Transposition table entries: {len(self.transpositionTable)}")
+                return "Draw"
+            
             # Check if White is in checkmate
             if self.isWhiteInCheckMate(currentState):
                 if verbose:
                     print("\n*** BLACK WINS BY CHECKMATE! ***")
+                    print(f"\nGame Statistics:")
+                    print(f"  Total moves (half-moves): {len(visitedStates) - 1}")
+                    print(f"  Total full moves: {moveCount}")
+                    print(f"  Minimax depth used: White={depthWhite}, Black={depthBlack}")
+                    print(f"  Total states visited: {len(visitedStates)}")
+                    print(f"  Transposition table entries: {len(self.transpositionTable)}")
                 return "Black"
         
         # Game reached max moves - it's a draw
         if verbose:
             print(f"\n*** DRAW (reached {maxMoves} moves) ***")
+            print(f"\nGame Statistics:")
+            print(f"  Total moves (half-moves): {len(visitedStates) - 1}")
+            print(f"  Total full moves: {moveCount}")
+            print(f"  Minimax depth used: White={depthWhite}, Black={depthBlack}")
+            print(f"  Total states visited: {len(visitedStates)}")
+            print(f"  Transposition table entries: {len(self.transpositionTable)}")
         return "Draw"
 
 
@@ -934,7 +1161,14 @@ if __name__ == "__main__":
     aichess.chess.boardSim.print_board()
     
     # Run exercise 1
-    print("\n==== Ejercicio 1 ===== \n")
-    winner = aichess.minimaxGame(3, 3, verbose=True)
-    print(f"GAME RESULT: {winner} wins!")
+    print("\n==== Exercise 1: Minimax Game (Depth 4 vs 4) ===== \n")
+    print("Both White and Black use Minimax algorithm with depth 4")
+    print("White moves first (as per chess rules)")
+    print("\nStarting game...\n")
+    
+    winner = aichess.minimaxGame(4, 4, verbose=True)
+    
+    print(f"\n{'='*60}")
+    print(f"FINAL RESULT: {winner} wins!")
+    print(f"{'='*60}")
     # Add code to save results and continue with other exercises
