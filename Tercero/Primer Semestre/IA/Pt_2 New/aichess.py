@@ -425,9 +425,14 @@ class Aichess():
         if wkState is None:
             return False
 
+        # Check if the black king is adjacent to the white king (illegal position, treat as in check)
+        wkPosition = wkState[0:2]
+        if max(abs(bkPosition[0] - wkPosition[0]), abs(bkPosition[1] - wkPosition[1])) == 1:
+            return True
+
         # Check all possible moves of the white king to see if it can capture the black king
-        for wkPosition in self.getNextPositions(wkState):
-            if bkPosition == wkPosition:
+        for wkPos in self.getNextPositions(wkState):
+            if bkPosition == wkPos:
                 # Black king would be in check
                 return True
 
@@ -440,39 +445,47 @@ class Aichess():
         return False
 
     def allBkMovementsWatched(self, currentState):
-        # In this method, we check if the black king is threatened by the white pieces
-
+        # Check if all possible moves for the black king leave it in check (checkmate condition)
+        
         self.newBoardSim(currentState)
-        # Get the current state of the black king
-        bkState = self.getPieceState(currentState, 12)
-        allWatched = False
-
-        # If the black king is on the edge of the board, all its moves might be under threat
-        if bkState[0] == 0 or bkState[0] == 7 or bkState[1] == 0 or bkState[1] == 7:
-            wrState = self.getPieceState(currentState, 2)
-            whiteState = self.getWhiteState(currentState)
-            allWatched = True
-            # Get the future states of the black pieces
-            nextBStates = self.getListNextStatesB(self.getBlackState(currentState))
-
-            for state in nextBStates:
-                newWhiteState = whiteState.copy()
-                # Check if the white rook has been captured; if so, remove it from the state
-                if wrState is not None and wrState[0:2] == state[0][0:2]:
-                    newWhiteState.remove(wrState)
-                state = state + newWhiteState
-                # Move the black pieces to the new state
-                self.newBoardSim(state)
-
-                # Check if in this position the black king is not threatened; 
-                # if so, not all its moves are under threat
-                if not self.isWatchedBk(state):
-                    allWatched = False
-                    break
-
+        wrState = self.getPieceState(currentState, 2)
+        wkState = self.getPieceState(currentState, 6)
+        whiteState = self.getWhiteState(currentState)
+        
+        # Get all possible next states for black pieces (king moves and potential rook captures)
+        nextBStates = self.getListNextStatesB(self.getBlackState(currentState))
+        
+        # If there are no legal moves at all, it's checkmate (or stalemate if not in check)
+        if len(nextBStates) == 0:
+            return True
+        
+        # Check each possible move
+        for state in nextBStates:
+            bkNewPos = state[0][0:2]
+            
+            # Skip illegal moves where black king would capture white king
+            if wkState is not None and bkNewPos == wkState[0:2]:
+                continue
+            
+            newWhiteState = whiteState.copy()
+            # Check if the white rook has been captured; if so, remove it from the state
+            if wrState is not None and wrState[0:2] == bkNewPos:
+                newWhiteState.remove(wrState)
+            
+            fullState = state + newWhiteState
+            # Move the black pieces to the new state
+            self.newBoardSim(fullState)
+            
+            # If this move gets the black king out of check, then not all moves are watched
+            if not self.isWatchedBk(fullState):
+                # Restore the original board state before returning
+                self.newBoardSim(currentState)
+                return False
+        
         # Restore the original board state
         self.newBoardSim(currentState)
-        return allWatched
+        # All moves leave the king in check
+        return True
 
     def isBlackInCheckMate(self, currentState):
         if self.isWatchedBk(currentState) and self.allBkMovementsWatched(currentState):
@@ -488,9 +501,15 @@ class Aichess():
         # If the black king has been captured, this is not a valid configuration
         if bkState is None:
             return False
+        
+        # Check if the white king is adjacent to the black king (illegal position, treat as in check)
+        bkPosition = bkState[0:2]
+        if max(abs(wkPosition[0] - bkPosition[0]), abs(wkPosition[1] - bkPosition[1])) == 1:
+            return True
+        
         # Check all possible moves for the black king and see if it can capture the white king
-        for bkPosition in self.getNextPositions(bkState):
-            if wkPosition == bkPosition:
+        for bkPos in self.getNextPositions(bkState):
+            if wkPosition == bkPos:
                 # White king would be in check
                 return True
         if brState is not None:
@@ -501,35 +520,47 @@ class Aichess():
         return False
 
     def allWkMovementsWatched(self, currentState):
+        # Check if all possible moves for the white king leave it in check (checkmate condition)
+        
         self.newBoardSim(currentState)
-        # In this method, we check if the white king is threatened by black pieces
-        # Get the current state of the white king
-        wkState = self.getPieceState(currentState, 6)
-        allWatched = False
-        # If the white king is on the edge of the board, it may be more vulnerable
-        if wkState[0] == 0 or wkState[0] == 7 or wkState[1] == 0 or wkState[1] == 7:
-            # Get the state of the black pieces
-            brState = self.getPieceState(currentState, 8)
-            blackState = self.getBlackState(currentState)
-            allWatched = True
-            # Get the possible future states for the white pieces
-            nextWStates = self.getListNextStatesW(self.getWhiteState(currentState))
-            for state in nextWStates:
-                newBlackState = blackState.copy()
-                # Check if the black rook has been captured. If so, remove it from the state
-                if brState is not None and brState[0:2] == state[0][0:2]:
-                    newBlackState.remove(brState)
-                state = state + newBlackState
-                # Move the white pieces to their new state
-                self.newBoardSim(state)
-                # Check if the white king is not threatened in this position,
-                # which implies that not all of its possible moves are under threat
-                if not self.isWatchedWk(state):
-                    allWatched = False
-                    break
+        brState = self.getPieceState(currentState, 8)
+        bkState = self.getPieceState(currentState, 12)
+        blackState = self.getBlackState(currentState)
+        
+        # Get all possible next states for white pieces (king moves and potential rook captures)
+        nextWStates = self.getListNextStatesW(self.getWhiteState(currentState))
+        
+        # If there are no legal moves at all, it's checkmate (or stalemate if not in check)
+        if len(nextWStates) == 0:
+            return True
+        
+        # Check each possible move
+        for state in nextWStates:
+            wkNewPos = state[0][0:2]
+            
+            # Skip illegal moves where white king would capture black king
+            if bkState is not None and wkNewPos == bkState[0:2]:
+                continue
+            
+            newBlackState = blackState.copy()
+            # Check if the black rook has been captured. If so, remove it from the state
+            if brState is not None and brState[0:2] == wkNewPos:
+                newBlackState.remove(brState)
+            
+            fullState = state + newBlackState
+            # Move the white pieces to their new state
+            self.newBoardSim(fullState)
+            
+            # If this move gets the white king out of check, then not all moves are watched
+            if not self.isWatchedWk(fullState):
+                # Restore the original board state before returning
+                self.newBoardSim(currentState)
+                return False
+        
         # Restore the original board state
         self.newBoardSim(currentState)
-        return allWatched
+        # All moves leave the king in check
+        return True
 
 
     def isWhiteInCheckMate(self, currentState):
