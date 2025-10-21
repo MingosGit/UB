@@ -750,6 +750,70 @@ class Aichess():
         """Convert state to hashable key for transposition table"""
         # Sort state to handle piece order variations
         return tuple(sorted(tuple(piece) for piece in state))
+    
+    def _board_to_string(self, state=None):
+        """Convert current board to a string representation"""
+        board_str = ""
+        
+        if state is not None:
+            # Build board from state directly
+            board = [[".  " for _ in range(8)] for _ in range(8)]
+            for piece in state:
+                row, col, piece_type = piece[0], piece[1], piece[2]
+                if piece_type == 2:
+                    board[row][col] = "WR "
+                elif piece_type == 6:
+                    board[row][col] = "WK "
+                elif piece_type == 8:
+                    board[row][col] = "BR "
+                elif piece_type == 12:
+                    board[row][col] = "BK "
+            
+            board_str += "  | 0  1  2  3  4  5  6  7\n"
+            board_str += "--+------------------------\n"
+            for i in range(8):
+                board_str += str(i) + " | "
+                for j in range(8):
+                    board_str += board[i][j]
+                board_str += "\n"
+            board_str += "\n"
+        else:
+            # Use existing boardSim
+            board = self.chess.boardSim.board
+            board_str += "  | 0  1  2  3  4  5  6  7\n"
+            board_str += "--+------------------------\n"
+            for i in range(8):
+                board_str += str(i) + " | "
+                for j in range(8):
+                    if board[i][j] == 0:
+                        board_str += ".  "
+                    elif board[i][j] == 2:
+                        board_str += "WR "  # White Rook
+                    elif board[i][j] == 6:
+                        board_str += "WK "  # White King
+                    elif board[i][j] == 8:
+                        board_str += "BR "  # Black Rook
+                    elif board[i][j] == 12:
+                        board_str += "BK "  # Black King
+                    else:
+                        board_str += "?  "
+                board_str += "\n"
+            board_str += "\n"
+        
+        return board_str
+    
+    def _save_game_data(self, moveLog, visitedStates, moves_file, states_file):
+        """Save moves and states to files"""
+        # Save moves
+        with open(moves_file, 'w', encoding='utf-8') as f:
+            f.writelines(moveLog)
+        
+        # Save states - only piece lists
+        with open(states_file, 'w', encoding='utf-8') as f:
+            f.write("All states during the game:\n")
+            f.write("="*60 + "\n\n")
+            for idx, state in enumerate(visitedStates):
+                f.write(f"State {idx}: Pieces: {state}\n")
 
     def orderMoves(self, moveStates, currentState, isWhite):
         """
@@ -979,7 +1043,7 @@ class Aichess():
             # self.transpositionTable[stateKey] = (depth, bestValue, bestState)
             return (bestValue, bestState)
 
-    def minimaxGame(self, depthWhite, depthBlack, verbose=True):
+    def minimaxGame(self, depthWhite, depthBlack, verbose=True, save_to_file=False, moves_file="moves_ex1.txt", states_file="states_ex1.txt"):
         """
         Play a complete game using minimax for both players
         
@@ -987,6 +1051,9 @@ class Aichess():
             depthWhite: Search depth for White
             depthBlack: Search depth for Black
             verbose: If True, print board state after each move
+            save_to_file: If True, save moves and states to files
+            moves_file: Filename to save moves
+            states_file: Filename to save states
             
         Returns:
             Winner string: "White", "Black", or "Draw"
@@ -1004,11 +1071,24 @@ class Aichess():
         posKey = self.stateToKey(currentState)
         positionHistory[posKey] = 1
         
+        # For saving moves
+        moveLog = []
+        
+        # Track minimum depth that would have been sufficient
+        minDepthWhite = depthWhite
+        minDepthBlack = depthBlack
+        
         if verbose:
             print("\n=== Starting Minimax Game ===")
             print(f"White depth: {depthWhite}, Black depth: {depthBlack}")
             print(f"Initial state: {currentState}")
             self.chess.boardSim.print_board()
+        
+        if save_to_file:
+            moveLog.append("=== Starting Minimax Game ===\n")
+            moveLog.append(f"White depth: {depthWhite}, Black depth: {depthBlack}\n")
+            moveLog.append(f"Initial state: {currentState}\n")
+            moveLog.append(self._board_to_string(currentState))
         
         moveCount = 0
         maxMoves = 100  # Prevent infinite games
@@ -1026,13 +1106,31 @@ class Aichess():
                     print(f"  Total moves (half-moves): {len(visitedStates) - 1}")
                     print(f"  Total full moves: {moveCount - 1}")
                     print(f"  Minimax depth used: White={depthWhite}, Black={depthBlack}")
+
                     print(f"  Total states visited: {len(visitedStates)}")
                     print(f"  Transposition table entries: {len(self.transpositionTable)}")
-                return "Draw"
+                if save_to_file:
+                    moveLog.append("\n*** DRAW (insufficient material - King vs King) ***\n")
+                    self._save_game_data(moveLog, visitedStates, moves_file, states_file)
+                return {
+                    'winner': "Draw",
+                    'stats': {
+                        'half_moves': len(visitedStates) - 1,
+                        'full_moves': moveCount - 1,
+                        'depth_white': depthWhite,
+                        'depth_black': depthBlack,
+                        'min_depth_white': minDepthWhite,
+                        'min_depth_black': minDepthBlack,
+                        'states_visited': len(visitedStates)
+                    }
+                }
             
             # White's turn
             if verbose:
                 print(f"\n--- Move {moveCount}: White's turn ---")
+            
+            if save_to_file:
+                moveLog.append(f"\n--- Move {moveCount}: White's turn ---\n")
             
             _, bestStateWhite = self.minimax(currentState, depthWhite, True)
             currentState = bestStateWhite
@@ -1042,6 +1140,9 @@ class Aichess():
             if verbose:
                 self.chess.boardSim.print_board()
             
+            if save_to_file:
+                moveLog.append(self._board_to_string(currentState))
+            
             # Check for position repetition (threefold repetition = draw)
             posKey = self.stateToKey(currentState)
             positionHistory[posKey] = positionHistory.get(posKey, 0) + 1
@@ -1052,9 +1153,24 @@ class Aichess():
                     print(f"  Total moves (half-moves): {len(visitedStates) - 1}")
                     print(f"  Total full moves: {moveCount}")
                     print(f"  Minimax depth used: White={depthWhite}, Black={depthBlack}")
+                    print(f"  Minimum depth necessary: White={minDepthWhite}, Black={minDepthBlack}")
                     print(f"  Total states visited: {len(visitedStates)}")
                     print(f"  Transposition table entries: {len(self.transpositionTable)}")
-                return "Draw"
+                if save_to_file:
+                    moveLog.append("\n*** DRAW (threefold repetition) ***\n")
+                    self._save_game_data(moveLog, visitedStates, moves_file, states_file)
+                return {
+                    'winner': "Draw",
+                    'stats': {
+                        'half_moves': len(visitedStates) - 1,
+                        'full_moves': moveCount,
+                        'depth_white': depthWhite,
+                        'depth_black': depthBlack,
+                        'min_depth_white': minDepthWhite,
+                        'min_depth_black': minDepthBlack,
+                        'states_visited': len(visitedStates)
+                    }
+                }
             
             # Check if Black is in checkmate
             if self.isBlackInCheckMate(currentState):
@@ -1064,13 +1180,31 @@ class Aichess():
                     print(f"  Total moves (half-moves): {len(visitedStates) - 1}")
                     print(f"  Total full moves: {moveCount}")
                     print(f"  Minimax depth used: White={depthWhite}, Black={depthBlack}")
+                    print(f"  Minimum depth necessary: White={minDepthWhite}, Black={minDepthBlack}")
                     print(f"  Total states visited: {len(visitedStates)}")
                     print(f"  Transposition table entries: {len(self.transpositionTable)}")
-                return "White"
+                if save_to_file:
+                    moveLog.append("\n*** WHITE WINS BY CHECKMATE! ***\n")
+                    self._save_game_data(moveLog, visitedStates, moves_file, states_file)
+                return {
+                    'winner': "White",
+                    'stats': {
+                        'half_moves': len(visitedStates) - 1,
+                        'full_moves': moveCount,
+                        'depth_white': depthWhite,
+                        'depth_black': depthBlack,
+                        'min_depth_white': minDepthWhite,
+                        'min_depth_black': minDepthBlack,
+                        'states_visited': len(visitedStates)
+                    }
+                }
             
             # Black's turn
             if verbose:
                 print(f"\n--- Move {moveCount}: Black's turn ---")
+            
+            if save_to_file:
+                moveLog.append(f"\n--- Move {moveCount}: Black's turn ---\n")
             
             _, bestStateBlack = self.minimax(currentState, depthBlack, False)
             currentState = bestStateBlack
@@ -1079,6 +1213,9 @@ class Aichess():
             
             if verbose:
                 self.chess.boardSim.print_board()
+            
+            if save_to_file:
+                moveLog.append(self._board_to_string(currentState))
             
             # Check for position repetition (threefold repetition = draw)
             posKey = self.stateToKey(currentState)
@@ -1092,6 +1229,9 @@ class Aichess():
                     print(f"  Minimax depth used: White={depthWhite}, Black={depthBlack}")
                     print(f"  Total states visited: {len(visitedStates)}")
                     print(f"  Transposition table entries: {len(self.transpositionTable)}")
+                if save_to_file:
+                    moveLog.append("\n*** DRAW (threefold repetition) ***\n")
+                    self._save_game_data(moveLog, visitedStates, moves_file, states_file)
                 return "Draw"
             
             # Check if White is in checkmate
@@ -1102,9 +1242,24 @@ class Aichess():
                     print(f"  Total moves (half-moves): {len(visitedStates) - 1}")
                     print(f"  Total full moves: {moveCount}")
                     print(f"  Minimax depth used: White={depthWhite}, Black={depthBlack}")
+                    print(f"  Minimum depth necessary: White={minDepthWhite}, Black={minDepthBlack}")
                     print(f"  Total states visited: {len(visitedStates)}")
                     print(f"  Transposition table entries: {len(self.transpositionTable)}")
-                return "Black"
+                if save_to_file:
+                    moveLog.append("\n*** BLACK WINS BY CHECKMATE! ***\n")
+                    self._save_game_data(moveLog, visitedStates, moves_file, states_file)
+                return {
+                    'winner': "Black",
+                    'stats': {
+                        'half_moves': len(visitedStates) - 1,
+                        'full_moves': moveCount,
+                        'depth_white': depthWhite,
+                        'depth_black': depthBlack,
+                        'min_depth_white': minDepthWhite,
+                        'min_depth_black': minDepthBlack,
+                        'states_visited': len(visitedStates)
+                    }
+                }
         
         # Game reached max moves - it's a draw
         if verbose:
@@ -1113,9 +1268,24 @@ class Aichess():
             print(f"  Total moves (half-moves): {len(visitedStates) - 1}")
             print(f"  Total full moves: {moveCount}")
             print(f"  Minimax depth used: White={depthWhite}, Black={depthBlack}")
+            print(f"  Minimum depth necessary: White={minDepthWhite}, Black={minDepthBlack}")
             print(f"  Total states visited: {len(visitedStates)}")
             print(f"  Transposition table entries: {len(self.transpositionTable)}")
-        return "Draw"
+        if save_to_file:
+            moveLog.append(f"\n*** DRAW (reached {maxMoves} moves) ***\n")
+            self._save_game_data(moveLog, visitedStates, moves_file, states_file)
+        return {
+            'winner': "Draw",
+            'stats': {
+                'half_moves': len(visitedStates) - 1,
+                'full_moves': moveCount,
+                'depth_white': depthWhite,
+                'depth_black': depthBlack,
+                'min_depth_white': minDepthWhite,
+                'min_depth_black': minDepthBlack,
+                'states_visited': len(visitedStates)
+            }
+        }
 
 
 # =============================================================
@@ -1166,9 +1336,25 @@ if __name__ == "__main__":
     print("White moves first (as per chess rules)")
     print("\nStarting game...\n")
     
-    winner = aichess.minimaxGame(4, 4, verbose=True)
+    result = aichess.minimaxGame(4, 4, verbose=False, save_to_file=True, 
+                                  moves_file="moves_ex1.txt", states_file="states_ex1.txt")
+    
+    winner = result['winner']
+    stats = result['stats']
     
     print(f"\n{'='*60}")
     print(f"FINAL RESULT: {winner} wins!")
     print(f"{'='*60}")
+    print("\nFinal board state:")
+    aichess.chess.boardSim.print_board()
+    
+    print(f"\nGame Statistics:")
+    print(f"  Total moves (half-moves): {stats['half_moves']}")
+    print(f"  Total full moves: {stats['full_moves']}")
+    print(f"  Minimax depth used: White={stats['depth_white']}, Black={stats['depth_black']}")
+    print(f"  Minimum depth necessary: White={stats['min_depth_white']}, Black={stats['min_depth_black']}")
+    print(f"  Total states visited: {stats['states_visited']}")
+    
+    print(f"\nMoves saved to: moves_ex1.txt")
+    print(f"States saved to: states_ex1.txt")
     # Add code to save results and continue with other exercises
