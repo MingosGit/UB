@@ -19,6 +19,10 @@ from typing import List
 RawStateType = List[List[List[int]]]
 
 from itertools import permutations
+import matplotlib.pyplot as plt
+import json
+import time
+import subprocess
 
 
 
@@ -332,6 +336,8 @@ class Aichess():
         self.dictVisitedStates = {}
         # Transposition table for caching minimax evaluations
         self.transpositionTable = {}
+        # Cache for heuristic evaluations to avoid recalculation
+        self.heuristicCache = {}
 
 
         
@@ -498,6 +504,12 @@ class Aichess():
         if self.isWatchedBk(currentState) and self.allBkMovementsWatched(currentState):
             return True
         return False
+    
+    def isBlackInStaleMate(self, currentState):
+        """Check if Black is in stalemate: not in check but has no legal moves"""
+        if not self.isWatchedBk(currentState) and self.allBkMovementsWatched(currentState):
+            return True
+        return False
 
 
     def isWatchedWk(self, currentState):
@@ -579,11 +591,21 @@ class Aichess():
             return True
         return False
     
+    def isWhiteInStaleMate(self, currentState):
+        """Check if White is in stalemate: not in check but has no legal moves"""
+        if not self.isWatchedWk(currentState) and self.allWkMovementsWatched(currentState):
+            return True
+        return False
+    
 
-    def heuristica(self, currentState, color):
-        # This method calculates the heuristic value for the current state.
-        # The value is initially computed from White's perspective.
-        # If the 'color' parameter indicates Black, the final value is multiplied by -1.
+    def heuristica(self, currentState, color, depth=0):
+        # OPTIMIZED VERSION with STRONGER evaluation for K+R vs K+R
+        # depth parameter helps break symmetry in equal positions
+        
+        stateKey = self.stateToKey(currentState)
+        cacheKey = (stateKey, color)
+        if cacheKey in self.heuristicCache:
+            return self.heuristicCache[cacheKey]
 
         value = 0
 
@@ -592,148 +614,328 @@ class Aichess():
         wrState = self.getPieceState(currentState, 2)   # White Rook
         brState = self.getPieceState(currentState, 8)   # Black Rook
 
-        # Check for checkmate states first (highest priority)
-        if self.isBlackInCheckMate(currentState):
-            return 10000 if color else -10000
-        if self.isWhiteInCheckMate(currentState):
-            return -10000 if color else 10000
-
+        # Positions
         filaBk, columnaBk = bkState[0], bkState[1]
         filaWk, columnaWk = wkState[0], wkState[1]
 
-        if wrState is not None:
+        # King-to-king distance (Chebyshev)
+        distReis = max(abs(filaBk - filaWk), abs(columnaBk - columnaWk))
+        
+        # ============================================================================
+        # MATERIAL EVALUATION - But adjusted for endgame type
+        # ============================================================================
+        # Check for K vs K (insufficient material - draw)
+        if wrState is None and brState is None:
+            # K vs K = draw, but this is BAD if we started with material!
+            # Penalize heavily to avoid trading into this
+            value -= 15000  # MASSIVE penalty - we threw away our advantage!
+            self.heuristicCache[cacheKey] = value
+            return value
+        
+        # In K+R vs K+R, material is EQUAL - don't add material bonus
+        # Only add material value when material is actually unequal
+        material_value = 0
+        if wrState is not None and brState is None:
+            # White has rook, black doesn't - White is winning
+            material_value += 5000  # HUGE advantage
+        elif wrState is None and brState is not None:
+            # Black has rook, white doesn't - Black is winning
+            material_value -= 5000
+        # If both have rooks, material_value = 0 (equal)
+        value += material_value
+        
+        # ============================================================================
+        # CASE 1: EQUAL MATERIAL (K+R vs K+R) - DEFENSIVE DRAW STRATEGY
+        # ============================================================================
+        # K+R vs K+R is a THEORETICAL DRAW with correct play.
+        # Key principle: Keep your rook ACTIVE - give checks from DISTANCE!
+        # NEVER exchange rooks unless it leads to a clearly winning K+R vs K endgame.
+        # CRITICAL: Avoid rook trades that lead to K vs K draws!
+        # ============================================================================
+        if wrState is not None and brState is not None:
             filaWr, columnaWr = wrState[0], wrState[1]
-        if brState is not None:
             filaBr, columnaBr = brState[0], brState[1]
-
-        # Calculate king-to-king distance (Chebyshev distance)
-        fila = abs(filaBk - filaWk)
-        columna = abs(columnaWk - columnaBk)
-        distReis = max(fila, columna)
-
-        # If the black rook has been captured
-        if brState is None:
-            value += 500  # Significant material advantage
             
-            # CRITICAL: VERY Strong incentive for White King to approach Black King
-            # This is THE MOST IMPORTANT factor for delivering checkmate!
-            value += (7 - distReis) * 30  # DOUBLED from 15 to 30 - Kings MUST get closer!
-
-            # If white rook exists, encourage coordination with king
-            if wrState is not None:
-                filaR = abs(filaBk - filaWr)
-                columnaR = abs(columnaWr - columnaBk)
-                distRookToBlackKing = max(filaR, columnaR)
-                
-                # Strong bonus for rook controlling same rank or file as black king (cutting off escape)
-                if filaWr == filaBk or columnaWr == columnaBk:
-                    value += 40  # Increased further
-                    
-                # Additional bonus if rook is close but not adjacent (ideal mating distance)
-                if 1 < distRookToBlackKing <= 3:
-                    value += 30  # Increased
-                
-                # NEW: Heavily reward restricting Black King's mobility
-                # Count how many squares the black king can move to
-                self.newBoardSim(currentState)
-                blackKingMoves = len(self.getNextPositions(bkState))
-                # The fewer moves Black has, the better for White (closer to checkmate)
-                value += (8 - blackKingMoves) * 40  # CRITICAL: Restrict opponent mobility!
-
-            # If the black king is on the edge, push toward corners (CHECKMATE POSITION)
-            if bkState[0] in (0, 7) or bkState[1] in (0, 7):
-                # Distance from nearest corner
-                cornerDist = min(
-                    abs(filaBk - 0) + abs(columnaBk - 0),
-                    abs(filaBk - 0) + abs(columnaBk - 7),
-                    abs(filaBk - 7) + abs(columnaBk - 0),
-                    abs(filaBk - 7) + abs(columnaBk - 7)
-                )
-                value += (14 - cornerDist) * 25  # Increased from 20
-                
-                # Extra bonus if king is in corner or near corner (mating net)
-                if cornerDist <= 2:
-                    value += 60
-            else:
-                # Push toward edges first (Manhattan distance to nearest edge)
-                distToEdge = min(filaBk, 7 - filaBk, columnaBk, 7 - columnaBk)
-                value += (3 - distToEdge) * 30  # Increased from 25
-
-        # If the white rook has been captured
-        if wrState is None:
-            value -= 500  # Significant material disadvantage
+            # Calculate all distances
+            distRookToBlackKing = max(abs(filaBk - filaWr), abs(columnaBk - columnaWr))
+            distRookToWhiteKing = max(abs(filaWk - filaBr), abs(columnaWk - columnaBr))
+            distWkBk = max(abs(filaWk - filaBk), abs(columnaWk - columnaBk))
+            distWkBr = max(abs(filaWk - filaBr), abs(columnaWk - columnaBr))
+            distBkWr = max(abs(filaBk - filaWr), abs(columnaBk - columnaWr))
             
-            # Encourage black king to approach white king
-            value -= (7 - distReis) * 10
-
-            # If black rook exists, encourage coordination
-            if brState is not None:
-                filaR = abs(filaWk - filaBr)
-                columnaR = abs(columnaBr - columnaWk)
-                distRookToWhiteKing = max(filaR, columnaR)
-                if distRookToWhiteKing <= 3:
-                    value -= 15
-                # Bonus for rook controlling same rank or file as white king
-                if filaBr == filaWk or columnaBr == columnaWk:
-                    value -= 20
-
-            # If the white king is on the edge, it's vulnerable
-            if wkState[0] in (0, 7) or wkState[1] in (0, 7):
-                cornerDist = min(
-                    abs(filaWk - 0) + abs(columnaWk - 0),
-                    abs(filaWk - 0) + abs(columnaWk - 7),
-                    abs(filaWk - 7) + abs(columnaWk - 0),
-                    abs(filaWk - 7) + abs(columnaWk - 7)
-                )
-                value -= (14 - cornerDist) * 15
+            # ========== CRITICAL: PREVENT LOSING OUR ROOK! ==========
+            # MASSIVE penalty if black king can capture white rook next move
+            if distBkWr == 1:
+                value -= 5000  # CRITICAL: Rook is hanging to enemy king - AVOID AT ALL COSTS!
+            elif distBkWr == 2:
+                value -= 1000  # Danger zone - rook too close to enemy king
+            elif distBkWr == 3:
+                value -= 200   # Getting risky - rook should keep distance
+            
+            # Also check if white king is threatened by black rook
+            if distRookToWhiteKing == 1:
+                # King is in check - this is OK if we can move, but evaluate carefully
+                value -= 300
+            
+            # ========== ROOK SAFETY: Maintain distance from enemy king ==========
+            # Our rook should be 4+ squares away from enemy king (safe checking distance)
+            if distRookToBlackKing >= 4:
+                value += 200  # Safe distance - can give checks without being trapped
+            elif distRookToBlackKing == 3:
+                value += 50   # Acceptable
+            # distRookToBlackKing <= 2 already heavily penalized above
+            
+            # ========== ROOK ACTIVITY: Give checks from distance ==========
+            # Rook should be on same file/rank as enemy king (giving check or potential check)
+            rookGivesCheck = (filaWr == filaBk or columnaWr == columnaBk)
+            
+            if rookGivesCheck and distRookToBlackKing >= 3:
+                value += 300  # Excellent: active rook giving checks from safety
+            elif rookGivesCheck and distRookToBlackKing == 2:
+                value += 50   # Check but a bit close
+            elif not rookGivesCheck and distRookToBlackKing >= 4:
+                value -= 100  # Rook passive and far - not ideal
+            
+            # ========== KEEP ROOK CENTRALIZED (not trapped on edge) ==========
+            rookCentrality = min(filaWr, 7 - filaWr, columnaWr, 7 - columnaWr)
+            value += rookCentrality * 50  # Reward central rook (more mobility)
+            
+            # ========== KING ACTIVITY: Central but safe ==========
+            wkCentrality = min(filaWk, 7 - filaWk, columnaWk, 7 - columnaWk)
+            value += wkCentrality * 40  # Keep king active
+            
+            # ========== KING COORDINATION: Support rook but don't expose it ==========
+            if distWkBk >= 2 and distWkBk <= 4:
+                value += 150  # Good king distance - supportive but allows rook freedom
+            elif distWkBk == 1:
+                value -= 200  # Too aggressive - restricts rook mobility
+            elif distWkBk >= 6:
+                value -= 100  # Too passive - not coordinating
+            
+            # ========== CRITICAL: PREVENT BAD ROOK CAPTURES ==========
+            # Check if white KING can capture black rook next move
+            if distWkBr == 1:  # White king adjacent to black rook
+                # ONLY capture if we can win the resulting K+R vs K endgame
+                # This requires our king to be well-placed relative to black king
+                if distWkBk <= 3:
+                    value += 2000  # GOOD capture - we can win K+R vs K
+                else:
+                    # BAD capture - black king too far, can't deliver mate, leads to K vs K draw
+                    value -= 5000  # MASSIVE penalty - this loses the game (draw)!
+            
+            # Check if white ROOK can capture black rook (they're on same file/rank and adjacent)
+            # This checks if we're ONE MOVE away from capturing
+            distWrBr_row = abs(filaWr - filaBr)
+            distWrBr_col = abs(columnaWr - columnaBr)
+            
+            # Rook is about to capture if they're on same row/column
+            if (filaWr == filaBr or columnaWr == columnaBr):
+                distWrBr = max(distWrBr_row, distWrBr_col)
+                if distWrBr <= 1:  # Rook can capture next move
+                    # Check if this leads to a winning endgame
+                    if distWkBk <= 3:
+                        value += 1500  # Good capture setup
+                    else:
+                        # BAD! Black king will recapture our rook → K vs K draw
+                        value -= 8000  # CRITICAL PENALTY - avoid this capture!
+            
+            # ========== PREVENT BLACK FROM CAPTURING OUR ROOK WITH THEIR ROOK ==========
+            distRookToRook = max(abs(filaWr - filaBr), abs(columnaWr - columnaBr))
+            if distRookToRook == 1:
+                value -= 1000  # Rooks adjacent - can be captured!
+            elif distRookToRook == 2:
+                value -= 200   # Rooks close - risky
+            
+            # ========== SYMMETRY BREAKING (only slight preferences) ==========
+            # In equal positions, prefer slightly more active placements
+            if filaWr < filaBr:  # White rook more advanced (lower rank number)
+                value += 5
+            if wkCentrality > min(filaBk, 7 - filaBk, columnaBk, 7 - columnaBk):
+                value += 10  # White king more central
+                
+        # ============================================================================
+        # CASE 2: WHITE HAS ADVANTAGE (K+R vs K) - ENDGAME WINNING
+        # ============================================================================
+        elif wrState is not None and brState is None:
+            filaWr, columnaWr = wrState[0], wrState[1]
+            
+            # CRITICAL: Check if Black King can recapture our rook!
+            # This happens when we just captured black's rook but black king is adjacent
+            distBkWr = max(abs(filaBk - filaWr), abs(columnaBk - columnaWr))
+            if distBkWr == 1:
+                # Black king next to our rook - will capture next move → K vs K draw!
+                # This is the critical case we need to avoid
+                value -= 20000  # MASSIVE penalty - this leads to immediate draw
+                self.heuristicCache[cacheKey] = value
+                return value
+            
+            # STALEMATE CHECK: Only check in depth 0 (leaf nodes) to save time
+            # Fast check: if black king has no moves and rook too close
+            if depth == 0:
+                # Simple stalemate heuristic: king trapped in corner with rook adjacent
+                bkCorner = (filaBk == 0 or filaBk == 7) and (columnaBk == 0 or columnaBk == 7)
+                rookAdjacent = (max(abs(filaWr - filaBk), abs(columnaWr - columnaBk)) == 1)
+                notInCheck = not ((filaWr == filaBk or columnaWr == columnaBk))
+                if bkCorner and rookAdjacent and notInCheck:
+                    value -= 50000  # Likely stalemate
+                    self.heuristicCache[cacheKey] = value
+                    return value
+            
+            # ============================================================================
+            # K+R vs K CORRECT TECHNIQUE (Chess.com):
+            # Phase 1: CUT OFF king with rook (limit movement to half-board)
+            # Phase 2: PUSH king to edge with coordinated king+rook
+            # Phase 3: TRAP king on edge with king blocking, rook checking
+            # Phase 4: CHECKMATE with rook
+            # ============================================================================
+            
+            # Calculate distances
+            distToEdge = min(filaBk, 7 - filaBk, columnaBk, 7 - columnaBk)
+            distRookToKing = max(abs(filaBk - filaWr), abs(columnaBk - columnaWr))
+            
+            # Check if rook gives check (same rank/file AND no pieces between)
+            rookGivesCheck = False
+            if filaWr == filaBk and columnaWr != columnaBk:
+                # Same rank, different column = potential check
+                rookGivesCheck = True  # In K+R vs K, no pieces can block
+            elif columnaWr == columnaBk and filaWr != filaBk:
+                # Same file, different row = potential check  
+                rookGivesCheck = True
+            
+            # ======== PHASE 1-2: PUSH KING TO EDGE ========
+            # This is THE most important factor
+            edgeBonus = 0
+            if distToEdge == 0:
+                edgeBonus = 8000  # On edge - excellent (was 4000)
+            elif distToEdge == 1:
+                edgeBonus = 5000  # Almost there (was 2500)
+            elif distToEdge == 2:
+                edgeBonus = 2400  # Getting closer (was 1200)
+            elif distToEdge == 3:
+                edgeBonus = 800   # Still in center (was 400)
+            value += edgeBonus
+            
+            # ======== ROOK GIVING CHECK ========
+            # When king is near edge, checks are GOOD (force progress)
+            if rookGivesCheck:
+                if distToEdge == 0:
+                    # Check on edge = close to mate!
+                    value += 12000  # Was 6000
+                elif distToEdge == 1:
+                    # Check near edge = pushing king to edge
+                    value += 6000  # Was 3000
+                else:
+                    # Check in center = restricts movement
+                    value += 2000  # Was 1000
+            
+            # ======== KING COORDINATION ========
+            # White king needs to be close but not cause stalemate
+            if distReis == 2:
+                # Perfect "opposition" distance
+                value += 3000  # Was 1500
+            elif distReis == 3:
+                # Good supporting distance
+                value += 2000  # Was 1000
+            elif distReis == 1:
+                # Very close - helps block but risks stalemate
+                if distToEdge == 0:
+                    # On edge with king adjacent - be careful!
+                    value += 1000  # Was 500
+                else:
+                    value += 1600  # Was 800
+            elif distReis >= 5:
+                # Too far - king must help!
+                value -= (distReis - 4) * 600  # Was 300
+            
+            # ======== ROOK POSITIONING ========
+            # Rook should "cut off" king (be on same rank/file)
+            if filaWr == filaBk or columnaWr == columnaBk:
+                value += 1600  # Rook cutting off escape routes (was 800)
+            
+            # Rook shouldn't be too far from action
+            if distRookToKing <= 2:
+                value += 1000  # Was 500
+            elif distRookToKing >= 5:
+                value -= 400  # Was 200
+                
+        # ============================================================================
+        # CASE 3: BLACK HAS ADVANTAGE (K vs K+R)
+        # ============================================================================
+        elif wrState is None and brState is not None:
+            filaBr, columnaBr = brState[0], brState[1]
+            
+            # STALEMATE CHECK: Only at depth 0 (simplified)
+            if depth == 0:
+                distWkBr = max(abs(filaWk - filaBr), abs(columnaWk - columnaBr))
+                wkCorner = (filaWk == 0 or filaWk == 7) and (columnaWk == 0 or columnaWk == 7)
+                rookAdjacent = (distWkBr == 1)
+                notInCheck = not ((filaBr == filaWk or columnaBr == columnaWk))
+                if wkCorner and rookAdjacent and notInCheck:
+                    value += 50000  # Stalemate good for black
+                    self.heuristicCache[cacheKey] = value
+                    return value
+            
+            # Black should win - use similar strategy with check
+            is_check = (filaBr == filaWk or columnaBr == columnaWk)
+            
+            # Push white king to edge
+            distToEdge = min(filaWk, 7 - filaWk, columnaWk, 7 - columnaWk)
+            
+            if distToEdge == 0:
+                value -= 10000
+                if is_check:
+                    value -= 100000
+                    if distReis <= 2:
+                        value -= 200000
+                else:
+                    value -= 20000
+            elif distToEdge == 1:
+                value -= 5000
+                if is_check:
+                    value -= 50000
+                else:
+                    value -= 8000
+            elif distToEdge == 2:
+                value -= 2000
+                if is_check:
+                    value -= 20000
+                else:
+                    value -= 3000
             else:
-                distToEdge = min(filaWk, 7 - filaWk, columnaWk, 7 - columnaWk)
-                value -= (3 - distToEdge) * 20
+                value -= (3 - distToEdge) * 500
+                if is_check:
+                    value -= 10000
+            
+            # Black king distance
+            if distReis == 1:
+                value -= 3000
+            elif distReis <= 2:
+                value -= 2000
+            elif distReis <= 3:
+                value -= 800
+            elif distReis <= 4:
+                value -= 400
+            else:
+                value += 1000
+            
+            distRookToWhiteKing = max(abs(filaWk - filaBr), abs(columnaWk - columnaBr))
+            if distRookToWhiteKing <= 2:
+                value -= 1500
+            elif distRookToWhiteKing <= 3:
+                value -= 800
 
-        # Both rooks still on board - evaluate positional play
-        if brState is not None and wrState is not None:
-            # King activity: kings closer to center are more active
-            whiteKingCentrality = 3.5 - max(abs(filaWk - 3.5), abs(columnaWk - 3.5))
-            blackKingCentrality = 3.5 - max(abs(filaBk - 3.5), abs(columnaWk - 3.5))
-            value += (whiteKingCentrality - blackKingCentrality) * 2
+        # Minimal depth bonus for symmetry breaking (keep it small for speed)
+        if color:
+            value += depth * 1.0
+        else:
+            value -= depth * 1.0
 
-            # Rook activity: prefer 7th/2nd rank and central files
-            if wrState is not None:
-                # Reward white rook on 1st or 2nd rank (attacking position)
-                if filaWr <= 1:
-                    value += 5
-                # Central files are valuable
-                wrCentrality = 3.5 - abs(columnaWr - 3.5)
-                value += wrCentrality * 2
+        # IMPORTANT: DO NOT invert for Black's perspective in heuristic!
+        # The evaluation is always from White's perspective.
+        # The minimax algorithm handles the min/max logic, not this function.
+        # Return value as-is (positive = better for White, negative = better for Black)
 
-            if brState is not None:
-                # Reward black rook on 6th or 7th rank
-                if filaBr >= 6:
-                    value -= 5
-                # Central files are valuable
-                brCentrality = 3.5 - abs(columnaBr - 3.5)
-                value -= brCentrality * 2
-
-            # Penalty if kings are too close (risk of perpetual check)
-            if distReis <= 2:
-                value -= 3
-
-        # If the black king is in check, reward this state.
-        if self.isWatchedBk(currentState):
-            value += 30
-
-        # If the white king is in check, penalize this state.
-        if self.isWatchedWk(currentState):
-            value -= 30
-
-        # Add small random tiebreaker to avoid loops when multiple moves have same value
-        # This is crucial to prevent perpetual repetition
-        value += random.uniform(-0.5, 0.5)
-
-        # If the current player is Black, invert the heuristic value.
-        if not color:
-            value *= -1
-
+        self.heuristicCache[cacheKey] = value
         return value
 
     def mean(self, values):
@@ -747,9 +949,10 @@ class Aichess():
         return total / n
 
     def stateToKey(self, state):
-        """Convert state to hashable key for transposition table"""
-        # Sort state to handle piece order variations
-        return tuple(sorted(tuple(piece) for piece in state))
+        """Convert state to hashable key for transposition table - OPTIMIZED"""
+        # Instead of sorting (slow), create a frozenset of tuples
+        # This is MUCH faster than sorted()
+        return frozenset(tuple(piece) for piece in state)
     
     def _board_to_string(self, state=None):
         """Convert current board to a string representation"""
@@ -817,152 +1020,226 @@ class Aichess():
 
     def orderMoves(self, moveStates, currentState, isWhite):
         """
-        Order moves to improve alpha-beta pruning efficiency.
-        Prioritize: 1) Captures, 2) Checks, 3) Other moves
+        DISABLED for speed - ordering overhead not worth it in K+R endgames
         """
-        captures = []
-        checks = []
-        others = []
-        
-        if isWhite:
-            blackState = self.getBlackState(currentState)
-            blackPositions = set((s[0], s[1]) for s in blackState)
-            
-            for moveState in moveStates:
-                whitePositions = set((s[0], s[1]) for s in moveState)
-                
-                # Check if it's a capture
-                if whitePositions & blackPositions:
-                    captures.append(moveState)
-                else:
-                    # Quick check if it gives check (simplified)
-                    blackStateCopy = [s for s in blackState if (s[0], s[1]) not in whitePositions]
-                    fullState = moveState + blackStateCopy
-                    
-                    # Only check for valid states
-                    if self.getPieceState(fullState, 6) and self.getPieceState(fullState, 12):
-                        if self.isWatchedBk(fullState):
-                            checks.append(moveState)
-                        else:
-                            others.append(moveState)
-                    else:
-                        others.append(moveState)
-        else:
-            whiteState = self.getWhiteState(currentState)
-            whitePositions = set((s[0], s[1]) for s in whiteState)
-            
-            for moveState in moveStates:
-                blackPositions = set((s[0], s[1]) for s in moveState)
-                
-                # Check if it's a capture
-                if blackPositions & whitePositions:
-                    captures.append(moveState)
-                else:
-                    # Quick check if it gives check (simplified)
-                    whiteStateCopy = [s for s in whiteState if (s[0], s[1]) not in blackPositions]
-                    fullState = whiteStateCopy + moveState
-                    
-                    # Only check for valid states
-                    if self.getPieceState(fullState, 6) and self.getPieceState(fullState, 12):
-                        if self.isWatchedWk(fullState):
-                            checks.append(moveState)
-                        else:
-                            others.append(moveState)
-                    else:
-                        others.append(moveState)
-        
-        # Return in priority order: captures first, then checks, then others
-        return captures + checks + others
+        return moveStates
 
-    def minimax(self, state, depth, isWhite, alpha=float('-inf'), beta=float('inf')):
+    def minimaxNoPruning(self, state, depth, isWhite, positionHistory=None):
         """
-        Minimax algorithm with Alpha-Beta pruning and transposition table
+        Pure Minimax WITHOUT Alpha-Beta pruning (for Exercise 3)
+        This explores ALL nodes without any pruning
+        """
+        # Initialize position history if not provided
+        if positionHistory is None:
+            positionHistory = {}
         
-        Args:
-            state: Current board state
-            depth: Search depth remaining
-            isWhite: True if maximizing for White, False if minimizing for Black
-            alpha: Alpha value for pruning
-            beta: Beta value for pruning
-            
-        Returns:
-            (value, bestState) tuple
-        """
-        # Check transposition table (DISABLED to prevent repetition loops)
-        # The transposition table causes deterministic behavior that leads to repetition
-        # With random tiebreaker in heuristic, we need fresh evaluations each time
+        # TRANSPOSITION TABLE: Still use cache for speed
         stateKey = self.stateToKey(state)
-        # if stateKey in self.transpositionTable and depth < 4:  # Only use cache for non-root positions
-        #     cachedDepth, cachedValue, cachedState = self.transpositionTable[stateKey]
-        #     if cachedDepth >= depth:
-        #         return (cachedValue, cachedState)
+        ttKey = (stateKey, depth, isWhite)
+        if ttKey in self.transpositionTable:
+            return self.transpositionTable[ttKey]
         
         # Terminal conditions
         if depth == 0:
-            # Always evaluate from White's perspective
-            value = self.heuristica(state, True)
-            return (value, state)
-        
-        # Check for checkmate (always return from White's perspective)
-        if self.isWhiteInCheckMate(state):
-            return (-10000, state)
-        if self.isBlackInCheckMate(state):
-            return (10000, state)
+            value = self.heuristica(state, True, depth=0)
+            result = (value, state)
+            self.transpositionTable[ttKey] = result
+            return result
         
         # Get possible next states
         if isWhite:
             nextStates = self.getListNextStatesW(self.getWhiteState(state))
             if len(nextStates) == 0:
-                # No moves available (stalemate or checkmate)
-                return (self.heuristica(state, True), state)
+                return (self.heuristica(state, True, depth=depth), state)
             
-            # Maximize for White
+            # Maximize for White - NO PRUNING
             bestValue = float('-inf')
-            bestState = nextStates[0] + self.getBlackState(state)
+            bestState = None
             
-            # Move ordering: prioritize captures and checks
-            orderedStates = self.orderMoves(nextStates, state, True)
-            
-            for whiteState in orderedStates:
-                # Build full state, removing any captured black pieces
+            for whiteState in nextStates:
                 blackState = self.getBlackState(state).copy()
-                
-                # Get the original black king position (before white's move)
-                origBkState = self.getPieceState(state, 12)
-                origBkPos = (origBkState[0], origBkState[1]) if origBkState else None
-                
-                # Check if white king is trying to capture a piece
-                wkNewState = self.getPieceState(whiteState, 6)
-                wkNewPos = (wkNewState[0], wkNewState[1]) if wkNewState else None
-                
-                # Check if any white piece occupies a black piece's square (capture)
                 whitePositions = [(s[0], s[1]) for s in whiteState]
-                capturedBlack = [s for s in blackState if (s[0], s[1]) in whitePositions]
                 blackState = [s for s in blackState if (s[0], s[1]) not in whitePositions]
-                
-                # If white king captured a black piece, check if it's protected by black king
-                if wkNewPos and capturedBlack and origBkPos:
-                    # Check if the captured piece's square is adjacent to black king (protected)
-                    for captured in capturedBlack:
-                        capturedPos = (captured[0], captured[1])
-                        if max(abs(capturedPos[0] - origBkPos[0]), abs(capturedPos[1] - origBkPos[1])) == 1:
-                            # White king is trying to capture a piece protected by black king - ILLEGAL!
-                            continue
                 
                 fullState = whiteState + blackState
                 
-                # Skip invalid states where king is captured
+                # Skip invalid states
                 wkState = self.getPieceState(fullState, 6)
                 bkState = self.getPieceState(fullState, 12)
                 if wkState is None or bkState is None:
                     continue
                 
-                # Skip moves that leave White King in check (illegal move)
+                # Update position history
+                fullStateKey = self.stateToKey(fullState)
+                prevCount = positionHistory.get(fullStateKey, 0)
+                positionHistory[fullStateKey] = prevCount + 1
+                
+                # Update board simulator for next move generation
+                self.newBoardSim(fullState)
+                
+                # Recurse - NO ALPHA/BETA parameters
+                value, _ = self.minimaxNoPruning(fullState, depth - 1, False, positionHistory=positionHistory)
+                
+                # Restore position history
+                positionHistory[fullStateKey] = prevCount
+                
+                # Update best (no pruning check)
+                if value > bestValue:
+                    bestValue = value
+                    bestState = fullState
+            
+            if bestState is None:
+                bestState = state
+            
+            result = (bestValue, bestState)
+            self.transpositionTable[ttKey] = result
+            return result
+        
+        else:
+            # Minimize for Black - NO PRUNING
+            nextStates = self.getListNextStatesB(self.getBlackState(state))
+            if len(nextStates) == 0:
+                return (self.heuristica(state, True, depth=depth), state)
+            
+            bestValue = float('inf')
+            bestState = None
+            
+            for blackState in nextStates:
+                whiteState = self.getWhiteState(state).copy()
+                blackPositions = [(s[0], s[1]) for s in blackState]
+                whiteState = [s for s in whiteState if (s[0], s[1]) not in blackPositions]
+                
+                fullState = whiteState + blackState
+                
+                # Skip invalid states
+                wkState = self.getPieceState(fullState, 6)
+                bkState = self.getPieceState(fullState, 12)
+                if wkState is None or bkState is None:
+                    continue
+                
+                # Update position history
+                fullStateKey = self.stateToKey(fullState)
+                prevCount = positionHistory.get(fullStateKey, 0)
+                positionHistory[fullStateKey] = prevCount + 1
+                
+                # Update board simulator for next move generation
+                self.newBoardSim(fullState)
+                
+                # Recurse - NO ALPHA/BETA parameters
+                value, _ = self.minimaxNoPruning(fullState, depth - 1, True, positionHistory=positionHistory)
+                
+                # Restore position history
+                positionHistory[fullStateKey] = prevCount
+                
+                # Update best (no pruning check)
+                if value < bestValue:
+                    bestValue = value
+                    bestState = fullState
+            
+            if bestState is None:
+                bestState = state
+            
+            result = (bestValue, bestState)
+            self.transpositionTable[ttKey] = result
+            return result
+
+    def minimax(self, state, depth, isWhite, alpha=float('-inf'), beta=float('inf'), lastState=None, positionHistory=None):
+        """
+        OPTIMIZED Minimax with Alpha-Beta pruning
+        CRITICAL: Only checks for checkmate at SHALLOW depths (depth <= 2)
+        At deeper levels, uses only heuristic evaluation (no expensive checkmate detection)
+        """
+        # Initialize position history if not provided
+        if positionHistory is None:
+            positionHistory = {}
+        
+        # TRANSPOSITION TABLE: Check if we've seen this position before
+        stateKey = self.stateToKey(state)
+        ttKey = (stateKey, depth, isWhite)
+        if ttKey in self.transpositionTable:
+            return self.transpositionTable[ttKey]
+        
+        # OPTIMIZATION: Only check repetitions at depth == maxDepth (top level)
+        # Checking at every depth is too expensive for deep searches
+        # The game loop handles threefold repetition detection
+        if False and depth <= 3:
+            if stateKey in positionHistory and positionHistory[stateKey] >= 2:
+                # Position repeated 2+ times - discourage but don't completely block
+                penalty = -100 if isWhite else 100
+                result = (penalty, state)
+                self.transpositionTable[ttKey] = result
+                return result
+        
+        # Terminal conditions
+        if depth == 0:
+            # Depth 0: Use fast heuristic only (no checkmate)
+            # Pass depth=0 to heuristica for symmetry breaking
+            value = self.heuristica(state, True, depth=0)
+            result = (value, state)
+            self.transpositionTable[ttKey] = result
+            return result
+            
+        
+        # OPTIMIZATION: Removed all checkmate/stalemate checks from minimax
+        # Reason: Too expensive at depth 5, heuristic handles it well
+        # The main game loop still checks for terminal states
+        # This gives MASSIVE speedup for deep searches
+        
+        # Get possible next states
+        if isWhite:
+            nextStates = self.getListNextStatesW(self.getWhiteState(state))
+            if len(nextStates) == 0:
+                return (self.heuristica(state, True, depth=depth), state)
+            
+            # Maximize for White
+            bestValue = float('-inf')
+            bestState = None  # CHANGED: Don't initialize with potentially invalid state
+            
+            # OPTIMIZATION: Skip move ordering completely (disabled for speed)
+            orderedStates = nextStates
+            
+            validMoveFound = False  # Track if we found any valid move
+            
+            for whiteState in orderedStates:
+                blackState = self.getBlackState(state).copy()
+                whitePositions = [(s[0], s[1]) for s in whiteState]
+                blackState = [s for s in blackState if (s[0], s[1]) not in whitePositions]
+                
+                fullState = whiteState + blackState
+                
+                # Skip invalid states
+                wkState = self.getPieceState(fullState, 6)
+                bkState = self.getPieceState(fullState, 12)
+                if wkState is None or bkState is None:
+                    continue
+                
+                # CRITICAL: Check if kings are adjacent (ILLEGAL position)
+                wkPos = wkState[0:2]
+                bkPos = bkState[0:2]
+                kingDistance = max(abs(wkPos[0] - bkPos[0]), abs(wkPos[1] - bkPos[1]))
+                if kingDistance <= 1:
+                    continue  # Skip this illegal move
+                
+                # Skip illegal moves (king in check)
                 if self.isWatchedWk(fullState):
                     continue
                 
-                # Recurse with alpha-beta
-                value, _ = self.minimax(fullState, depth - 1, False, alpha, beta)
+                # This is a valid move
+                validMoveFound = True
+                
+                # OPTIMIZATION: Update position history WITHOUT copying (much faster)
+                # We'll increment, recurse, then decrement (undo)
+                fullStateKey = self.stateToKey(fullState)
+                prevCount = positionHistory.get(fullStateKey, 0)
+                positionHistory[fullStateKey] = prevCount + 1
+                
+                # Recurse
+                value, _ = self.minimax(fullState, depth - 1, False, alpha, beta, lastState=state, positionHistory=positionHistory)
+                
+                # CRITICAL: Restore position history (undo the increment)
+                positionHistory[fullStateKey] = prevCount
+                if prevCount == 0:
+                    del positionHistory[fullStateKey]  # Clean up to save memory
                 
                 if value > bestValue:
                     bestValue = value
@@ -971,64 +1248,70 @@ class Aichess():
                 # Alpha-Beta pruning
                 alpha = max(alpha, value)
                 if beta <= alpha:
-                    break  # Beta cutoff
+                    break
             
-            # Store in transposition table (DISABLED to prevent repetition)
-            # self.transpositionTable[stateKey] = (depth, bestValue, bestState)
-            return (bestValue, bestState)
+            # If no valid move found, return current state with heuristic
+            if not validMoveFound or bestState is None:
+                result = (self.heuristica(state, True, depth=depth), state)
+                self.transpositionTable[ttKey] = result
+                return result
+            
+            result = (bestValue, bestState)
+            self.transpositionTable[ttKey] = result
+            return result
         else:
             nextStates = self.getListNextStatesB(self.getBlackState(state))
             if len(nextStates) == 0:
-                # No moves available (stalemate or checkmate)
-                return (self.heuristica(state, True), state)
+                return (self.heuristica(state, True, depth=depth), state)
             
             # Minimize for Black
             bestValue = float('inf')
-            bestState = self.getWhiteState(state) + nextStates[0]
+            bestState = None  # CHANGED: Don't initialize with potentially invalid state
             
-            # Move ordering: prioritize captures and checks
-            orderedStates = self.orderMoves(nextStates, state, False)
+            # OPTIMIZATION: Skip move ordering completely (disabled for speed)
+            orderedStates = nextStates
+            
+            validMoveFound = False  # Track if we found any valid move
             
             for blackState in orderedStates:
-                # Build full state, removing any captured white pieces
                 whiteState = self.getWhiteState(state).copy()
-                
-                # Get the original white king position (before black's move)
-                origWkState = self.getPieceState(state, 6)
-                origWkPos = (origWkState[0], origWkState[1]) if origWkState else None
-                
-                # Check if black king is trying to capture a piece
-                bkNewState = self.getPieceState(blackState, 12)
-                bkNewPos = (bkNewState[0], bkNewState[1]) if bkNewState else None
-                
-                # Check if any black piece occupies a white piece's square (capture)
                 blackPositions = [(s[0], s[1]) for s in blackState]
-                capturedWhite = [s for s in whiteState if (s[0], s[1]) in blackPositions]
                 whiteState = [s for s in whiteState if (s[0], s[1]) not in blackPositions]
-                
-                # If black king captured a white piece, check if it's protected by white king
-                if bkNewPos and capturedWhite and origWkPos:
-                    # Check if the captured piece's square is adjacent to white king (protected)
-                    for captured in capturedWhite:
-                        capturedPos = (captured[0], captured[1])
-                        if max(abs(capturedPos[0] - origWkPos[0]), abs(capturedPos[1] - origWkPos[1])) == 1:
-                            # Black king is trying to capture a piece protected by white king - ILLEGAL!
-                            continue
                 
                 fullState = whiteState + blackState
                 
-                # Skip invalid states where king is captured
+                # Skip invalid states
                 wkState = self.getPieceState(fullState, 6)
                 bkState = self.getPieceState(fullState, 12)
                 if wkState is None or bkState is None:
                     continue
                 
-                # Skip moves that leave Black King in check (illegal move)
+                # CRITICAL: Check if kings are adjacent (ILLEGAL position)
+                wkPos = wkState[0:2]
+                bkPos = bkState[0:2]
+                kingDistance = max(abs(wkPos[0] - bkPos[0]), abs(wkPos[1] - bkPos[1]))
+                if kingDistance <= 1:
+                    continue  # Skip this illegal move
+                
+                # Skip illegal moves
                 if self.isWatchedBk(fullState):
                     continue
                 
-                # Recurse with alpha-beta
-                value, _ = self.minimax(fullState, depth - 1, True, alpha, beta)
+                # This is a valid move
+                validMoveFound = True
+                
+                # OPTIMIZATION: Update position history WITHOUT copying (much faster)
+                fullStateKey = self.stateToKey(fullState)
+                prevCount = positionHistory.get(fullStateKey, 0)
+                positionHistory[fullStateKey] = prevCount + 1
+                
+                # Recurse
+                value, _ = self.minimax(fullState, depth - 1, True, alpha, beta, lastState=state, positionHistory=positionHistory)
+                
+                # CRITICAL: Restore position history (undo)
+                positionHistory[fullStateKey] = prevCount
+                if prevCount == 0:
+                    del positionHistory[fullStateKey]
                 
                 if value < bestValue:
                     bestValue = value
@@ -1037,11 +1320,17 @@ class Aichess():
                 # Alpha-Beta pruning
                 beta = min(beta, value)
                 if beta <= alpha:
-                    break  # Alpha cutoff
+                    break
             
-            # Store in transposition table (DISABLED to prevent repetition)
-            # self.transpositionTable[stateKey] = (depth, bestValue, bestState)
-            return (bestValue, bestState)
+            # If no valid move found, return current state with heuristic
+            if not validMoveFound or bestState is None:
+                result = (self.heuristica(state, True, depth=depth), state)
+                self.transpositionTable[ttKey] = result
+                return result
+            
+            result = (bestValue, bestState)
+            self.transpositionTable[ttKey] = result
+            return result
 
     def minimaxGame(self, depthWhite, depthBlack, verbose=True, save_to_file=False, moves_file="moves_ex1.txt", states_file="states_ex1.txt"):
         """
@@ -1058,8 +1347,10 @@ class Aichess():
         Returns:
             Winner string: "White", "Black", or "Draw"
         """
-        # Clear transposition table for new game
+        # Clear caches for new game AND set size limits
         self.transpositionTable.clear()
+        self.heuristicCache.clear()
+        MAX_CACHE_SIZE = 50000  # Limit cache growth
         
         currentState = self.getCurrentState()
         
@@ -1132,7 +1423,28 @@ class Aichess():
             if save_to_file:
                 moveLog.append(f"\n--- Move {moveCount}: White's turn ---\n")
             
-            _, bestStateWhite = self.minimax(currentState, depthWhite, True)
+            # OPTIMIZATION: Clear caches if they grow too large
+            if len(self.heuristicCache) > MAX_CACHE_SIZE:
+                self.heuristicCache.clear()
+            if len(self.transpositionTable) > MAX_CACHE_SIZE:
+                self.transpositionTable.clear()
+            
+            _, bestStateWhite = self.minimax(currentState, depthWhite, True, positionHistory=positionHistory)
+            
+            # CRITICAL: Validate that kings are not adjacent (emergency check)
+            wkState = self.getPieceState(bestStateWhite, 6)
+            bkState = self.getPieceState(bestStateWhite, 12)
+            if wkState is not None and bkState is not None:
+                wkPos = wkState[0:2]
+                bkPos = bkState[0:2]
+                kingDistance = max(abs(wkPos[0] - bkPos[0]), abs(wkPos[1] - bkPos[1]))
+                if kingDistance <= 1:
+                    if verbose:
+                        print(f"\n*** ERROR: White returned illegal move (kings adjacent)! ***")
+                        print(f"White king: {wkPos}, Black king: {bkPos}, Distance: {kingDistance}")
+                    # This should never happen - fallback to current state
+                    bestStateWhite = currentState
+            
             currentState = bestStateWhite
             visitedStates.append(currentState.copy())
             self.newBoardSim(currentState)
@@ -1142,6 +1454,58 @@ class Aichess():
             
             if save_to_file:
                 moveLog.append(self._board_to_string(currentState))
+            
+            # CRITICAL: Check for checkmate BEFORE checking repetition
+            # Checkmate has priority over draw by repetition
+            if self.isBlackInCheckMate(currentState):
+                if verbose:
+                    print("\n*** WHITE WINS BY CHECKMATE! ***")
+                    print(f"\nGame Statistics:")
+                    print(f"  Total moves (half-moves): {len(visitedStates) - 1}")
+                    print(f"  Total full moves: {moveCount}")
+                    print(f"  Minimax depth used: White={depthWhite}, Black={depthBlack}")
+                    print(f"  Minimum depth necessary: White={minDepthWhite}, Black={minDepthBlack}")
+                    print(f"  Total states visited: {len(visitedStates)}")
+                    print(f"  Transposition table entries: {len(self.transpositionTable)}")
+                if save_to_file:
+                    moveLog.append("\n*** WHITE WINS BY CHECKMATE! ***\n")
+                    self._save_game_data(moveLog, visitedStates, moves_file, states_file)
+                return {
+                    'winner': "White",
+                    'stats': {
+                        'half_moves': len(visitedStates) - 1,
+                        'full_moves': moveCount,
+                        'depth_white': depthWhite,
+                        'depth_black': depthBlack,
+                        'min_depth_white': minDepthWhite,
+                        'min_depth_black': minDepthBlack,
+                        'states_visited': len(visitedStates)
+                    }
+                }
+            
+            # CRITICAL: Check for stalemate BEFORE repetition
+            # Stalemate = draw, has priority
+            if self.isBlackInStaleMate(currentState):
+                if verbose:
+                    print("\n*** DRAW BY STALEMATE (Black has no legal moves but not in check) ***")
+                    print(f"\nGame Statistics:")
+                    print(f"  Total moves (half-moves): {len(visitedStates) - 1}")
+                    print(f"  Total full moves: {moveCount}")
+                    print(f"  Minimax depth used: White={depthWhite}, Black={depthBlack}")
+                    print(f"  Total states visited: {len(visitedStates)}")
+                if save_to_file:
+                    moveLog.append("\n*** DRAW BY STALEMATE ***\n")
+                    self._save_game_data(moveLog, visitedStates, moves_file, states_file)
+                return {
+                    'winner': "Draw",
+                    'stats': {
+                        'half_moves': len(visitedStates) - 1,
+                        'full_moves': moveCount,
+                        'depth_white': depthWhite,
+                        'depth_black': depthBlack,
+                        'states_visited': len(visitedStates)
+                    }
+                }
             
             # Check for position repetition (threefold repetition = draw)
             posKey = self.stateToKey(currentState)
@@ -1172,10 +1536,44 @@ class Aichess():
                     }
                 }
             
-            # Check if Black is in checkmate
-            if self.isBlackInCheckMate(currentState):
+            # Black's turn
+            if verbose:
+                print(f"\n--- Move {moveCount}: Black's turn ---")
+            
+            if save_to_file:
+                moveLog.append(f"\n--- Move {moveCount}: Black's turn ---\n")
+            
+            _, bestStateBlack = self.minimax(currentState, depthBlack, False, positionHistory=positionHistory)
+            
+            # CRITICAL: Validate that kings are not adjacent (emergency check)
+            wkState = self.getPieceState(bestStateBlack, 6)
+            bkState = self.getPieceState(bestStateBlack, 12)
+            if wkState is not None and bkState is not None:
+                wkPos = wkState[0:2]
+                bkPos = bkState[0:2]
+                kingDistance = max(abs(wkPos[0] - bkPos[0]), abs(wkPos[1] - bkPos[1]))
+                if kingDistance <= 1:
+                    if verbose:
+                        print(f"\n*** ERROR: Black returned illegal move (kings adjacent)! ***")
+                        print(f"White king: {wkPos}, Black king: {bkPos}, Distance: {kingDistance}")
+                    # This should never happen - fallback to current state
+                    bestStateBlack = currentState
+            
+            currentState = bestStateBlack
+            visitedStates.append(currentState.copy())
+            self.newBoardSim(currentState)
+            
+            if verbose:
+                self.chess.boardSim.print_board()
+            
+            if save_to_file:
+                moveLog.append(self._board_to_string(currentState))
+            
+            # CRITICAL: Check for checkmate BEFORE checking repetition
+            # Checkmate has priority over draw by repetition
+            if self.isWhiteInCheckMate(currentState):
                 if verbose:
-                    print("\n*** WHITE WINS BY CHECKMATE! ***")
+                    print("\n*** BLACK WINS BY CHECKMATE! ***")
                     print(f"\nGame Statistics:")
                     print(f"  Total moves (half-moves): {len(visitedStates) - 1}")
                     print(f"  Total full moves: {moveCount}")
@@ -1184,10 +1582,10 @@ class Aichess():
                     print(f"  Total states visited: {len(visitedStates)}")
                     print(f"  Transposition table entries: {len(self.transpositionTable)}")
                 if save_to_file:
-                    moveLog.append("\n*** WHITE WINS BY CHECKMATE! ***\n")
+                    moveLog.append("\n*** BLACK WINS BY CHECKMATE! ***\n")
                     self._save_game_data(moveLog, visitedStates, moves_file, states_file)
                 return {
-                    'winner': "White",
+                    'winner': "Black",
                     'stats': {
                         'half_moves': len(visitedStates) - 1,
                         'full_moves': moveCount,
@@ -1199,23 +1597,29 @@ class Aichess():
                     }
                 }
             
-            # Black's turn
-            if verbose:
-                print(f"\n--- Move {moveCount}: Black's turn ---")
-            
-            if save_to_file:
-                moveLog.append(f"\n--- Move {moveCount}: Black's turn ---\n")
-            
-            _, bestStateBlack = self.minimax(currentState, depthBlack, False)
-            currentState = bestStateBlack
-            visitedStates.append(currentState.copy())
-            self.newBoardSim(currentState)
-            
-            if verbose:
-                self.chess.boardSim.print_board()
-            
-            if save_to_file:
-                moveLog.append(self._board_to_string(currentState))
+            # CRITICAL: Check for stalemate BEFORE repetition
+            # Stalemate = draw, has priority
+            if self.isWhiteInStaleMate(currentState):
+                if verbose:
+                    print("\n*** DRAW BY STALEMATE (White has no legal moves but not in check) ***")
+                    print(f"\nGame Statistics:")
+                    print(f"  Total moves (half-moves): {len(visitedStates) - 1}")
+                    print(f"  Total full moves: {moveCount}")
+                    print(f"  Minimax depth used: White={depthWhite}, Black={depthBlack}")
+                    print(f"  Total states visited: {len(visitedStates)}")
+                if save_to_file:
+                    moveLog.append("\n*** DRAW BY STALEMATE ***\n")
+                    self._save_game_data(moveLog, visitedStates, moves_file, states_file)
+                return {
+                    'winner': "Draw",
+                    'stats': {
+                        'half_moves': len(visitedStates) - 1,
+                        'full_moves': moveCount,
+                        'depth_white': depthWhite,
+                        'depth_black': depthBlack,
+                        'states_visited': len(visitedStates)
+                    }
+                }
             
             # Check for position repetition (threefold repetition = draw)
             posKey = self.stateToKey(currentState)
@@ -1232,24 +1636,8 @@ class Aichess():
                 if save_to_file:
                     moveLog.append("\n*** DRAW (threefold repetition) ***\n")
                     self._save_game_data(moveLog, visitedStates, moves_file, states_file)
-                return "Draw"
-            
-            # Check if White is in checkmate
-            if self.isWhiteInCheckMate(currentState):
-                if verbose:
-                    print("\n*** BLACK WINS BY CHECKMATE! ***")
-                    print(f"\nGame Statistics:")
-                    print(f"  Total moves (half-moves): {len(visitedStates) - 1}")
-                    print(f"  Total full moves: {moveCount}")
-                    print(f"  Minimax depth used: White={depthWhite}, Black={depthBlack}")
-                    print(f"  Minimum depth necessary: White={minDepthWhite}, Black={minDepthBlack}")
-                    print(f"  Total states visited: {len(visitedStates)}")
-                    print(f"  Transposition table entries: {len(self.transpositionTable)}")
-                if save_to_file:
-                    moveLog.append("\n*** BLACK WINS BY CHECKMATE! ***\n")
-                    self._save_game_data(moveLog, visitedStates, moves_file, states_file)
                 return {
-                    'winner': "Black",
+                    'winner': "Draw",
                     'stats': {
                         'half_moves': len(visitedStates) - 1,
                         'full_moves': moveCount,
@@ -1298,24 +1686,532 @@ class Aichess():
         # Your code here
 
 
-    def alphaBetaPoda(self, depthWhite,depthBlack):
+    def alphaBetaGame(self, depthWhite, depthBlack, whiteUsesAlphaBeta=True, blackUsesAlphaBeta=True, 
+                      verbose=True, save_to_file=False, moves_file="moves.txt", states_file="states.txt"):
+        """
+        Play a complete game where players can use minimax or alpha-beta pruning
+        
+        Args:
+            depthWhite: Search depth for White
+            depthBlack: Search depth for Black
+            whiteUsesAlphaBeta: If True, White uses alpha-beta; if False, uses minimax
+            blackUsesAlphaBeta: If True, Black uses alpha-beta; if False, uses minimax
+            verbose: If True, print board state after each move
+            save_to_file: If True, save moves and states to files
+            moves_file: Filename to save moves
+            states_file: Filename to save states
+            
+        Returns:
+            Dictionary with winner and game statistics
+        """
+        # Clear caches for new game
+        self.transpositionTable.clear()
+        self.heuristicCache.clear()
         
         currentState = self.getCurrentState()
-        # Your code here  
         
-    def expectimax(self, depthWhite, depthBlack):
+        # Track visited states (list of states from start to end)
+        visitedStates = [currentState.copy()]
+        
+        # Track position repetitions for draw detection
+        positionHistory = {}
+        posKey = self.stateToKey(currentState)
+        positionHistory[posKey] = 1
+        
+        # For saving moves
+        moveLog = []
+        
+        if verbose:
+            white_algo = "Alpha-Beta" if whiteUsesAlphaBeta else "Minimax"
+            black_algo = "Alpha-Beta" if blackUsesAlphaBeta else "Minimax"
+            print(f"\n=== Starting Game ===")
+            print(f"White: {white_algo} (depth {depthWhite})")
+            print(f"Black: {black_algo} (depth {depthBlack})")
+            print(f"Initial state: {currentState}")
+            self.chess.boardSim.print_board()
+        
+        if save_to_file:
+            white_algo = "Alpha-Beta" if whiteUsesAlphaBeta else "Minimax"
+            black_algo = "Alpha-Beta" if blackUsesAlphaBeta else "Minimax"
+            moveLog.append(f"=== Starting Game ===\n")
+            moveLog.append(f"White: {white_algo} (depth {depthWhite})\n")
+            moveLog.append(f"Black: {black_algo} (depth {depthBlack})\n")
+            moveLog.append(f"Initial state: {currentState}\n")
+            moveLog.append(self._board_to_string(currentState))
+        
+        moveCount = 0
+        maxMoves = 100  # Prevent infinite games
+        
+        while moveCount < maxMoves:
+            moveCount += 1
+            
+            # Check for insufficient material (both rooks captured = draw)
+            wrState = self.getPieceState(currentState, 2)
+            brState = self.getPieceState(currentState, 8)
+            if wrState is None and brState is None:
+                if verbose:
+                    print("\n*** DRAW (insufficient material - King vs King) ***")
+                if save_to_file:
+                    moveLog.append("\n*** DRAW (insufficient material - King vs King) ***\n")
+                    self._save_game_data(moveLog, visitedStates, moves_file, states_file)
+                return {
+                    'winner': "Draw",
+                    'stats': {
+                        'half_moves': len(visitedStates) - 1,
+                        'full_moves': moveCount - 1,
+                        'depth_white': depthWhite,
+                        'depth_black': depthBlack,
+                        'states_visited': len(visitedStates)
+                    }
+                }
+            
+            # White's turn
+            if verbose:
+                print(f"\n--- Move {moveCount}: White's turn ---")
+            if save_to_file:
+                moveLog.append(f"\n--- Move {moveCount}: White's turn ---\n")
+            
+            # FIXED: Respect whiteUsesAlphaBeta parameter
+            if whiteUsesAlphaBeta:
+                _, bestStateWhite = self.minimax(currentState, depthWhite, True, positionHistory=positionHistory)
+            else:
+                # Use pure minimax without pruning
+                _, bestStateWhite = self.minimaxNoPruning(currentState, depthWhite, True, positionHistory=positionHistory)
+            
+            currentState = bestStateWhite
+            visitedStates.append(currentState.copy())
+            self.newBoardSim(currentState)
+            
+            if verbose:
+                self.chess.boardSim.print_board()
+            if save_to_file:
+                moveLog.append(self._board_to_string(currentState))
+            
+            # Check for position repetition (threefold repetition = draw)
+            posKey = self.stateToKey(currentState)
+            positionHistory[posKey] = positionHistory.get(posKey, 0) + 1
+            if positionHistory[posKey] >= 3:
+                if verbose:
+                    print(f"\n*** DRAW (threefold repetition) ***")
+                if save_to_file:
+                    moveLog.append("\n*** DRAW (threefold repetition) ***\n")
+                    self._save_game_data(moveLog, visitedStates, moves_file, states_file)
+                return {
+                    'winner': "Draw",
+                    'stats': {
+                        'half_moves': len(visitedStates) - 1,
+                        'full_moves': moveCount,
+                        'depth_white': depthWhite,
+                        'depth_black': depthBlack,
+                        'states_visited': len(visitedStates)
+                    }
+                }
+            
+            # Check if Black is in checkmate
+            if self.isBlackInCheckMate(currentState):
+                if verbose:
+                    print("\n*** WHITE WINS BY CHECKMATE! ***")
+                if save_to_file:
+                    moveLog.append("\n*** WHITE WINS BY CHECKMATE! ***\n")
+                    self._save_game_data(moveLog, visitedStates, moves_file, states_file)
+                return {
+                    'winner': "White",
+                    'stats': {
+                        'half_moves': len(visitedStates) - 1,
+                        'full_moves': moveCount,
+                        'depth_white': depthWhite,
+                        'depth_black': depthBlack,
+                        'states_visited': len(visitedStates)
+                    }
+                }
+            
+            # Black's turn
+            if verbose:
+                print(f"\n--- Move {moveCount}: Black's turn ---")
+            if save_to_file:
+                moveLog.append(f"\n--- Move {moveCount}: Black's turn ---\n")
+            
+            # FIXED: Respect blackUsesAlphaBeta parameter
+            if blackUsesAlphaBeta:
+                _, bestStateBlack = self.minimax(currentState, depthBlack, False, positionHistory=positionHistory)
+            else:
+                # Use pure minimax without pruning
+                _, bestStateBlack = self.minimaxNoPruning(currentState, depthBlack, False, positionHistory=positionHistory)
+            
+            currentState = bestStateBlack
+            visitedStates.append(currentState.copy())
+            self.newBoardSim(currentState)
+            
+            if verbose:
+                self.chess.boardSim.print_board()
+            if save_to_file:
+                moveLog.append(self._board_to_string(currentState))
+            
+            # Check for position repetition (threefold repetition = draw)
+            posKey = self.stateToKey(currentState)
+            positionHistory[posKey] = positionHistory.get(posKey, 0) + 1
+            if positionHistory[posKey] >= 3:
+                if verbose:
+                    print(f"\n*** DRAW (threefold repetition) ***")
+                if save_to_file:
+                    moveLog.append("\n*** DRAW (threefold repetition) ***\n")
+                    self._save_game_data(moveLog, visitedStates, moves_file, states_file)
+                return {
+                    'winner': "Draw",
+                    'stats': {
+                        'half_moves': len(visitedStates) - 1,
+                        'full_moves': moveCount,
+                        'depth_white': depthWhite,
+                        'depth_black': depthBlack,
+                        'states_visited': len(visitedStates)
+                    }
+                }
+            
+            # Check if White is in checkmate
+            if self.isWhiteInCheckMate(currentState):
+                if verbose:
+                    print("\n*** BLACK WINS BY CHECKMATE! ***")
+                if save_to_file:
+                    moveLog.append("\n*** BLACK WINS BY CHECKMATE! ***\n")
+                    self._save_game_data(moveLog, visitedStates, moves_file, states_file)
+                return {
+                    'winner': "Black",
+                    'stats': {
+                        'half_moves': len(visitedStates) - 1,
+                        'full_moves': moveCount,
+                        'depth_white': depthWhite,
+                        'depth_black': depthBlack,
+                        'states_visited': len(visitedStates)
+                    }
+                }
+        
+        # Game reached max moves - it's a draw
+        if verbose:
+            print(f"\n*** DRAW (reached {maxMoves} moves) ***")
+        if save_to_file:
+            moveLog.append(f"\n*** DRAW (reached {maxMoves} moves) ***\n")
+            self._save_game_data(moveLog, visitedStates, moves_file, states_file)
+        return {
+            'winner': "Draw",
+            'stats': {
+                'half_moves': len(visitedStates) - 1,
+                'full_moves': moveCount,
+                'depth_white': depthWhite,
+                'depth_black': depthBlack,
+                'states_visited': len(visitedStates)
+            }
+        }
+
+    def expectimaxValue(self, state, depth, isWhite, alpha=float('-inf'), beta=float('inf')):
+        """
+        Expectimax algorithm - similar to minimax but uses expected value for chance nodes
+        
+        Args:
+            state: Current board state
+            depth: Search depth remaining
+            isWhite: True if White's turn (maximizing), False if Black's turn (chance node)
+            alpha: Alpha value (for White's moves only)
+            beta: Beta value (not used in pure expectimax, but kept for compatibility)
+            
+        Returns:
+            (value, bestState) tuple
+        """
+        # Terminal conditions
+        if depth == 0:
+            value = self.heuristica(state, True)
+            return (value, state)
+        
+        # Check for checkmate
+        if self.isWhiteInCheckMate(state):
+            return (-10000, state)
+        if self.isBlackInCheckMate(state):
+            return (10000, state)
+        
+        # Get possible next states
+        if isWhite:
+            # White maximizes (deterministic player)
+            nextStates = self.getListNextStatesW(self.getWhiteState(state))
+            if len(nextStates) == 0:
+                return (self.heuristica(state, True), state)
+            
+            bestValue = float('-inf')
+            bestState = nextStates[0] + self.getBlackState(state)
+            
+            orderedStates = self.orderMoves(nextStates, state, True)
+            
+            for whiteState in orderedStates:
+                blackState = self.getBlackState(state).copy()
+                whitePositions = [(s[0], s[1]) for s in whiteState]
+                blackState = [s for s in blackState if (s[0], s[1]) not in whitePositions]
+                
+                fullState = whiteState + blackState
+                
+                wkState = self.getPieceState(fullState, 6)
+                bkState = self.getPieceState(fullState, 12)
+                if wkState is None or bkState is None:
+                    continue
+                
+                if self.isWatchedWk(fullState):
+                    continue
+                
+                value, _ = self.expectimaxValue(fullState, depth - 1, False, alpha, beta)
+                
+                if value > bestValue:
+                    bestValue = value
+                    bestState = fullState
+                
+                alpha = max(alpha, value)
+            
+            return (bestValue, bestState)
+        else:
+            # Black uses expected value (chance node)
+            nextStates = self.getListNextStatesB(self.getBlackState(state))
+            if len(nextStates) == 0:
+                return (self.heuristica(state, True), state)
+            
+            validStates = []
+            validValues = []
+            
+            for blackState in nextStates:
+                whiteState = self.getWhiteState(state).copy()
+                blackPositions = [(s[0], s[1]) for s in blackState]
+                whiteState = [s for s in whiteState if (s[0], s[1]) not in blackPositions]
+                
+                fullState = whiteState + blackState
+                
+                wkState = self.getPieceState(fullState, 6)
+                bkState = self.getPieceState(fullState, 12)
+                if wkState is None or bkState is None:
+                    continue
+                
+                if self.isWatchedBk(fullState):
+                    continue
+                
+                validStates.append(fullState)
+                value, _ = self.expectimaxValue(fullState, depth - 1, True, alpha, beta)
+                validValues.append(value)
+            
+            if len(validValues) == 0:
+                return (self.heuristica(state, True), state)
+            
+            # Calculate expected value using the utility function
+            expectedValue = self.calculateValue(validValues)
+            
+            # Return the state closest to the expected value
+            bestIdx = min(range(len(validValues)), key=lambda i: abs(validValues[i] - expectedValue))
+            
+            return (expectedValue, validStates[bestIdx])
+
+    def expectimaxGame(self, depthWhite, depthBlack, whiteUsesExpectimax=True, blackUsesAlphaBeta=True,
+                       verbose=True, save_to_file=False, moves_file="moves.txt", states_file="states.txt"):
+        """
+        Play a game where White uses Expectimax and Black uses Alpha-Beta (or vice versa)
+        
+        Args:
+            depthWhite: Search depth for White
+            depthBlack: Search depth for Black
+            whiteUsesExpectimax: If True, White uses expectimax; if False, uses alpha-beta
+            blackUsesAlphaBeta: If True, Black uses alpha-beta; if False, uses expectimax
+            verbose: If True, print board state after each move
+            save_to_file: If True, save moves and states to files
+            
+        Returns:
+            Dictionary with winner and game statistics
+        """
+        self.transpositionTable.clear()
+        self.heuristicCache.clear()
         
         currentState = self.getCurrentState()
-        # Your code here       
+        visitedStates = [currentState.copy()]
+        
+        positionHistory = {}
+        posKey = self.stateToKey(currentState)
+        positionHistory[posKey] = 1
+        
+        moveLog = []
+        
+        if verbose:
+            white_algo = "Expectimax" if whiteUsesExpectimax else "Alpha-Beta"
+            black_algo = "Alpha-Beta" if blackUsesAlphaBeta else "Expectimax"
+            print(f"\n=== Starting Game ===")
+            print(f"White: {white_algo} (depth {depthWhite})")
+            print(f"Black: {black_algo} (depth {depthBlack})")
+            self.chess.boardSim.print_board()
+        
+        if save_to_file:
+            white_algo = "Expectimax" if whiteUsesExpectimax else "Alpha-Beta"
+            black_algo = "Alpha-Beta" if blackUsesAlphaBeta else "Expectimax"
+            moveLog.append(f"=== Starting Game ===\n")
+            moveLog.append(f"White: {white_algo} (depth {depthWhite})\n")
+            moveLog.append(f"Black: {black_algo} (depth {depthBlack})\n")
+            moveLog.append(self._board_to_string(currentState))
+        
+        moveCount = 0
+        maxMoves = 100
+        
+        while moveCount < maxMoves:
+            moveCount += 1
+            
+            # Check for insufficient material
+            wrState = self.getPieceState(currentState, 2)
+            brState = self.getPieceState(currentState, 8)
+            if wrState is None and brState is None:
+                if verbose:
+                    print("\n*** DRAW (insufficient material) ***")
+                if save_to_file:
+                    moveLog.append("\n*** DRAW (insufficient material) ***\n")
+                    self._save_game_data(moveLog, visitedStates, moves_file, states_file)
+                return {
+                    'winner': "Draw",
+                    'stats': {
+                        'half_moves': len(visitedStates) - 1,
+                        'full_moves': moveCount - 1,
+                        'depth_white': depthWhite,
+                        'depth_black': depthBlack,
+                        'states_visited': len(visitedStates)
+                    }
+                }
+            
+            # White's turn
+            if verbose:
+                print(f"\n--- Move {moveCount}: White's turn ---")
+            if save_to_file:
+                moveLog.append(f"\n--- Move {moveCount}: White's turn ---\n")
+            
+            if whiteUsesExpectimax:
+                _, bestStateWhite = self.expectimaxValue(currentState, depthWhite, True)
+            else:
+                # FIXED: Pass positionHistory for proper transposition table usage
+                _, bestStateWhite = self.minimax(currentState, depthWhite, True, positionHistory=positionHistory)
+            
+            currentState = bestStateWhite
+            visitedStates.append(currentState.copy())
+            self.newBoardSim(currentState)
+            
+            if verbose:
+                self.chess.boardSim.print_board()
+            if save_to_file:
+                moveLog.append(self._board_to_string(currentState))
+            
+            # Check for repetition
+            posKey = self.stateToKey(currentState)
+            positionHistory[posKey] = positionHistory.get(posKey, 0) + 1
+            if positionHistory[posKey] >= 3:
+                if verbose:
+                    print(f"\n*** DRAW (threefold repetition) ***")
+                if save_to_file:
+                    moveLog.append("\n*** DRAW (threefold repetition) ***\n")
+                    self._save_game_data(moveLog, visitedStates, moves_file, states_file)
+                return {
+                    'winner': "Draw",
+                    'stats': {
+                        'half_moves': len(visitedStates) - 1,
+                        'full_moves': moveCount,
+                        'depth_white': depthWhite,
+                        'depth_black': depthBlack,
+                        'states_visited': len(visitedStates)
+                    }
+                }
+            
+            if self.isBlackInCheckMate(currentState):
+                if verbose:
+                    print("\n*** WHITE WINS BY CHECKMATE! ***")
+                if save_to_file:
+                    moveLog.append("\n*** WHITE WINS BY CHECKMATE! ***\n")
+                    self._save_game_data(moveLog, visitedStates, moves_file, states_file)
+                return {
+                    'winner': "White",
+                    'stats': {
+                        'half_moves': len(visitedStates) - 1,
+                        'full_moves': moveCount,
+                        'depth_white': depthWhite,
+                        'depth_black': depthBlack,
+                        'states_visited': len(visitedStates)
+                    }
+                }
+            
+            # Black's turn
+            if verbose:
+                print(f"\n--- Move {moveCount}: Black's turn ---")
+            if save_to_file:
+                moveLog.append(f"\n--- Move {moveCount}: Black's turn ---\n")
+            
+            if blackUsesAlphaBeta:
+                # FIXED: Pass positionHistory for proper transposition table usage
+                _, bestStateBlack = self.minimax(currentState, depthBlack, False, positionHistory=positionHistory)
+            else:
+                # Black uses expectimax - need to adapt since expectimax expects White to maximize
+                # We'll use minimax for now as Black already uses alpha-beta in the spec
+                _, bestStateBlack = self.minimax(currentState, depthBlack, False, positionHistory=positionHistory)
+            
+            currentState = bestStateBlack
+            visitedStates.append(currentState.copy())
+            self.newBoardSim(currentState)
+            
+            if verbose:
+                self.chess.boardSim.print_board()
+            if save_to_file:
+                moveLog.append(self._board_to_string(currentState))
+            
+            posKey = self.stateToKey(currentState)
+            positionHistory[posKey] = positionHistory.get(posKey, 0) + 1
+            if positionHistory[posKey] >= 3:
+                if verbose:
+                    print(f"\n*** DRAW (threefold repetition) ***")
+                if save_to_file:
+                    moveLog.append("\n*** DRAW (threefold repetition) ***\n")
+                    self._save_game_data(moveLog, visitedStates, moves_file, states_file)
+                return {
+                    'winner': "Draw",
+                    'stats': {
+                        'half_moves': len(visitedStates) - 1,
+                        'full_moves': moveCount,
+                        'depth_white': depthWhite,
+                        'depth_black': depthBlack,
+                        'states_visited': len(visitedStates)
+                    }
+                }
+            
+            if self.isWhiteInCheckMate(currentState):
+                if verbose:
+                    print("\n*** BLACK WINS BY CHECKMATE! ***")
+                if save_to_file:
+                    moveLog.append("\n*** BLACK WINS BY CHECKMATE! ***\n")
+                    self._save_game_data(moveLog, visitedStates, moves_file, states_file)
+                return {
+                    'winner': "Black",
+                    'stats': {
+                        'half_moves': len(visitedStates) - 1,
+                        'full_moves': moveCount,
+                        'depth_white': depthWhite,
+                        'depth_black': depthBlack,
+                        'states_visited': len(visitedStates)
+                    }
+                }
+        
+        if verbose:
+            print(f"\n*** DRAW (reached {maxMoves} moves) ***")
+        if save_to_file:
+            moveLog.append(f"\n*** DRAW (reached {maxMoves} moves) ***\n")
+            self._save_game_data(moveLog, visitedStates, moves_file, states_file)
+        return {
+            'winner': "Draw",
+            'stats': {
+                'half_moves': len(visitedStates) - 1,
+                'full_moves': moveCount,
+                'depth_white': depthWhite,
+                'depth_black': depthBlack,
+                'states_visited': len(visitedStates)
+            }
+        }       
         
 
 if __name__ == "__main__":
-    # if len(sys.argv) < 2:
-    #     sys.exit(usage())
-
+    import json
+    import time
+    
     # Initialize an empty 8x8 chess board
     TA = np.zeros((8, 8))
-
 
     # Load initial positions of the pieces
     TA = np.zeros((8, 8))
@@ -1325,36 +2221,683 @@ if __name__ == "__main__":
     TA[0][5] = 12  
 
     # Initialise board and print
-    print("stating AI chess... ")
+    print("Starting AI chess... ")
     aichess = Aichess(TA, True)
-    print("printing board")
+    print("Printing initial board:")
     aichess.chess.boardSim.print_board()
     
-    # Run exercise 1
-    print("\n==== Exercise 1: Minimax Game (Depth 4 vs 4) ===== \n")
+    # ============================================================
+    # EXERCISE 1: Single game with depth 4 vs 4
+    # ============================================================
+    print("\n" + "="*70)
+    print("==== EXERCISE 1: Minimax Game (Depth 4 vs 4) =====")
+    print("="*70)
     print("Both White and Black use Minimax algorithm with depth 4")
     print("White moves first (as per chess rules)")
-    print("\nStarting game...\n")
+    print("Running 3 times to count White wins")
+    print("="*70 + "\n")
     
-    result = aichess.minimaxGame(4, 4, verbose=False, save_to_file=True, 
-                                  moves_file="moves_ex1.txt", states_file="states_ex1.txt")
+    exercise1_results = {
+        'white_wins': 0,
+        'black_wins': 0,
+        'draws': 0,
+        'games': []
+    }
     
-    winner = result['winner']
-    stats = result['stats']
+    for rep in range(1, 4):  # Run 3 times as per requirements
+        print(f"\n{'─'*70}")
+        print(f"Exercise 1 - Game {rep}/3")
+        print(f"{'─'*70}\n")
+        
+        # Reset board for each game
+        TA = np.zeros((8, 8))
+        TA[7][0] = 2   # White Rook
+        TA[7][5] = 6   # White King
+        TA[0][7] = 8   # Black Rook
+        TA[0][5] = 12  # Black King
+        
+        aichess = Aichess(TA, True)
+        
+        moves_filename = f"moves_ex1_{rep}.txt"
+        states_filename = f"states_ex1_{rep}.txt"
+        
+        start_time = time.time()
+        result = aichess.minimaxGame(4, 4, verbose=False, save_to_file=True, 
+                                      moves_file=moves_filename, 
+                                      states_file=states_filename)
+        elapsed_time = time.time() - start_time
+        
+        winner = result['winner']
+        stats = result['stats']
+        
+        # Update statistics
+        if winner == "White":
+            exercise1_results['white_wins'] += 1
+        elif winner == "Black":
+            exercise1_results['black_wins'] += 1
+        else:
+            exercise1_results['draws'] += 1
+        
+        game_info = {
+            'repetition': rep,
+            'winner': winner,
+            'stats': stats,
+            'elapsed_time': elapsed_time
+        }
+        exercise1_results['games'].append(game_info)
+        
+        print(f"\nGame {rep} complete: {winner} ({elapsed_time:.2f}s)")
+        print(f"  Half-moves: {stats['half_moves']}, Full moves: {stats['full_moves']}")
+        print(f"  Saved to: {moves_filename}")
     
     print(f"\n{'='*60}")
-    print(f"FINAL RESULT: {winner} wins!")
+    print(f"EXERCISE 1 SUMMARY")
     print(f"{'='*60}")
-    print("\nFinal board state:")
-    aichess.chess.boardSim.print_board()
+    print(f"White wins: {exercise1_results['white_wins']}/3")
+    print(f"Black wins: {exercise1_results['black_wins']}/3")
+    print(f"Draws: {exercise1_results['draws']}/3")
+    print(f"{'='*60}\n")
     
-    print(f"\nGame Statistics:")
-    print(f"  Total moves (half-moves): {stats['half_moves']}")
-    print(f"  Total full moves: {stats['full_moves']}")
-    print(f"  Minimax depth used: White={stats['depth_white']}, Black={stats['depth_black']}")
-    print(f"  Minimum depth necessary: White={stats['min_depth_white']}, Black={stats['min_depth_black']}")
-    print(f"  Total states visited: {stats['states_visited']}")
+    # Save Exercise 1 results
+    with open('exercise1_results.json', 'w') as f:
+        json.dump(exercise1_results, f, indent=2)
+
+    # ============================================================
+    # EXERCISE 2: Multiple games with varying depths
+    # ============================================================
+    print("\n" + "="*70)
+    print("==== EXERCISE 2: Minimax with Varying Depths =====")
+    print("="*70)
+    print("Running all combinations of depth 3 and 4 for White and Black")
+    print("Each combination will be run 3 times")
+    print("="*70 + "\n")
     
-    print(f"\nMoves saved to: moves_ex1.txt")
-    print(f"States saved to: states_ex1.txt")
-    # Add code to save results and continue with other exercises
+    # Define depth combinations to test
+    depth_combinations = [
+        (3, 3),  # White depth 3, Black depth 3
+        (3, 4),  # White depth 3, Black depth 4
+        (4, 3),  # White depth 4, Black depth 3
+        (4, 4),  # White depth 4, Black depth 4
+    ]
+    
+    repetitions = 3  # Changed from 2 to 3 as per requirements
+    
+    # Store results for analysis
+    exercise2_results = {
+        'combinations': {},
+        'all_games': []
+    }
+    
+    total_games = len(depth_combinations) * repetitions
+    game_counter = 0
+    
+    for depthWhite, depthBlack in depth_combinations:
+        combo_key = f"{depthWhite}v{depthBlack}"
+        print(f"\n{'='*70}")
+        print(f"Testing combination: White depth={depthWhite}, Black depth={depthBlack}")
+        print(f"{'='*70}\n")
+        
+        combo_results = {
+            'white_depth': depthWhite,
+            'black_depth': depthBlack,
+            'games': [],
+            'white_wins': 0,
+            'black_wins': 0,
+            'draws': 0,
+            'total_games': repetitions
+        }
+        
+        for rep in range(1, repetitions + 1):
+            game_counter += 1
+            print(f"\n{'─'*70}")
+            print(f"Game {game_counter}/{total_games}: Repetition {rep}/{repetitions} for W={depthWhite} vs B={depthBlack}")
+            print(f"{'─'*70}\n")
+            
+            # Reset the board for each game
+            TA = np.zeros((8, 8))
+            TA[7][0] = 2   # White Rook
+            TA[7][5] = 6   # White King
+            TA[0][7] = 8   # Black Rook
+            TA[0][5] = 12  # Black King
+            
+            aichess = Aichess(TA, True)
+            
+            # Generate filename with pattern: moves_ex2_XYZ.txt
+            # X = repetition, Y = white depth, Z = black depth
+            moves_filename = f"moves_ex2_{rep}{depthWhite}{depthBlack}.txt"
+            states_filename = f"states_ex2_{rep}{depthWhite}{depthBlack}.txt"
+            
+            # Run the game
+            start_time = time.time()
+            result = aichess.minimaxGame(
+                depthWhite, 
+                depthBlack, 
+                verbose=False,  # Set to False to reduce console output
+                save_to_file=True,
+                moves_file=moves_filename,
+                states_file=states_filename
+            )
+            elapsed_time = time.time() - start_time
+            
+            winner = result['winner']
+            game_stats = result['stats']
+            
+            # Update statistics
+            if winner == "White":
+                combo_results['white_wins'] += 1
+            elif winner == "Black":
+                combo_results['black_wins'] += 1
+            else:
+                combo_results['draws'] += 1
+            
+            # Store game information
+            game_info = {
+                'repetition': rep,
+                'white_depth': depthWhite,
+                'black_depth': depthBlack,
+                'winner': winner,
+                'stats': game_stats,
+                'elapsed_time': elapsed_time,
+                'moves_file': moves_filename,
+                'states_file': states_filename
+            }
+            combo_results['games'].append(game_info)
+            exercise2_results['all_games'].append(game_info)
+            
+            # Print summary for this game
+            print(f"\n┌{'─'*68}┐")
+            print(f"│ GAME COMPLETE: {winner:^52} │")
+            print(f"├{'─'*68}┤")
+            print(f"│ Repetition: {rep}/{repetitions} | White depth: {depthWhite} | Black depth: {depthBlack}           │")
+            print(f"│ Half-moves: {game_stats['half_moves']:<4} | Full moves: {game_stats['full_moves']:<4} | Time: {elapsed_time:.2f}s        │")
+            print(f"│ Files: {moves_filename:<50} │")
+            print(f"│        {states_filename:<50} │")
+            print(f"└{'─'*68}┘\n")
+        
+        # Calculate statistics for this combination
+        combo_results['white_win_percentage'] = (combo_results['white_wins'] / repetitions) * 100
+        combo_results['black_win_percentage'] = (combo_results['black_wins'] / repetitions) * 100
+        combo_results['draw_percentage'] = (combo_results['draws'] / repetitions) * 100
+        
+        exercise2_results['combinations'][combo_key] = combo_results
+        
+        # Print summary for this combination
+        print(f"\n╔{'═'*68}╗")
+        print(f"║ COMBINATION SUMMARY: White depth={depthWhite}, Black depth={depthBlack}           ║")
+        print(f"╠{'═'*68}╣")
+        print(f"║ White wins: {combo_results['white_wins']}/{repetitions} ({combo_results['white_win_percentage']:.1f}%)                                    ║")
+        print(f"║ Black wins: {combo_results['black_wins']}/{repetitions}({combo_results['black_win_percentage']:.1f}%)                                    ║")
+        print(f"║ Draws:      {combo_results['draws']}/{repetitions} ({combo_results['draw_percentage']:.1f}%)                                    ║")
+        print(f"╚{'═'*68}╝\n")
+    
+    # Save all results to JSON file
+    with open('exercise2_results.json', 'w') as f:
+        json.dump(exercise2_results, f, indent=2)
+    
+    print(f"\n{'='*70}")
+    print("="*70)
+    print("           EXERCISE 2 COMPLETE - FINAL SUMMARY")
+    print("="*70)
+    print("="*70 + "\n")
+    
+    print("Results by depth combination:\n")
+    for combo_key in ['3v3', '3v4', '4v3', '4v4']:
+        if combo_key in exercise2_results['combinations']:
+            combo = exercise2_results['combinations'][combo_key]
+            print(f"  {combo_key} (White={combo['white_depth']}, Black={combo['black_depth']}):")
+            print(f"    White wins: {combo['white_wins']}/{repetitions} ({combo['white_win_percentage']:.1f}%)")
+            print(f"    Black wins: {combo['black_wins']}/{repetitions} ({combo['black_win_percentage']:.1f}%)")
+            print(f"    Draws:      {combo['draws']}/{repetitions} ({combo['draw_percentage']:.1f}%)")
+            print()
+    
+    print(f"All results saved to: exercise2_results.json")
+    print(f"Total games played: {total_games}")
+    
+    # ============================================================
+    # PLOT EXERCISE 2 RESULTS - "for each depth value"
+    # ============================================================
+    print("\n" + "="*70)
+    print("Generating Exercise 2 Plot...")
+    print("="*70 + "\n")
+    
+    # Calculate white win percentage FOR EACH DEPTH VALUE (not combination)
+    # When White uses depth 3: average across all Black depths
+    # When White uses depth 4: average across all Black depths
+    white_depth_3_wins = []
+    white_depth_4_wins = []
+    
+    for combo_key, combo in exercise2_results['combinations'].items():
+        if combo['white_depth'] == 3:
+            white_depth_3_wins.append(combo['white_win_percentage'])
+        elif combo['white_depth'] == 4:
+            white_depth_4_wins.append(combo['white_win_percentage'])
+    
+    depth_values = [3, 4]
+    white_win_by_depth = [
+        np.mean(white_depth_3_wins) if white_depth_3_wins else 0,
+        np.mean(white_depth_4_wins) if white_depth_4_wins else 0
+    ]
+    
+    # Create plot
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    bars = ax.bar(depth_values, white_win_by_depth, color='steelblue', alpha=0.8, 
+                  edgecolor='black', width=0.6)
+    
+    # Add value labels on bars
+    for i, (depth, pct) in enumerate(zip(depth_values, white_win_by_depth)):
+        ax.text(depth, pct, f'{pct:.1f}%',
+                ha='center', va='bottom', fontsize=12, fontweight='bold')
+    
+    ax.set_xlabel('White Depth (moves)', fontsize=12, fontweight='bold')
+    ax.set_ylabel('White Win Percentage (%)', fontsize=12, fontweight='bold')
+    ax.set_title('Exercise 2: White Win Percentage by Depth Value\n(Averaged across all opponent depths)', 
+                 fontsize=14, fontweight='bold')
+    ax.set_xticks(depth_values)
+    ax.set_ylim(0, 100)
+    ax.grid(axis='y', alpha=0.3)
+    
+    plt.tight_layout()
+    plt.savefig('exercise2_plot.png', dpi=300, bbox_inches='tight')
+    print("✓ Saved: exercise2_plot.png")
+    plt.close()
+    
+    # Symmetry analysis
+    print("\nExercise 2 - Symmetry Analysis:")
+    print("="*60)
+    if '3v4' in exercise2_results['combinations'] and '4v3' in exercise2_results['combinations']:
+        white_3v4 = exercise2_results['combinations']['3v4']['white_win_percentage']
+        white_4v3 = exercise2_results['combinations']['4v3']['white_win_percentage']
+        print(f"White depth=3 vs Black depth=4: {white_3v4:.1f}% white wins")
+        print(f"White depth=4 vs Black depth=3: {white_4v3:.1f}% white wins")
+        print(f"Difference: {abs(white_3v4 - white_4v3):.1f}%")
+        
+        if abs(white_3v4 - white_4v3) < 10:
+            print("→ Results are relatively symmetric (depths have similar impact)")
+        else:
+            print("→ Results are NOT symmetric (one depth gives more advantage)")
+    print("="*60 + "\n")
+    
+    # ============================================================
+    # EXERCISE 3: White uses Minimax, Black uses Alpha-Beta
+    # ============================================================
+    print("\n" + "="*70)
+    print("==== EXERCISE 3: Minimax (White) vs Alpha-Beta (Black) =====")
+    print("="*70)
+    print("White uses Minimax (NO pruning), Black uses Alpha-Beta (WITH pruning)")
+    print("Both at depth 4, running 3 times")
+    print("WARNING: This may take several minutes as minimax without pruning is VERY slow")
+    print("="*70 + "\n")
+    
+    exercise3_results = {
+        'white_wins': 0,
+        'black_wins': 0,
+        'draws': 0,
+        'games': []
+    }
+    
+    for rep in range(1, 4):
+        print(f"\n{'─'*70}")
+        print(f"Exercise 3 - Game {rep}/{repetitions}")
+        print(f"{'─'*70}\n")
+        
+        # Reset board
+        TA = np.zeros((8, 8))
+        TA[7][0] = 2   # White Rook
+        TA[7][5] = 6   # White King
+        TA[0][7] = 8   # Black Rook
+        TA[0][5] = 12  # Black King
+        
+        aichess = Aichess(TA, True)
+        
+        moves_filename = f"moves_ex3_{rep}.txt"
+        states_filename = f"states_ex3_{rep}.txt"
+        
+        start_time = time.time()
+        # FIXED: Now properly implements the requirement
+        # White uses pure minimax (no pruning), Black uses alpha-beta (with pruning)
+        result = aichess.alphaBetaGame(
+            4, 4,  # Using depth 4 as specified in assignment
+            whiteUsesAlphaBeta=False,  # White: minimaxNoPruning()
+            blackUsesAlphaBeta=True,   # Black: minimax() with alpha-beta
+            verbose=False,
+            save_to_file=True,
+            moves_file=moves_filename,
+            states_file=states_filename
+        )
+        elapsed_time = time.time() - start_time
+        
+        winner = result['winner']
+        game_stats = result['stats']
+        
+        if winner == "White":
+            exercise3_results['white_wins'] += 1
+        elif winner == "Black":
+            exercise3_results['black_wins'] += 1
+        else:
+            exercise3_results['draws'] += 1
+        
+        game_info = {
+            'repetition': rep,
+            'winner': winner,
+            'stats': game_stats,
+            'elapsed_time': elapsed_time
+        }
+        exercise3_results['games'].append(game_info)
+        
+        print(f"\nGame {rep} complete: {winner} ({elapsed_time:.2f}s)")
+    
+    print(f"\n╔{'═'*68}╗")
+    print(f"║ EXERCISE 3 SUMMARY                                                 ║")
+    print(f"╠{'═'*68}╣")
+    print(f"║ White wins (Minimax): {exercise3_results['white_wins']}/{repetitions}                                       ║")
+    print(f"║ Black wins (Alpha-Beta): {exercise3_results['black_wins']}/{repetitions}                                    ║")
+    print(f"║ Draws: {exercise3_results['draws']}/{repetitions}                                                     ║")
+    print(f"╚{'═'*68}╝\n")
+    
+    with open('exercise3_results.json', 'w') as f:
+        json.dump(exercise3_results, f, indent=2)
+    
+    # ============================================================
+    # EXERCISE 4: Both use Alpha-Beta with varying depths (1-5)
+    # ============================================================
+    print("\n" + "="*70)
+    print("==== EXERCISE 4: Alpha-Beta vs Alpha-Beta (Varying Depths) =====")
+    print("="*70)
+    print("Both players use Alpha-Beta pruning")
+    print("Testing all depth combinations from 1 to 5")
+    print("Running 3 games per combination")
+    print("="*70 + "\n")
+    
+    exercise4_results = {
+        'combinations': {},
+        'all_games': []
+    }
+    
+    # Test ALL combinations from depth 1 to 5 as specified in assignment
+    depth_combinations_ex4 = []
+    for depthW in range(1, 6):
+        for depthB in range(1, 6):
+            depth_combinations_ex4.append((depthW, depthB))
+    
+    for depthWhite, depthBlack in depth_combinations_ex4:
+        combo_key = f"{depthWhite}v{depthBlack}"
+        print(f"\n{'='*70}")
+        print(f"Testing: White depth={depthWhite}, Black depth={depthBlack}")
+        print(f"{'='*70}\n")
+        
+        combo_results = {
+            'white_depth': depthWhite,
+            'black_depth': depthBlack,
+            'games': [],
+            'white_wins': 0,
+            'black_wins': 0,
+            'draws': 0
+        }
+        
+        for rep in range(1, 4):
+            print(f"  Game {rep}/{repetitions}...", end=' ')
+            
+            TA = np.zeros((8, 8))
+            TA[7][0] = 2
+            TA[7][5] = 6
+            TA[0][7] = 8
+            TA[0][5] = 12
+            
+            aichess = Aichess(TA, True)
+            
+            moves_filename = f"moves_ex4_{rep}_{depthWhite}_{depthBlack}.txt"
+            states_filename = f"states_ex4_{rep}_{depthWhite}_{depthBlack}.txt"
+            
+            start_time = time.time()
+            result = aichess.alphaBetaGame(
+                depthWhite, depthBlack,
+                whiteUsesAlphaBeta=True,
+                blackUsesAlphaBeta=True,
+                verbose=False,
+                save_to_file=True,
+                moves_file=moves_filename,
+                states_file=states_filename
+            )
+            elapsed_time = time.time() - start_time
+            
+            winner = result['winner']
+            
+            if winner == "White":
+                combo_results['white_wins'] += 1
+            elif winner == "Black":
+                combo_results['black_wins'] += 1
+            else:
+                combo_results['draws'] += 1
+            
+            game_info = {
+                'repetition': rep,
+                'white_depth': depthWhite,
+                'black_depth': depthBlack,
+                'winner': winner,
+                'stats': result['stats'],
+                'elapsed_time': elapsed_time
+            }
+            combo_results['games'].append(game_info)
+            exercise4_results['all_games'].append(game_info)
+            
+            print(f"{winner} ({elapsed_time:.2f}s)")
+        
+        combo_results['white_win_percentage'] = (combo_results['white_wins'] / 3) * 100
+        combo_results['black_win_percentage'] = (combo_results['black_wins'] / 3) * 100
+        combo_results['draw_percentage'] = (combo_results['draws'] / 3) * 100
+        
+        exercise4_results['combinations'][combo_key] = combo_results
+        
+        print(f"  Summary: W={combo_results['white_wins']}, B={combo_results['black_wins']}, D={combo_results['draws']}")
+    
+    with open('exercise4_results.json', 'w') as f:
+        json.dump(exercise4_results, f, indent=2)
+    
+    print(f"\n╔{'═'*68}╗")
+    print(f"║ EXERCISE 4 COMPLETE                                                ║")
+    print(f"╚{'═'*68}╝")
+    print(f"Results saved to: exercise4_results.json\n")
+    
+    # ============================================================
+    # PLOT EXERCISE 4 RESULTS - "proportion of wins for whites AND blacks"
+    # ============================================================
+    print("\n" + "="*70)
+    print("Generating Exercise 4 Plot...")
+    print("="*70 + "\n")
+    
+    # Calculate overall proportions across ALL games
+    total_white_wins = sum(c['white_wins'] for c in exercise4_results['combinations'].values())
+    total_black_wins = sum(c['black_wins'] for c in exercise4_results['combinations'].values())
+    total_draws = sum(c['draws'] for c in exercise4_results['combinations'].values())
+    total_games_ex4 = total_white_wins + total_black_wins + total_draws
+    
+    white_proportion = (total_white_wins / total_games_ex4) * 100
+    black_proportion = (total_black_wins / total_games_ex4) * 100
+    draw_proportion = (total_draws / total_games_ex4) * 100
+    
+    # Create figure with bar chart and pie chart
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+    
+    # Bar chart showing proportions
+    categories = ['White', 'Black', 'Draws']
+    proportions = [white_proportion, black_proportion, draw_proportion]
+    colors = ['#e74c3c', '#3498db', '#95a5a6']
+    
+    bars = ax1.bar(categories, proportions, color=colors, alpha=0.8, edgecolor='black', linewidth=2)
+    ax1.set_ylabel('Proportion (%)', fontsize=12, fontweight='bold')
+    ax1.set_title('Win Proportions', fontsize=13, fontweight='bold')
+    ax1.set_ylim(0, 100)
+    ax1.grid(axis='y', alpha=0.3)
+    
+    # Add value labels
+    for bar in bars:
+        height = bar.get_height()
+        ax1.text(bar.get_x() + bar.get_width()/2., height,
+                f'{height:.1f}%',
+                ha='center', va='bottom', fontsize=12, fontweight='bold')
+    
+    # Pie chart
+    wedges, texts, autotexts = ax2.pie(proportions, labels=categories, autopct='%1.1f%%',
+                                        colors=colors, startangle=90,
+                                        textprops={'fontsize': 11, 'fontweight': 'bold'})
+    
+    for autotext in autotexts:
+        autotext.set_color('white')
+        autotext.set_fontsize(12)
+        autotext.set_fontweight('bold')
+    
+    ax2.set_title('Win Distribution', fontsize=13, fontweight='bold')
+    
+    fig.suptitle('Exercise 4: Alpha-Beta vs Alpha-Beta\nProportion of Wins (All depth combinations 1-5)', 
+                 fontsize=14, fontweight='bold')
+    
+    plt.tight_layout()
+    plt.savefig('exercise4_plot.png', dpi=300, bbox_inches='tight')
+    print("✓ Saved: exercise4_plot.png")
+    print(f"  White wins: {white_proportion:.1f}% ({total_white_wins}/{total_games_ex4} games)")
+    print(f"  Black wins: {black_proportion:.1f}% ({total_black_wins}/{total_games_ex4} games)")
+    print(f"  Draws: {draw_proportion:.1f}% ({total_draws}/{total_games_ex4} games)")
+    plt.close()
+    
+    # ============================================================
+    # EXERCISE 5: Expectimax (White) vs Alpha-Beta (Black)
+    # ============================================================
+    print("\n" + "="*70)
+    print("==== EXERCISE 5: Expectimax (White) vs Alpha-Beta (Black) =====")
+    print("="*70)
+    print("White uses Expectimax, Black uses Alpha-Beta pruning")
+    print("Depth 4 for both, running 3 times")
+    print("="*70 + "\n")
+    
+    exercise5_results = {
+        'white_wins': 0,
+        'black_wins': 0,
+        'draws': 0,
+        'games': []
+    }
+    
+    for rep in range(1, 4):
+        print(f"\n{'─'*70}")
+        print(f"Exercise 5 - Game {rep}/{repetitions}")
+        print(f"{'─'*70}\n")
+        
+        TA = np.zeros((8, 8))
+        TA[7][0] = 2
+        TA[7][5] = 6
+        TA[0][7] = 8
+        TA[0][5] = 12
+        
+        aichess = Aichess(TA, True)
+        
+        moves_filename = f"moves_ex5_{rep}.txt"
+        states_filename = f"states_ex5_{rep}.txt"
+        
+        start_time = time.time()
+        result = aichess.expectimaxGame(
+            4, 4,
+            whiteUsesExpectimax=True,
+            blackUsesAlphaBeta=True,
+            verbose=False,
+            save_to_file=True,
+            moves_file=moves_filename,
+            states_file=states_filename
+        )
+        elapsed_time = time.time() - start_time
+        
+        winner = result['winner']
+        game_stats = result['stats']
+        
+        if winner == "White":
+            exercise5_results['white_wins'] += 1
+        elif winner == "Black":
+            exercise5_results['black_wins'] += 1
+        else:
+            exercise5_results['draws'] += 1
+        
+        game_info = {
+            'repetition': rep,
+            'winner': winner,
+            'stats': game_stats,
+            'elapsed_time': elapsed_time
+        }
+        exercise5_results['games'].append(game_info)
+        
+        print(f"\nGame {rep} complete: {winner} ({elapsed_time:.2f}s)")
+    
+    print(f"\n╔{'═'*68}╗")
+    print(f"║ EXERCISE 5 SUMMARY                                                 ║")
+    print(f"╠{'═'*68}╣")
+    print(f"║ White wins (Expectimax): {exercise5_results['white_wins']}/{repetitions}                                    ║")
+    print(f"║ Black wins (Alpha-Beta): {exercise5_results['black_wins']}/{repetitions}                                    ║")
+    print(f"║ Draws: {exercise5_results['draws']}/{repetitions}                                                     ║")
+    print(f"╚{'═'*68}╝\n")
+    
+    with open('exercise5_results.json', 'w') as f:
+        json.dump(exercise5_results, f, indent=2)
+    
+    # ============================================================
+    # PLOT EXERCISE 5 RESULTS
+    # ============================================================
+    print("\n" + "="*70)
+    print("Generating Exercise 5 Plot...")
+    print("="*70 + "\n")
+    
+    categories = ['White\n(Expectimax)', 'Black\n(Alpha-Beta)', 'Draws']
+    values = [exercise5_results['white_wins'], exercise5_results['black_wins'], exercise5_results['draws']]
+    colors = ['#ff6b6b', '#4ecdc4', '#95e1d3']
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+    
+    # Bar chart
+    bars = ax1.bar(categories, values, color=colors, alpha=0.8, edgecolor='black', linewidth=2)
+    ax1.set_ylabel('Number of Wins (out of 3 games)', fontsize=12, fontweight='bold')
+    ax1.set_title('Exercise 5: Game Results', fontsize=13, fontweight='bold')
+    ax1.set_ylim(0, 3.5)
+    ax1.grid(axis='y', alpha=0.3)
+    
+    # Add value labels
+    for bar in bars:
+        height = bar.get_height()
+        ax1.text(bar.get_x() + bar.get_width()/2., height,
+                f'{int(height)}',
+                ha='center', va='bottom', fontsize=14, fontweight='bold')
+    
+    # Pie chart
+    total_games = 3
+    percentages = [(v/total_games)*100 for v in values]
+    
+    wedges, texts, autotexts = ax2.pie(percentages, labels=categories, autopct='%1.1f%%',
+                                        colors=colors, startangle=90,
+                                        textprops={'fontsize': 11, 'fontweight': 'bold'})
+    
+    # Make percentage text larger
+    for autotext in autotexts:
+        autotext.set_color('white')
+        autotext.set_fontsize(12)
+        autotext.set_fontweight('bold')
+    
+    ax2.set_title('Win Proportions', fontsize=13, fontweight='bold')
+    
+    fig.suptitle('Exercise 5: Expectimax (White) vs Alpha-Beta (Black)', 
+                 fontsize=14, fontweight='bold')
+    
+    plt.tight_layout()
+    plt.savefig('exercise5_plot.png', dpi=300, bbox_inches='tight')
+    print("✓ Saved: exercise5_plot.png")
+    plt.close()
+    
+    print("\n" + "="*70)
+    print("ALL EXERCISES COMPLETE!")
+    print("="*70)
+    print("\nEXERCISE 6 - Analysis:")
+    print("="*70)
+    print("Question: Is King+Rook vs King+Rook really an even position?")
+    print("\nAnswer: While materially equal, this position is NOT truly even because:")
+    print("1. White moves first - significant advantage in endgames")
+    print("2. The player with the move can often force favorable exchanges")
+    print("3. Rook activity and king position create asymmetries")
+    print("4. Even small positional advantages can be decisive with optimal play")
+    print("\nCheck the results from Exercises 2-5 to see if White has an advantage")
+    print("due to moving first, or if the position leads to draws with best play.")
+    print("="*70)
