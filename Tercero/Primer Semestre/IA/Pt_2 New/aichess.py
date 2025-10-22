@@ -251,7 +251,6 @@ class Aichess():
 
             return pow(total / n, 1 / 2)
 
-
     def calculateValue(self, values):
         # Calculate a weighted expected value based on normalized probabilities. - useful for Expectimax.
         
@@ -298,8 +297,6 @@ class Aichess():
         else:
             return False
 
-
-
     def isVisited(self, mystate):
 
         if (len(self.listVisitedStates) > 0):
@@ -339,10 +336,6 @@ class Aichess():
         # Cache for heuristic evaluations to avoid recalculation
         self.heuristicCache = {}
 
-
-        
-
-
     def newBoardSim(self, listStates):
         # We create a  new boardSim
         TA = np.zeros((8, 8))
@@ -381,7 +374,6 @@ class Aichess():
             nextPositions.append(i[0][0:2])
         return nextPositions
 
-
     def reconstructPath(self, state, depth):
         # Once the solution is found, reconstruct the path taken to reach it
         for i in range(depth):
@@ -391,7 +383,6 @@ class Aichess():
 
         # Insert the root node at the beginning
         self.pathToTarget.insert(0, state)
-
 
     def changeState(self, start, to):
         # Determine which piece has moved from the start state to the next state
@@ -414,9 +405,9 @@ class Aichess():
 
 
 
-# =============================================================
-# ==================   MODIFICADOS ============================ 
-# =============================================================
+# ===================================================================================================
+# ==================   MODIFICADOS ==================================================================
+# ===================================================================================================
 
 
 
@@ -2203,50 +2194,53 @@ class Aichess():
                 'depth_black': depthBlack,
                 'states_visited': len(visitedStates)
             }
-        }       
-        
+        }
 
-if __name__ == "__main__":
-    import json
-    import time
+
+
+
+# =============================================================
+# ==================   EXERCISE FUNCTIONS =====================
+# =============================================================
+
+
+
+def run_exercise_1(depth_white=4, depth_black=4, repetitions=3, verbose=False, 
+                   save_to_file=True, results_file='exercise1_results.json'):
+    """
+    Exercise 1: Minimax vs Minimax
     
-    # Initialize an empty 8x8 chess board
-    TA = np.zeros((8, 8))
-
-    # Load initial positions of the pieces
-    TA = np.zeros((8, 8))
-    TA[7][0] = 2   
-    TA[7][5] = 6   
-    TA[0][7] = 8   
-    TA[0][5] = 12  
-
-    # Initialise board and print
-    print("Starting AI chess... ")
-    aichess = Aichess(TA, True)
-    print("Printing initial board:")
-    aichess.chess.boardSim.print_board()
-    
-    # ============================================================
-    # EXERCISE 1: Single game with depth 4 vs 4
-    # ============================================================
+    Args:
+        depth_white: Search depth for White (default: 4)
+        depth_black: Search depth for Black (default: 4)
+        repetitions: Number of games to play (default: 3)
+        verbose: If True, print board state after each move (default: False)
+        save_to_file: If True, save moves and states to files (default: True)
+        results_file: JSON file to save results (default: 'exercise1_results.json')
+    """
     print("\n" + "="*70)
-    print("==== EXERCISE 1: Minimax Game (Depth 4 vs 4) =====")
+    print(f"==== EXERCISE 1: Minimax Game (Depth {depth_white} vs {depth_black}) =====")
     print("="*70)
-    print("Both White and Black use Minimax algorithm with depth 4")
-    print("White moves first (as per chess rules)")
-    print("Running 3 times to count White wins")
+    print(f"Both White and Black use Minimax algorithm")
+    print(f"White depth: {depth_white}, Black depth: {depth_black}")
+    print(f"Running {repetitions} times to count White wins")
     print("="*70 + "\n")
     
     exercise1_results = {
         'white_wins': 0,
         'black_wins': 0,
         'draws': 0,
-        'games': []
+        'games': [],
+        'config': {
+            'depth_white': depth_white,
+            'depth_black': depth_black,
+            'repetitions': repetitions
+        }
     }
     
-    for rep in range(1, 4):  # Run 3 times as per requirements
+    for rep in range(1, repetitions + 1):
         print(f"\n{'─'*70}")
-        print(f"Exercise 1 - Game {rep}/3")
+        print(f"Exercise 1 - Game {rep}/{repetitions}")
         print(f"{'─'*70}\n")
         
         # Reset board for each game
@@ -2258,11 +2252,13 @@ if __name__ == "__main__":
         
         aichess = Aichess(TA, True)
         
-        moves_filename = f"moves_ex1_{rep}.txt"
-        states_filename = f"states_ex1_{rep}.txt"
+        moves_filename = f"moves_ex1_{rep}.txt" if save_to_file else None
+        states_filename = f"states_ex1_{rep}.txt" if save_to_file else None
         
         start_time = time.time()
-        result = aichess.minimaxGame(4, 4, verbose=False, save_to_file=True, 
+        result = aichess.minimaxGame(depth_white, depth_black, 
+                                      verbose=verbose, 
+                                      save_to_file=save_to_file, 
                                       moves_file=moves_filename, 
                                       states_file=states_filename)
         elapsed_time = time.time() - start_time
@@ -2288,44 +2284,57 @@ if __name__ == "__main__":
         
         print(f"\nGame {rep} complete: {winner} ({elapsed_time:.2f}s)")
         print(f"  Half-moves: {stats['half_moves']}, Full moves: {stats['full_moves']}")
-        print(f"  Saved to: {moves_filename}")
+        if save_to_file:
+            print(f"  Saved to: {moves_filename}")
     
     print(f"\n{'='*60}")
     print(f"EXERCISE 1 SUMMARY")
     print(f"{'='*60}")
-    print(f"White wins: {exercise1_results['white_wins']}/3")
-    print(f"Black wins: {exercise1_results['black_wins']}/3")
-    print(f"Draws: {exercise1_results['draws']}/3")
+    print(f"White wins: {exercise1_results['white_wins']}/{repetitions}")
+    print(f"Black wins: {exercise1_results['black_wins']}/{repetitions}")
+    print(f"Draws: {exercise1_results['draws']}/{repetitions}")
     print(f"{'='*60}\n")
     
     # Save Exercise 1 results
-    with open('exercise1_results.json', 'w') as f:
-        json.dump(exercise1_results, f, indent=2)
+    if results_file:
+        with open(results_file, 'w') as f:
+            json.dump(exercise1_results, f, indent=2)
+        print(f"Results saved to: {results_file}\n")
+    
+    return exercise1_results
 
-    # ============================================================
-    # EXERCISE 2: Multiple games with varying depths
-    # ============================================================
+
+def run_exercise_2(depth_values=[3, 4], repetitions=3, verbose=False, 
+                   save_to_file=True, generate_plot=True, results_file='exercise2_results.json'):
+    """
+    Exercise 2: Minimax with varying depths
+    
+    Args:
+        depth_values: List of depth values to test (default: [3, 4])
+        repetitions: Number of games per combination (default: 3)
+        verbose: If True, print board state after each move (default: False)
+        save_to_file: If True, save moves and states to files (default: True)
+        generate_plot: If True, generate plot with results (default: True)
+        results_file: JSON file to save results (default: 'exercise2_results.json')
+    """
     print("\n" + "="*70)
     print("==== EXERCISE 2: Minimax with Varying Depths =====")
     print("="*70)
-    print("Running all combinations of depth 3 and 4 for White and Black")
-    print("Each combination will be run 3 times")
+    print(f"Testing depth combinations from: {depth_values}")
+    print(f"Each combination will be run {repetitions} times")
     print("="*70 + "\n")
     
     # Define depth combinations to test
-    depth_combinations = [
-        (3, 3),  # White depth 3, Black depth 3
-        (3, 4),  # White depth 3, Black depth 4
-        (4, 3),  # White depth 4, Black depth 3
-        (4, 4),  # White depth 4, Black depth 4
-    ]
-    
-    repetitions = 3  # Changed from 2 to 3 as per requirements
+    depth_combinations = [(w, b) for w in depth_values for b in depth_values]
     
     # Store results for analysis
     exercise2_results = {
         'combinations': {},
-        'all_games': []
+        'all_games': [],
+        'config': {
+            'depth_values': depth_values,
+            'repetitions': repetitions
+        }
     }
     
     total_games = len(depth_combinations) * repetitions
@@ -2349,40 +2358,31 @@ if __name__ == "__main__":
         
         for rep in range(1, repetitions + 1):
             game_counter += 1
-            print(f"\n{'─'*70}")
-            print(f"Game {game_counter}/{total_games}: Repetition {rep}/{repetitions} for W={depthWhite} vs B={depthBlack}")
-            print(f"{'─'*70}\n")
+            print(f"Game {game_counter}/{total_games}: White depth={depthWhite}, Black depth={depthBlack}, Repetition {rep}")
             
-            # Reset the board for each game
+            # Reset board
             TA = np.zeros((8, 8))
-            TA[7][0] = 2   # White Rook
-            TA[7][5] = 6   # White King
-            TA[0][7] = 8   # Black Rook
-            TA[0][5] = 12  # Black King
+            TA[7][0] = 2
+            TA[7][5] = 6
+            TA[0][7] = 8
+            TA[0][5] = 12
             
             aichess = Aichess(TA, True)
             
-            # Generate filename with pattern: moves_ex2_XYZ.txt
-            # X = repetition, Y = white depth, Z = black depth
-            moves_filename = f"moves_ex2_{rep}{depthWhite}{depthBlack}.txt"
-            states_filename = f"states_ex2_{rep}{depthWhite}{depthBlack}.txt"
+            moves_filename = f"moves_ex2_{depthWhite}{depthBlack}{rep}.txt" if save_to_file else None
+            states_filename = f"states_ex2_{depthWhite}{depthBlack}{rep}.txt" if save_to_file else None
             
-            # Run the game
             start_time = time.time()
-            result = aichess.minimaxGame(
-                depthWhite, 
-                depthBlack, 
-                verbose=False,  # Set to False to reduce console output
-                save_to_file=True,
-                moves_file=moves_filename,
-                states_file=states_filename
-            )
+            result = aichess.minimaxGame(depthWhite, depthBlack, 
+                                          verbose=verbose, 
+                                          save_to_file=save_to_file,
+                                          moves_file=moves_filename, 
+                                          states_file=states_filename)
             elapsed_time = time.time() - start_time
             
             winner = result['winner']
-            game_stats = result['stats']
+            stats = result['stats']
             
-            # Update statistics
             if winner == "White":
                 combo_results['white_wins'] += 1
             elif winner == "Black":
@@ -2390,29 +2390,18 @@ if __name__ == "__main__":
             else:
                 combo_results['draws'] += 1
             
-            # Store game information
             game_info = {
-                'repetition': rep,
                 'white_depth': depthWhite,
                 'black_depth': depthBlack,
+                'repetition': rep,
                 'winner': winner,
-                'stats': game_stats,
-                'elapsed_time': elapsed_time,
-                'moves_file': moves_filename,
-                'states_file': states_filename
+                'stats': stats,
+                'elapsed_time': elapsed_time
             }
             combo_results['games'].append(game_info)
             exercise2_results['all_games'].append(game_info)
             
-            # Print summary for this game
-            print(f"\n┌{'─'*68}┐")
-            print(f"│ GAME COMPLETE: {winner:^52} │")
-            print(f"├{'─'*68}┤")
-            print(f"│ Repetition: {rep}/{repetitions} | White depth: {depthWhite} | Black depth: {depthBlack}           │")
-            print(f"│ Half-moves: {game_stats['half_moves']:<4} | Full moves: {game_stats['full_moves']:<4} | Time: {elapsed_time:.2f}s        │")
-            print(f"│ Files: {moves_filename:<50} │")
-            print(f"│        {states_filename:<50} │")
-            print(f"└{'─'*68}┘\n")
+            print(f"  Result: {winner} ({elapsed_time:.2f}s)\n")
         
         # Calculate statistics for this combination
         combo_results['white_win_percentage'] = (combo_results['white_wins'] / repetitions) * 100
@@ -2431,8 +2420,9 @@ if __name__ == "__main__":
         print(f"╚{'═'*68}╝\n")
     
     # Save all results to JSON file
-    with open('exercise2_results.json', 'w') as f:
-        json.dump(exercise2_results, f, indent=2)
+    if results_file:
+        with open(results_file, 'w') as f:
+            json.dump(exercise2_results, f, indent=2)
     
     print(f"\n{'='*70}")
     print("="*70)
@@ -2441,91 +2431,102 @@ if __name__ == "__main__":
     print("="*70 + "\n")
     
     print("Results by depth combination:\n")
-    for combo_key in ['3v3', '3v4', '4v3', '4v4']:
-        if combo_key in exercise2_results['combinations']:
-            combo = exercise2_results['combinations'][combo_key]
-            print(f"  {combo_key} (White={combo['white_depth']}, Black={combo['black_depth']}):")
-            print(f"    White wins: {combo['white_wins']}/{repetitions} ({combo['white_win_percentage']:.1f}%)")
-            print(f"    Black wins: {combo['black_wins']}/{repetitions} ({combo['black_win_percentage']:.1f}%)")
-            print(f"    Draws:      {combo['draws']}/{repetitions} ({combo['draw_percentage']:.1f}%)")
-            print()
+    for combo_key in sorted(exercise2_results['combinations'].keys()):
+        combo = exercise2_results['combinations'][combo_key]
+        print(f"{combo_key}: W={combo['white_wins']}, B={combo['black_wins']}, D={combo['draws']}")
     
-    print(f"All results saved to: exercise2_results.json")
+    if results_file:
+        print(f"\nAll results saved to: {results_file}")
     print(f"Total games played: {total_games}")
     
-    # ============================================================
-    # PLOT EXERCISE 2 RESULTS - "for each depth value"
-    # ============================================================
-    print("\n" + "="*70)
-    print("Generating Exercise 2 Plot...")
-    print("="*70 + "\n")
-    
-    # Calculate white win percentage FOR EACH DEPTH VALUE (not combination)
-    # When White uses depth 3: average across all Black depths
-    # When White uses depth 4: average across all Black depths
-    white_depth_3_wins = []
-    white_depth_4_wins = []
-    
-    for combo_key, combo in exercise2_results['combinations'].items():
-        if combo['white_depth'] == 3:
-            white_depth_3_wins.append(combo['white_win_percentage'])
-        elif combo['white_depth'] == 4:
-            white_depth_4_wins.append(combo['white_win_percentage'])
-    
-    depth_values = [3, 4]
-    white_win_by_depth = [
-        np.mean(white_depth_3_wins) if white_depth_3_wins else 0,
-        np.mean(white_depth_4_wins) if white_depth_4_wins else 0
-    ]
-    
-    # Create plot
-    fig, ax = plt.subplots(figsize=(10, 6))
-    
-    bars = ax.bar(depth_values, white_win_by_depth, color='steelblue', alpha=0.8, 
-                  edgecolor='black', width=0.6)
-    
-    # Add value labels on bars
-    for i, (depth, pct) in enumerate(zip(depth_values, white_win_by_depth)):
-        ax.text(depth, pct, f'{pct:.1f}%',
-                ha='center', va='bottom', fontsize=12, fontweight='bold')
-    
-    ax.set_xlabel('White Depth (moves)', fontsize=12, fontweight='bold')
-    ax.set_ylabel('White Win Percentage (%)', fontsize=12, fontweight='bold')
-    ax.set_title('Exercise 2: White Win Percentage by Depth Value\n(Averaged across all opponent depths)', 
-                 fontsize=14, fontweight='bold')
-    ax.set_xticks(depth_values)
-    ax.set_ylim(0, 100)
-    ax.grid(axis='y', alpha=0.3)
-    
-    plt.tight_layout()
-    plt.savefig('exercise2_plot.png', dpi=300, bbox_inches='tight')
-    print("✓ Saved: exercise2_plot.png")
-    plt.close()
-    
-    # Symmetry analysis
-    print("\nExercise 2 - Symmetry Analysis:")
-    print("="*60)
-    if '3v4' in exercise2_results['combinations'] and '4v3' in exercise2_results['combinations']:
-        white_3v4 = exercise2_results['combinations']['3v4']['white_win_percentage']
-        white_4v3 = exercise2_results['combinations']['4v3']['white_win_percentage']
-        print(f"White depth=3 vs Black depth=4: {white_3v4:.1f}% white wins")
-        print(f"White depth=4 vs Black depth=3: {white_4v3:.1f}% white wins")
-        print(f"Difference: {abs(white_3v4 - white_4v3):.1f}%")
+    # Generate plot
+    if generate_plot:
+        print("\n" + "="*70)
+        print("Generating Exercise 2 Plot...")
+        print("="*70 + "\n")
         
-        if abs(white_3v4 - white_4v3) < 10:
-            print("→ Results are relatively symmetric (depths have similar impact)")
-        else:
-            print("→ Results are NOT symmetric (one depth gives more advantage)")
-    print("="*60 + "\n")
+        # Calculate white win percentage FOR EACH DEPTH VALUE
+        depth_win_percentages = {}
+        for depth in depth_values:
+            wins_for_depth = [combo['white_win_percentage'] 
+                             for combo in exercise2_results['combinations'].values() 
+                             if combo['white_depth'] == depth]
+            depth_win_percentages[depth] = np.mean(wins_for_depth) if wins_for_depth else 0
+        
+        # Create plot
+        fig, ax = plt.subplots(figsize=(10, 6))
+        
+        depths = list(depth_win_percentages.keys())
+        percentages = list(depth_win_percentages.values())
+        
+        bars = ax.bar(depths, percentages, color='steelblue', alpha=0.8, 
+                      edgecolor='black', width=0.6)
+        
+        # Add value labels on bars
+        for depth, pct in zip(depths, percentages):
+            ax.text(depth, pct, f'{pct:.1f}%',
+                    ha='center', va='bottom', fontsize=12, fontweight='bold')
+        
+        ax.set_xlabel('White Depth (moves)', fontsize=12, fontweight='bold')
+        ax.set_ylabel('White Win Percentage (%)', fontsize=12, fontweight='bold')
+        ax.set_title('Exercise 2: White Win Percentage by Depth Value\n(Averaged across all opponent depths)', 
+                     fontsize=14, fontweight='bold')
+        ax.set_xticks(depths)
+        ax.set_ylim(0, 100)
+        ax.grid(axis='y', alpha=0.3)
+        
+        plt.tight_layout()
+        plt.savefig('exercise2_plot.png', dpi=300, bbox_inches='tight')
+        print("✓ Saved: exercise2_plot.png")
+        plt.close()
+        
+        # Symmetry analysis (only if we have at least 2 depths)
+        if len(depth_values) >= 2:
+            print("\nExercise 2 - Symmetry Analysis:")
+            print("="*60)
+            # Compare first depth vs second at second vs first
+            d1, d2 = depth_values[0], depth_values[1]
+            key1 = f"{d1}v{d2}"
+            key2 = f"{d2}v{d1}"
+            if key1 in exercise2_results['combinations'] and key2 in exercise2_results['combinations']:
+                white_d1_d2 = exercise2_results['combinations'][key1]['white_win_percentage']
+                white_d2_d1 = exercise2_results['combinations'][key2]['white_win_percentage']
+                print(f"White depth={d1} vs Black depth={d2}: {white_d1_d2:.1f}% white wins")
+                print(f"White depth={d2} vs Black depth={d1}: {white_d2_d1:.1f}% white wins")
+                print(f"Difference: {abs(white_d1_d2 - white_d2_d1):.1f}%")
+                
+                if abs(white_d1_d2 - white_d2_d1) < 10:
+                    print("→ Results are relatively symmetric")
+                else:
+                    print("→ Significant asymmetry detected")
+            print("="*60 + "\n")
     
-    # ============================================================
-    # EXERCISE 3: White uses Minimax, Black uses Alpha-Beta
-    # ============================================================
+    return exercise2_results
+
+
+
+def run_exercise_3(depth=4, repetitions=3, verbose=False, save_to_file=True, 
+                   results_file='exercise3_results.json'):
+    """
+    Exercise 3: White uses Minimax (no pruning), Black uses Alpha-Beta
+    
+    Args:
+        depth: Search depth for both players (default: 4)
+        repetitions: Number of games to play (default: 3)
+        verbose: If True, print board state after each move (default: False)
+        save_to_file: If True, save moves and states to files (default: True)
+        results_file: JSON file to save results (default: 'exercise3_results.json')
+    """
+    import time
+    import json
+    import numpy as np
+    from aichess import Aichess
+    
     print("\n" + "="*70)
     print("==== EXERCISE 3: Minimax (White) vs Alpha-Beta (Black) =====")
     print("="*70)
     print("White uses Minimax (NO pruning), Black uses Alpha-Beta (WITH pruning)")
-    print("Both at depth 4, running 3 times")
+    print(f"Both at depth {depth}, running {repetitions} times")
     print("WARNING: This may take several minutes as minimax without pruning is VERY slow")
     print("="*70 + "\n")
     
@@ -2533,10 +2534,14 @@ if __name__ == "__main__":
         'white_wins': 0,
         'black_wins': 0,
         'draws': 0,
-        'games': []
+        'games': [],
+        'config': {
+            'depth': depth,
+            'repetitions': repetitions
+        }
     }
     
-    for rep in range(1, 4):
+    for rep in range(1, repetitions + 1):
         print(f"\n{'─'*70}")
         print(f"Exercise 3 - Game {rep}/{repetitions}")
         print(f"{'─'*70}\n")
@@ -2550,18 +2555,16 @@ if __name__ == "__main__":
         
         aichess = Aichess(TA, True)
         
-        moves_filename = f"moves_ex3_{rep}.txt"
-        states_filename = f"states_ex3_{rep}.txt"
+        moves_filename = f"moves_ex3_{rep}.txt" if save_to_file else None
+        states_filename = f"states_ex3_{rep}.txt" if save_to_file else None
         
         start_time = time.time()
-        # FIXED: Now properly implements the requirement
-        # White uses pure minimax (no pruning), Black uses alpha-beta (with pruning)
         result = aichess.alphaBetaGame(
-            4, 4,  # Using depth 4 as specified in assignment
-            whiteUsesAlphaBeta=False,  # White: minimaxNoPruning()
-            blackUsesAlphaBeta=True,   # Black: minimax() with alpha-beta
-            verbose=False,
-            save_to_file=True,
+            depth, depth,
+            whiteUsesAlphaBeta=False,  # White uses minimax (no pruning)
+            blackUsesAlphaBeta=True,   # Black uses alpha-beta
+            verbose=verbose,
+            save_to_file=save_to_file,
             moves_file=moves_filename,
             states_file=states_filename
         )
@@ -2595,29 +2598,54 @@ if __name__ == "__main__":
     print(f"║ Draws: {exercise3_results['draws']}/{repetitions}                                                     ║")
     print(f"╚{'═'*68}╝\n")
     
-    with open('exercise3_results.json', 'w') as f:
-        json.dump(exercise3_results, f, indent=2)
+    if results_file:
+        with open(results_file, 'w') as f:
+            json.dump(exercise3_results, f, indent=2)
+        print(f"Results saved to: {results_file}\n")
     
-    # ============================================================
-    # EXERCISE 4: Both use Alpha-Beta with varying depths (1-5)
-    # ============================================================
+    return exercise3_results
+
+
+def run_exercise_4(depth_range=(1, 5), repetitions=3, verbose=False, save_to_file=True, 
+                   generate_plot=True, results_file='exercise4_results.json'):
+    """
+    Exercise 4: Both use Alpha-Beta with varying depths
+    
+    Args:
+        depth_range: Tuple (min_depth, max_depth) inclusive (default: (1, 5))
+        repetitions: Number of games per combination (default: 3)
+        verbose: If True, print board state after each move (default: False)
+        save_to_file: If True, save moves and states to files (default: True)
+        generate_plot: If True, generate plot with results (default: True)
+        results_file: JSON file to save results (default: 'exercise4_results.json')
+    """
+    import time
+    import json
+    import numpy as np
+    from aichess import Aichess
+    import matplotlib.pyplot as plt
+    
     print("\n" + "="*70)
     print("==== EXERCISE 4: Alpha-Beta vs Alpha-Beta (Varying Depths) =====")
     print("="*70)
     print("Both players use Alpha-Beta pruning")
-    print("Testing all depth combinations from 1 to 5")
-    print("Running 3 games per combination")
+    print(f"Testing all depth combinations from {depth_range[0]} to {depth_range[1]}")
+    print(f"Running {repetitions} games per combination")
     print("="*70 + "\n")
     
     exercise4_results = {
         'combinations': {},
-        'all_games': []
+        'all_games': [],
+        'config': {
+            'depth_range': depth_range,
+            'repetitions': repetitions
+        }
     }
     
-    # Test ALL combinations from depth 1 to 5 as specified in assignment
+    # Test ALL combinations
     depth_combinations_ex4 = []
-    for depthW in range(1, 6):
-        for depthB in range(1, 6):
+    for depthW in range(depth_range[0], depth_range[1] + 1):
+        for depthB in range(depth_range[0], depth_range[1] + 1):
             depth_combinations_ex4.append((depthW, depthB))
     
     for depthWhite, depthBlack in depth_combinations_ex4:
@@ -2635,8 +2663,8 @@ if __name__ == "__main__":
             'draws': 0
         }
         
-        for rep in range(1, 4):
-            print(f"  Game {rep}/{repetitions}...", end=' ')
+        for rep in range(1, repetitions + 1):
+            print(f"  Game {rep}/{repetitions}...")
             
             TA = np.zeros((8, 8))
             TA[7][0] = 2
@@ -2646,22 +2674,20 @@ if __name__ == "__main__":
             
             aichess = Aichess(TA, True)
             
-            moves_filename = f"moves_ex4_{rep}_{depthWhite}_{depthBlack}.txt"
-            states_filename = f"states_ex4_{rep}_{depthWhite}_{depthBlack}.txt"
+            moves_filename = f"moves_ex4_{depthWhite}_{depthBlack}_{rep}.txt" if save_to_file else None
+            states_filename = f"states_ex4_{depthWhite}_{depthBlack}_{rep}.txt" if save_to_file else None
             
             start_time = time.time()
-            result = aichess.alphaBetaGame(
-                depthWhite, depthBlack,
-                whiteUsesAlphaBeta=True,
-                blackUsesAlphaBeta=True,
-                verbose=False,
-                save_to_file=True,
-                moves_file=moves_filename,
-                states_file=states_filename
-            )
+            result = aichess.alphaBetaGame(depthWhite, depthBlack,
+                                            whiteUsesAlphaBeta=True,
+                                            blackUsesAlphaBeta=True,
+                                            verbose=verbose, save_to_file=save_to_file,
+                                            moves_file=moves_filename,
+                                            states_file=states_filename)
             elapsed_time = time.time() - start_time
             
             winner = result['winner']
+            game_stats = result['stats']
             
             if winner == "White":
                 combo_results['white_wins'] += 1
@@ -2671,113 +2697,137 @@ if __name__ == "__main__":
                 combo_results['draws'] += 1
             
             game_info = {
-                'repetition': rep,
                 'white_depth': depthWhite,
                 'black_depth': depthBlack,
+                'repetition': rep,
                 'winner': winner,
-                'stats': result['stats'],
+                'stats': game_stats,
                 'elapsed_time': elapsed_time
             }
             combo_results['games'].append(game_info)
             exercise4_results['all_games'].append(game_info)
             
-            print(f"{winner} ({elapsed_time:.2f}s)")
+            print(f"    Result: {winner} ({elapsed_time:.2f}s)")
         
-        combo_results['white_win_percentage'] = (combo_results['white_wins'] / 3) * 100
-        combo_results['black_win_percentage'] = (combo_results['black_wins'] / 3) * 100
-        combo_results['draw_percentage'] = (combo_results['draws'] / 3) * 100
+        combo_results['white_win_percentage'] = (combo_results['white_wins'] / repetitions) * 100
+        combo_results['black_win_percentage'] = (combo_results['black_wins'] / repetitions) * 100
+        combo_results['draw_percentage'] = (combo_results['draws'] / repetitions) * 100
         
         exercise4_results['combinations'][combo_key] = combo_results
         
         print(f"  Summary: W={combo_results['white_wins']}, B={combo_results['black_wins']}, D={combo_results['draws']}")
     
-    with open('exercise4_results.json', 'w') as f:
-        json.dump(exercise4_results, f, indent=2)
+    if results_file:
+        with open(results_file, 'w') as f:
+            json.dump(exercise4_results, f, indent=2)
     
     print(f"\n╔{'═'*68}╗")
     print(f"║ EXERCISE 4 COMPLETE                                                ║")
     print(f"╚{'═'*68}╝")
-    print(f"Results saved to: exercise4_results.json\n")
+    if results_file:
+        print(f"Results saved to: {results_file}\n")
     
-    # ============================================================
-    # PLOT EXERCISE 4 RESULTS - "proportion of wins for whites AND blacks"
-    # ============================================================
-    print("\n" + "="*70)
-    print("Generating Exercise 4 Plot...")
-    print("="*70 + "\n")
+    # Generate plot
+    if generate_plot:
+        print("\n" + "="*70)
+        print("Generating Exercise 4 Plot...")
+        print("="*70 + "\n")
+        
+        # Calculate overall proportions across ALL games
+        total_white_wins = sum(c['white_wins'] for c in exercise4_results['combinations'].values())
+        total_black_wins = sum(c['black_wins'] for c in exercise4_results['combinations'].values())
+        total_draws = sum(c['draws'] for c in exercise4_results['combinations'].values())
+        total_games_ex4 = total_white_wins + total_black_wins + total_draws
+        
+        white_proportion = (total_white_wins / total_games_ex4) * 100
+        black_proportion = (total_black_wins / total_games_ex4) * 100
+        draw_proportion = (total_draws / total_games_ex4) * 100
+        
+        # Create figure with bar chart and pie chart
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+        
+        # Bar chart showing proportions
+        categories = ['White', 'Black', 'Draws']
+        proportions = [white_proportion, black_proportion, draw_proportion]
+        colors = ['#e74c3c', '#3498db', '#95a5a6']
+        
+        bars = ax1.bar(categories, proportions, color=colors, alpha=0.8, edgecolor='black', linewidth=2)
+        ax1.set_ylabel('Proportion (%)', fontsize=12, fontweight='bold')
+        ax1.set_title('Win Proportions', fontsize=13, fontweight='bold')
+        ax1.set_ylim(0, 100)
+        ax1.grid(axis='y', alpha=0.3)
+        
+        # Add value labels
+        for bar in bars:
+            height = bar.get_height()
+            ax1.text(bar.get_x() + bar.get_width()/2., height,
+                    f'{height:.1f}%',
+                    ha='center', va='bottom', fontsize=12, fontweight='bold')
+        
+        # Pie chart
+        wedges, texts, autotexts = ax2.pie(proportions, labels=categories, autopct='%1.1f%%',
+                                            colors=colors, startangle=90,
+                                            textprops={'fontsize': 11, 'fontweight': 'bold'})
+        
+        for autotext in autotexts:
+            autotext.set_color('white')
+            autotext.set_fontsize(12)
+            autotext.set_fontweight('bold')
+        
+        ax2.set_title('Win Distribution', fontsize=13, fontweight='bold')
+        
+        fig.suptitle(f'Exercise 4: Alpha-Beta vs Alpha-Beta\nProportion of Wins (All depth combinations {depth_range[0]}-{depth_range[1]})', 
+                     fontsize=14, fontweight='bold')
+        
+        plt.tight_layout()
+        plt.savefig('exercise4_plot.png', dpi=300, bbox_inches='tight')
+        print("✓ Saved: exercise4_plot.png")
+        print(f"  White wins: {white_proportion:.1f}% ({total_white_wins}/{total_games_ex4} games)")
+        print(f"  Black wins: {black_proportion:.1f}% ({total_black_wins}/{total_games_ex4} games)")
+        print(f"  Draws: {draw_proportion:.1f}% ({total_draws}/{total_games_ex4} games)")
+        plt.close()
     
-    # Calculate overall proportions across ALL games
-    total_white_wins = sum(c['white_wins'] for c in exercise4_results['combinations'].values())
-    total_black_wins = sum(c['black_wins'] for c in exercise4_results['combinations'].values())
-    total_draws = sum(c['draws'] for c in exercise4_results['combinations'].values())
-    total_games_ex4 = total_white_wins + total_black_wins + total_draws
+    return exercise4_results
+
+
+def run_exercise_5(depth=4, repetitions=3, verbose=False, save_to_file=True, 
+                   generate_plot=True, results_file='exercise5_results.json'):
+    """
+    Exercise 5: Expectimax (White) vs Alpha-Beta (Black)
     
-    white_proportion = (total_white_wins / total_games_ex4) * 100
-    black_proportion = (total_black_wins / total_games_ex4) * 100
-    draw_proportion = (total_draws / total_games_ex4) * 100
+    Args:
+        depth: Search depth for both players (default: 4)
+        repetitions: Number of games to play (default: 3)
+        verbose: If True, print board state after each move (default: False)
+        save_to_file: If True, save moves and states to files (default: True)
+        generate_plot: If True, generate plot with results (default: True)
+        results_file: JSON file to save results (default: 'exercise5_results.json')
+    """
+    import time
+    import json
+    import numpy as np
+    from aichess import Aichess
+    import matplotlib.pyplot as plt
     
-    # Create figure with bar chart and pie chart
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
-    
-    # Bar chart showing proportions
-    categories = ['White', 'Black', 'Draws']
-    proportions = [white_proportion, black_proportion, draw_proportion]
-    colors = ['#e74c3c', '#3498db', '#95a5a6']
-    
-    bars = ax1.bar(categories, proportions, color=colors, alpha=0.8, edgecolor='black', linewidth=2)
-    ax1.set_ylabel('Proportion (%)', fontsize=12, fontweight='bold')
-    ax1.set_title('Win Proportions', fontsize=13, fontweight='bold')
-    ax1.set_ylim(0, 100)
-    ax1.grid(axis='y', alpha=0.3)
-    
-    # Add value labels
-    for bar in bars:
-        height = bar.get_height()
-        ax1.text(bar.get_x() + bar.get_width()/2., height,
-                f'{height:.1f}%',
-                ha='center', va='bottom', fontsize=12, fontweight='bold')
-    
-    # Pie chart
-    wedges, texts, autotexts = ax2.pie(proportions, labels=categories, autopct='%1.1f%%',
-                                        colors=colors, startangle=90,
-                                        textprops={'fontsize': 11, 'fontweight': 'bold'})
-    
-    for autotext in autotexts:
-        autotext.set_color('white')
-        autotext.set_fontsize(12)
-        autotext.set_fontweight('bold')
-    
-    ax2.set_title('Win Distribution', fontsize=13, fontweight='bold')
-    
-    fig.suptitle('Exercise 4: Alpha-Beta vs Alpha-Beta\nProportion of Wins (All depth combinations 1-5)', 
-                 fontsize=14, fontweight='bold')
-    
-    plt.tight_layout()
-    plt.savefig('exercise4_plot.png', dpi=300, bbox_inches='tight')
-    print("✓ Saved: exercise4_plot.png")
-    print(f"  White wins: {white_proportion:.1f}% ({total_white_wins}/{total_games_ex4} games)")
-    print(f"  Black wins: {black_proportion:.1f}% ({total_black_wins}/{total_games_ex4} games)")
-    print(f"  Draws: {draw_proportion:.1f}% ({total_draws}/{total_games_ex4} games)")
-    plt.close()
-    
-    # ============================================================
-    # EXERCISE 5: Expectimax (White) vs Alpha-Beta (Black)
-    # ============================================================
     print("\n" + "="*70)
     print("==== EXERCISE 5: Expectimax (White) vs Alpha-Beta (Black) =====")
     print("="*70)
     print("White uses Expectimax, Black uses Alpha-Beta pruning")
-    print("Depth 4 for both, running 3 times")
+    print(f"Depth {depth} for both, running {repetitions} times")
     print("="*70 + "\n")
     
     exercise5_results = {
         'white_wins': 0,
         'black_wins': 0,
         'draws': 0,
-        'games': []
+        'games': [],
+        'config': {
+            'depth': depth,
+            'repetitions': repetitions
+        }
     }
     
-    for rep in range(1, 4):
+    for rep in range(1, repetitions + 1):
         print(f"\n{'─'*70}")
         print(f"Exercise 5 - Game {rep}/{repetitions}")
         print(f"{'─'*70}\n")
@@ -2790,16 +2840,16 @@ if __name__ == "__main__":
         
         aichess = Aichess(TA, True)
         
-        moves_filename = f"moves_ex5_{rep}.txt"
-        states_filename = f"states_ex5_{rep}.txt"
+        moves_filename = f"moves_ex5_{rep}.txt" if save_to_file else None
+        states_filename = f"states_ex5_{rep}.txt" if save_to_file else None
         
         start_time = time.time()
         result = aichess.expectimaxGame(
-            4, 4,
+            depth, depth,
             whiteUsesExpectimax=True,
             blackUsesAlphaBeta=True,
-            verbose=False,
-            save_to_file=True,
+            verbose=verbose,
+            save_to_file=save_to_file,
             moves_file=moves_filename,
             states_file=states_filename
         )
@@ -2833,71 +2883,125 @@ if __name__ == "__main__":
     print(f"║ Draws: {exercise5_results['draws']}/{repetitions}                                                     ║")
     print(f"╚{'═'*68}╝\n")
     
-    with open('exercise5_results.json', 'w') as f:
-        json.dump(exercise5_results, f, indent=2)
+    if results_file:
+        with open(results_file, 'w') as f:
+            json.dump(exercise5_results, f, indent=2)
+        print(f"Results saved to: {results_file}\n")
     
-    # ============================================================
-    # PLOT EXERCISE 5 RESULTS
-    # ============================================================
-    print("\n" + "="*70)
-    print("Generating Exercise 5 Plot...")
-    print("="*70 + "\n")
+    # Generate plot
+    if generate_plot:
+        print("\n" + "="*70)
+        print("Generating Exercise 5 Plot...")
+        print("="*70 + "\n")
+        
+        categories = ['White\n(Expectimax)', 'Black\n(Alpha-Beta)', 'Draws']
+        values = [exercise5_results['white_wins'], exercise5_results['black_wins'], exercise5_results['draws']]
+        colors = ['#ff6b6b', '#4ecdc4', '#95e1d3']
+        
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+        
+        # Bar chart
+        bars = ax1.bar(categories, values, color=colors, alpha=0.8, edgecolor='black', linewidth=2)
+        ax1.set_ylabel(f'Number of Wins (out of {repetitions} games)', fontsize=12, fontweight='bold')
+        ax1.set_title('Exercise 5: Game Results', fontsize=13, fontweight='bold')
+        ax1.set_ylim(0, repetitions + 0.5)
+        ax1.grid(axis='y', alpha=0.3)
+        
+        # Add value labels
+        for bar in bars:
+            height = bar.get_height()
+            ax1.text(bar.get_x() + bar.get_width()/2., height,
+                    f'{int(height)}',
+                    ha='center', va='bottom', fontsize=14, fontweight='bold')
+        
+        # Pie chart
+        percentages = [(v/repetitions)*100 for v in values]
+        
+        wedges, texts, autotexts = ax2.pie(percentages, labels=categories, autopct='%1.1f%%',
+                                            colors=colors, startangle=90,
+                                            textprops={'fontsize': 11, 'fontweight': 'bold'})
+        
+        # Make percentage text larger
+        for autotext in autotexts:
+            autotext.set_color('white')
+            autotext.set_fontsize(12)
+            autotext.set_fontweight('bold')
+        
+        ax2.set_title('Win Proportions', fontsize=13, fontweight='bold')
+        
+        fig.suptitle('Exercise 5: Expectimax (White) vs Alpha-Beta (Black)', 
+                     fontsize=14, fontweight='bold')
+        
+        plt.tight_layout()
+        plt.savefig('exercise5_plot.png', dpi=300, bbox_inches='tight')
+        print("✓ Saved: exercise5_plot.png")
+        plt.close()
     
-    categories = ['White\n(Expectimax)', 'Black\n(Alpha-Beta)', 'Draws']
-    values = [exercise5_results['white_wins'], exercise5_results['black_wins'], exercise5_results['draws']]
-    colors = ['#ff6b6b', '#4ecdc4', '#95e1d3']
+    return exercise5_results
+
+
+# ===========================================================================
+# ========================= MAIN ============================================
+# ===========================================================================
+
+if __name__ == "__main__":
+    import json
+    import time
     
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+    # Initialize an empty 8x8 chess board
+    TA = np.zeros((8, 8))
+
+    # Load initial positions of the pieces
+    TA = np.zeros((8, 8))
+    TA[7][0] = 2   
+    TA[7][5] = 6   
+    TA[0][7] = 8   
+    TA[0][5] = 12  
+
+    # Initialise board and print
+    print("Starting AI chess... ")
+    aichess = Aichess(TA, True)
+    print("Printing initial board:")
+    aichess.chess.boardSim.print_board()
     
-    # Bar chart
-    bars = ax1.bar(categories, values, color=colors, alpha=0.8, edgecolor='black', linewidth=2)
-    ax1.set_ylabel('Number of Wins (out of 3 games)', fontsize=12, fontweight='bold')
-    ax1.set_title('Exercise 5: Game Results', fontsize=13, fontweight='bold')
-    ax1.set_ylim(0, 3.5)
-    ax1.grid(axis='y', alpha=0.3)
-    
-    # Add value labels
-    for bar in bars:
-        height = bar.get_height()
-        ax1.text(bar.get_x() + bar.get_width()/2., height,
-                f'{int(height)}',
-                ha='center', va='bottom', fontsize=14, fontweight='bold')
-    
-    # Pie chart
-    total_games = 3
-    percentages = [(v/total_games)*100 for v in values]
-    
-    wedges, texts, autotexts = ax2.pie(percentages, labels=categories, autopct='%1.1f%%',
-                                        colors=colors, startangle=90,
-                                        textprops={'fontsize': 11, 'fontweight': 'bold'})
-    
-    # Make percentage text larger
-    for autotext in autotexts:
-        autotext.set_color('white')
-        autotext.set_fontsize(12)
-        autotext.set_fontweight('bold')
-    
-    ax2.set_title('Win Proportions', fontsize=13, fontweight='bold')
-    
-    fig.suptitle('Exercise 5: Expectimax (White) vs Alpha-Beta (Black)', 
-                 fontsize=14, fontweight='bold')
-    
-    plt.tight_layout()
-    plt.savefig('exercise5_plot.png', dpi=300, bbox_inches='tight')
-    print("✓ Saved: exercise5_plot.png")
-    plt.close()
-    
-    print("\n" + "="*70)
-    print("ALL EXERCISES COMPLETE!")
-    print("="*70)
-    print("\nEXERCISE 6 - Analysis:")
-    print("="*70)
-    print("Question: Is King+Rook vs King+Rook really an even position?")
-    print("\nAnswer: While materially equal, this position is NOT truly even because:")
-    print("1. White moves first - significant advantage in endgames")
-    print("2. The player with the move can often force favorable exchanges")
-    print("3. Rook activity and king position create asymmetries")
-    print("4. Even small positional advantages can be decisive with optimal play")
-    print("\nCheck the results from Exercises 2-5 to see if White has an advantage")
-    print("due to moving first, or if the position leads to draws with best play.")
-    print("="*70)
+    # Run all exercises with default parameters
+    # You can customize each exercise by passing different parameters
+    run_exercise_1(
+    depth_white=4,           # Profundidad de búsqueda para Blancas
+    depth_black=4,           # Profundidad de búsqueda para Negras
+    repetitions=3,           # Número de partidas
+    verbose=False,           # Imprimir tablero tras cada movimiento
+    save_to_file=True,       # Guardar movimientos/estados en archivos
+    results_file='exercise1_results.json'  # Archivo JSON de resultados
+    )
+    run_exercise_2(
+    depth_values=[3, 4],     # Lista de profundidades a probar
+    repetitions=3,           # Partidas por combinación
+    verbose=False,           # Imprimir tablero tras cada movimiento
+    save_to_file=True,       # Guardar movimientos/estados
+    generate_plot=True,      # Generar gráfico con resultados
+    results_file='exercise2_results.json'
+    )
+    run_exercise_3(
+    depth=4,                 # Profundidad para ambos jugadores
+    repetitions=3,           # Número de partidas
+    verbose=False,           # Imprimir tablero
+    save_to_file=True,       # Guardar archivos
+    results_file='exercise3_results.json'
+    )
+    run_exercise_4(
+    depth_range=(1, 5),      # (min, max) profundidades inclusivo
+    repetitions=3,           # Partidas por combinación
+    verbose=False,           # Imprimir tablero
+    save_to_file=True,       # Guardar archivos
+    generate_plot=True,      # Generar gráfico
+    results_file='exercise4_results.json'
+    )
+    run_exercise_5(
+    depth=4,                 # Profundidad para ambos
+    repetitions=3,           # Número de partidas
+    verbose=False,           # Imprimir tablero
+    save_to_file=True,       # Guardar archivos
+    generate_plot=True,      # Generar gráfico
+    results_file='exercise5_results.json'
+    )
