@@ -1,0 +1,2413 @@
+{
+  "combinations": {
+    "1v1": {
+      "white_depth": 1,
+      "black_depth": 1,
+      "games": [
+        {
+          "white_depth": 1,
+          "black_depth": 1,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 12,
+            "full_moves": 6,
+            "depth_white": 1,
+            "depth_black": 1,
+            "states_visited": 13
+          },
+          "elapsed_time": 0.07547140121459961
+        },
+        {
+          "white_depth": 1,
+          "black_depth": 1,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 12,
+            "full_moves": 6,
+            "depth_white": 1,
+            "depth_black": 1,
+            "states_visited": 13
+          },
+          "elapsed_time": 0.07751941680908203
+        },
+        {
+          "white_depth": 1,
+          "black_depth": 1,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 12,
+            "full_moves": 6,
+            "depth_white": 1,
+            "depth_black": 1,
+            "states_visited": 13
+          },
+          "elapsed_time": 0.07625269889831543
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    },
+    "1v2": {
+      "white_depth": 1,
+      "black_depth": 2,
+      "games": [
+        {
+          "white_depth": 1,
+          "black_depth": 2,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 9,
+            "full_moves": 5,
+            "depth_white": 1,
+            "depth_black": 2,
+            "states_visited": 10
+          },
+          "elapsed_time": 0.0931549072265625
+        },
+        {
+          "white_depth": 1,
+          "black_depth": 2,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 9,
+            "full_moves": 5,
+            "depth_white": 1,
+            "depth_black": 2,
+            "states_visited": 10
+          },
+          "elapsed_time": 0.11319422721862793
+        },
+        {
+          "white_depth": 1,
+          "black_depth": 2,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 9,
+            "full_moves": 5,
+            "depth_white": 1,
+            "depth_black": 2,
+            "states_visited": 10
+          },
+          "elapsed_time": 0.09473800659179688
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    },
+    "1v3": {
+      "white_depth": 1,
+      "black_depth": 3,
+      "games": [
+        {
+          "white_depth": 1,
+          "black_depth": 3,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 21,
+            "full_moves": 11,
+            "depth_white": 1,
+            "depth_black": 3,
+            "states_visited": 22
+          },
+          "elapsed_time": 1.0063929557800293
+        },
+        {
+          "white_depth": 1,
+          "black_depth": 3,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 21,
+            "full_moves": 11,
+            "depth_white": 1,
+            "depth_black": 3,
+            "states_visited": 22
+          },
+          "elapsed_time": 1.0070574283599854
+        },
+        {
+          "white_depth": 1,
+          "black_depth": 3,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 21,
+            "full_moves": 11,
+            "depth_white": 1,
+            "depth_black": 3,
+            "states_visited": 22
+          },
+          "elapsed_time": 1.014153003692627
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    },
+    "1v4": {
+      "white_depth": 1,
+      "black_depth": 4,
+      "games": [
+        {
+          "white_depth": 1,
+          "black_depth": 4,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 9,
+            "full_moves": 5,
+            "depth_white": 1,
+            "depth_black": 4,
+            "states_visited": 10
+          },
+          "elapsed_time": 5.242432594299316
+        },
+        {
+          "white_depth": 1,
+          "black_depth": 4,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 9,
+            "full_moves": 5,
+            "depth_white": 1,
+            "depth_black": 4,
+            "states_visited": 10
+          },
+          "elapsed_time": 5.250701189041138
+        },
+        {
+          "white_depth": 1,
+          "black_depth": 4,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 9,
+            "full_moves": 5,
+            "depth_white": 1,
+            "depth_black": 4,
+            "states_visited": 10
+          },
+          "elapsed_time": 5.2498486042022705
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    },
+    "1v5": {
+      "white_depth": 1,
+      "black_depth": 5,
+      "games": [
+        {
+          "white_depth": 1,
+          "black_depth": 5,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 50,
+            "full_moves": 25,
+            "depth_white": 1,
+            "depth_black": 5,
+            "states_visited": 51
+          },
+          "elapsed_time": 224.65519094467163
+        },
+        {
+          "white_depth": 1,
+          "black_depth": 5,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 50,
+            "full_moves": 25,
+            "depth_white": 1,
+            "depth_black": 5,
+            "states_visited": 51
+          },
+          "elapsed_time": 233.4592261314392
+        },
+        {
+          "white_depth": 1,
+          "black_depth": 5,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 50,
+            "full_moves": 25,
+            "depth_white": 1,
+            "depth_black": 5,
+            "states_visited": 51
+          },
+          "elapsed_time": 224.4025580883026
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    },
+    "2v1": {
+      "white_depth": 2,
+      "black_depth": 1,
+      "games": [
+        {
+          "white_depth": 2,
+          "black_depth": 1,
+          "repetition": 1,
+          "winner": "White",
+          "stats": {
+            "half_moves": 33,
+            "full_moves": 17,
+            "depth_white": 2,
+            "depth_black": 1,
+            "states_visited": 34
+          },
+          "elapsed_time": 1.028670072555542
+        },
+        {
+          "white_depth": 2,
+          "black_depth": 1,
+          "repetition": 2,
+          "winner": "White",
+          "stats": {
+            "half_moves": 33,
+            "full_moves": 17,
+            "depth_white": 2,
+            "depth_black": 1,
+            "states_visited": 34
+          },
+          "elapsed_time": 1.0349969863891602
+        },
+        {
+          "white_depth": 2,
+          "black_depth": 1,
+          "repetition": 3,
+          "winner": "White",
+          "stats": {
+            "half_moves": 33,
+            "full_moves": 17,
+            "depth_white": 2,
+            "depth_black": 1,
+            "states_visited": 34
+          },
+          "elapsed_time": 1.0277268886566162
+        }
+      ],
+      "white_wins": 3,
+      "black_wins": 0,
+      "draws": 0,
+      "white_win_percentage": 100.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 0.0
+    },
+    "2v2": {
+      "white_depth": 2,
+      "black_depth": 2,
+      "games": [
+        {
+          "white_depth": 2,
+          "black_depth": 2,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 24,
+            "full_moves": 12,
+            "depth_white": 2,
+            "depth_black": 2,
+            "states_visited": 25
+          },
+          "elapsed_time": 1.2846393585205078
+        },
+        {
+          "white_depth": 2,
+          "black_depth": 2,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 24,
+            "full_moves": 12,
+            "depth_white": 2,
+            "depth_black": 2,
+            "states_visited": 25
+          },
+          "elapsed_time": 1.291402816772461
+        },
+        {
+          "white_depth": 2,
+          "black_depth": 2,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 24,
+            "full_moves": 12,
+            "depth_white": 2,
+            "depth_black": 2,
+            "states_visited": 25
+          },
+          "elapsed_time": 1.2992992401123047
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    },
+    "2v3": {
+      "white_depth": 2,
+      "black_depth": 3,
+      "games": [
+        {
+          "white_depth": 2,
+          "black_depth": 3,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 26,
+            "full_moves": 13,
+            "depth_white": 2,
+            "depth_black": 3,
+            "states_visited": 27
+          },
+          "elapsed_time": 7.9365599155426025
+        },
+        {
+          "white_depth": 2,
+          "black_depth": 3,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 26,
+            "full_moves": 13,
+            "depth_white": 2,
+            "depth_black": 3,
+            "states_visited": 27
+          },
+          "elapsed_time": 7.973306179046631
+        },
+        {
+          "white_depth": 2,
+          "black_depth": 3,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 26,
+            "full_moves": 13,
+            "depth_white": 2,
+            "depth_black": 3,
+            "states_visited": 27
+          },
+          "elapsed_time": 7.9555275440216064
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    },
+    "2v4": {
+      "white_depth": 2,
+      "black_depth": 4,
+      "games": [
+        {
+          "white_depth": 2,
+          "black_depth": 4,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 26,
+            "full_moves": 13,
+            "depth_white": 2,
+            "depth_black": 4,
+            "states_visited": 27
+          },
+          "elapsed_time": 54.188955783843994
+        },
+        {
+          "white_depth": 2,
+          "black_depth": 4,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 26,
+            "full_moves": 13,
+            "depth_white": 2,
+            "depth_black": 4,
+            "states_visited": 27
+          },
+          "elapsed_time": 54.123061418533325
+        },
+        {
+          "white_depth": 2,
+          "black_depth": 4,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 26,
+            "full_moves": 13,
+            "depth_white": 2,
+            "depth_black": 4,
+            "states_visited": 27
+          },
+          "elapsed_time": 54.18520903587341
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    },
+    "2v5": {
+      "white_depth": 2,
+      "black_depth": 5,
+      "games": [
+        {
+          "white_depth": 2,
+          "black_depth": 5,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 24,
+            "full_moves": 12,
+            "depth_white": 2,
+            "depth_black": 5,
+            "states_visited": 25
+          },
+          "elapsed_time": 250.65300226211548
+        },
+        {
+          "white_depth": 2,
+          "black_depth": 5,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 24,
+            "full_moves": 12,
+            "depth_white": 2,
+            "depth_black": 5,
+            "states_visited": 25
+          },
+          "elapsed_time": 265.7165403366089
+        },
+        {
+          "white_depth": 2,
+          "black_depth": 5,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 24,
+            "full_moves": 12,
+            "depth_white": 2,
+            "depth_black": 5,
+            "states_visited": 25
+          },
+          "elapsed_time": 250.37033939361572
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    },
+    "3v1": {
+      "white_depth": 3,
+      "black_depth": 1,
+      "games": [
+        {
+          "white_depth": 3,
+          "black_depth": 1,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 31,
+            "full_moves": 16,
+            "depth_white": 3,
+            "depth_black": 1,
+            "states_visited": 32
+          },
+          "elapsed_time": 8.135130405426025
+        },
+        {
+          "white_depth": 3,
+          "black_depth": 1,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 31,
+            "full_moves": 16,
+            "depth_white": 3,
+            "depth_black": 1,
+            "states_visited": 32
+          },
+          "elapsed_time": 8.163368463516235
+        },
+        {
+          "white_depth": 3,
+          "black_depth": 1,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 31,
+            "full_moves": 16,
+            "depth_white": 3,
+            "depth_black": 1,
+            "states_visited": 32
+          },
+          "elapsed_time": 8.182752132415771
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    },
+    "3v2": {
+      "white_depth": 3,
+      "black_depth": 2,
+      "games": [
+        {
+          "white_depth": 3,
+          "black_depth": 2,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 9,
+            "full_moves": 5,
+            "depth_white": 3,
+            "depth_black": 2,
+            "states_visited": 10
+          },
+          "elapsed_time": 2.5522282123565674
+        },
+        {
+          "white_depth": 3,
+          "black_depth": 2,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 9,
+            "full_moves": 5,
+            "depth_white": 3,
+            "depth_black": 2,
+            "states_visited": 10
+          },
+          "elapsed_time": 2.5207324028015137
+        },
+        {
+          "white_depth": 3,
+          "black_depth": 2,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 9,
+            "full_moves": 5,
+            "depth_white": 3,
+            "depth_black": 2,
+            "states_visited": 10
+          },
+          "elapsed_time": 2.5407612323760986
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    },
+    "3v3": {
+      "white_depth": 3,
+      "black_depth": 3,
+      "games": [
+        {
+          "white_depth": 3,
+          "black_depth": 3,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 30,
+            "full_moves": 15,
+            "depth_white": 3,
+            "depth_black": 3,
+            "states_visited": 31
+          },
+          "elapsed_time": 8.180213212966919
+        },
+        {
+          "white_depth": 3,
+          "black_depth": 3,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 30,
+            "full_moves": 15,
+            "depth_white": 3,
+            "depth_black": 3,
+            "states_visited": 31
+          },
+          "elapsed_time": 8.21537160873413
+        },
+        {
+          "white_depth": 3,
+          "black_depth": 3,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 30,
+            "full_moves": 15,
+            "depth_white": 3,
+            "depth_black": 3,
+            "states_visited": 31
+          },
+          "elapsed_time": 8.240785837173462
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    },
+    "3v4": {
+      "white_depth": 3,
+      "black_depth": 4,
+      "games": [
+        {
+          "white_depth": 3,
+          "black_depth": 4,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 9,
+            "full_moves": 5,
+            "depth_white": 3,
+            "depth_black": 4,
+            "states_visited": 10
+          },
+          "elapsed_time": 5.9657981395721436
+        },
+        {
+          "white_depth": 3,
+          "black_depth": 4,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 9,
+            "full_moves": 5,
+            "depth_white": 3,
+            "depth_black": 4,
+            "states_visited": 10
+          },
+          "elapsed_time": 6.006144285202026
+        },
+        {
+          "white_depth": 3,
+          "black_depth": 4,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 9,
+            "full_moves": 5,
+            "depth_white": 3,
+            "depth_black": 4,
+            "states_visited": 10
+          },
+          "elapsed_time": 5.998414516448975
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    },
+    "3v5": {
+      "white_depth": 3,
+      "black_depth": 5,
+      "games": [
+        {
+          "white_depth": 3,
+          "black_depth": 5,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 19,
+            "full_moves": 10,
+            "depth_white": 3,
+            "depth_black": 5,
+            "states_visited": 20
+          },
+          "elapsed_time": 125.62271237373352
+        },
+        {
+          "white_depth": 3,
+          "black_depth": 5,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 19,
+            "full_moves": 10,
+            "depth_white": 3,
+            "depth_black": 5,
+            "states_visited": 20
+          },
+          "elapsed_time": 125.7728841304779
+        },
+        {
+          "white_depth": 3,
+          "black_depth": 5,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 19,
+            "full_moves": 10,
+            "depth_white": 3,
+            "depth_black": 5,
+            "states_visited": 20
+          },
+          "elapsed_time": 125.44824862480164
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    },
+    "4v1": {
+      "white_depth": 4,
+      "black_depth": 1,
+      "games": [
+        {
+          "white_depth": 4,
+          "black_depth": 1,
+          "repetition": 1,
+          "winner": "White",
+          "stats": {
+            "half_moves": 33,
+            "full_moves": 17,
+            "depth_white": 4,
+            "depth_black": 1,
+            "states_visited": 34
+          },
+          "elapsed_time": 19.649696350097656
+        },
+        {
+          "white_depth": 4,
+          "black_depth": 1,
+          "repetition": 2,
+          "winner": "White",
+          "stats": {
+            "half_moves": 33,
+            "full_moves": 17,
+            "depth_white": 4,
+            "depth_black": 1,
+            "states_visited": 34
+          },
+          "elapsed_time": 19.671661615371704
+        },
+        {
+          "white_depth": 4,
+          "black_depth": 1,
+          "repetition": 3,
+          "winner": "White",
+          "stats": {
+            "half_moves": 33,
+            "full_moves": 17,
+            "depth_white": 4,
+            "depth_black": 1,
+            "states_visited": 34
+          },
+          "elapsed_time": 20.865044355392456
+        }
+      ],
+      "white_wins": 3,
+      "black_wins": 0,
+      "draws": 0,
+      "white_win_percentage": 100.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 0.0
+    },
+    "4v2": {
+      "white_depth": 4,
+      "black_depth": 2,
+      "games": [
+        {
+          "white_depth": 4,
+          "black_depth": 2,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 9,
+            "full_moves": 5,
+            "depth_white": 4,
+            "depth_black": 2,
+            "states_visited": 10
+          },
+          "elapsed_time": 15.064412832260132
+        },
+        {
+          "white_depth": 4,
+          "black_depth": 2,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 9,
+            "full_moves": 5,
+            "depth_white": 4,
+            "depth_black": 2,
+            "states_visited": 10
+          },
+          "elapsed_time": 15.687274694442749
+        },
+        {
+          "white_depth": 4,
+          "black_depth": 2,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 9,
+            "full_moves": 5,
+            "depth_white": 4,
+            "depth_black": 2,
+            "states_visited": 10
+          },
+          "elapsed_time": 14.360376596450806
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    },
+    "4v3": {
+      "white_depth": 4,
+      "black_depth": 3,
+      "games": [
+        {
+          "white_depth": 4,
+          "black_depth": 3,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 11,
+            "full_moves": 6,
+            "depth_white": 4,
+            "depth_black": 3,
+            "states_visited": 12
+          },
+          "elapsed_time": 18.835951805114746
+        },
+        {
+          "white_depth": 4,
+          "black_depth": 3,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 11,
+            "full_moves": 6,
+            "depth_white": 4,
+            "depth_black": 3,
+            "states_visited": 12
+          },
+          "elapsed_time": 18.85942792892456
+        },
+        {
+          "white_depth": 4,
+          "black_depth": 3,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 11,
+            "full_moves": 6,
+            "depth_white": 4,
+            "depth_black": 3,
+            "states_visited": 12
+          },
+          "elapsed_time": 18.87821078300476
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    },
+    "4v4": {
+      "white_depth": 4,
+      "black_depth": 4,
+      "games": [
+        {
+          "white_depth": 4,
+          "black_depth": 4,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 9,
+            "full_moves": 5,
+            "depth_white": 4,
+            "depth_black": 4,
+            "states_visited": 10
+          },
+          "elapsed_time": 16.65929889678955
+        },
+        {
+          "white_depth": 4,
+          "black_depth": 4,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 9,
+            "full_moves": 5,
+            "depth_white": 4,
+            "depth_black": 4,
+            "states_visited": 10
+          },
+          "elapsed_time": 16.63393807411194
+        },
+        {
+          "white_depth": 4,
+          "black_depth": 4,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 9,
+            "full_moves": 5,
+            "depth_white": 4,
+            "depth_black": 4,
+            "states_visited": 10
+          },
+          "elapsed_time": 16.644964694976807
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    },
+    "4v5": {
+      "white_depth": 4,
+      "black_depth": 5,
+      "games": [
+        {
+          "white_depth": 4,
+          "black_depth": 5,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 33,
+            "full_moves": 17,
+            "depth_white": 4,
+            "depth_black": 5,
+            "states_visited": 34
+          },
+          "elapsed_time": 307.21567392349243
+        },
+        {
+          "white_depth": 4,
+          "black_depth": 5,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 33,
+            "full_moves": 17,
+            "depth_white": 4,
+            "depth_black": 5,
+            "states_visited": 34
+          },
+          "elapsed_time": 306.94938254356384
+        },
+        {
+          "white_depth": 4,
+          "black_depth": 5,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 33,
+            "full_moves": 17,
+            "depth_white": 4,
+            "depth_black": 5,
+            "states_visited": 34
+          },
+          "elapsed_time": 317.980676651001
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    },
+    "5v1": {
+      "white_depth": 5,
+      "black_depth": 1,
+      "games": [
+        {
+          "white_depth": 5,
+          "black_depth": 1,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 19,
+            "full_moves": 10,
+            "depth_white": 5,
+            "depth_black": 1,
+            "states_visited": 20
+          },
+          "elapsed_time": 161.75013399124146
+        },
+        {
+          "white_depth": 5,
+          "black_depth": 1,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 19,
+            "full_moves": 10,
+            "depth_white": 5,
+            "depth_black": 1,
+            "states_visited": 20
+          },
+          "elapsed_time": 161.89529514312744
+        },
+        {
+          "white_depth": 5,
+          "black_depth": 1,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 19,
+            "full_moves": 10,
+            "depth_white": 5,
+            "depth_black": 1,
+            "states_visited": 20
+          },
+          "elapsed_time": 161.8800458908081
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    },
+    "5v2": {
+      "white_depth": 5,
+      "black_depth": 2,
+      "games": [
+        {
+          "white_depth": 5,
+          "black_depth": 2,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 16,
+            "full_moves": 8,
+            "depth_white": 5,
+            "depth_black": 2,
+            "states_visited": 17
+          },
+          "elapsed_time": 108.50288796424866
+        },
+        {
+          "white_depth": 5,
+          "black_depth": 2,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 16,
+            "full_moves": 8,
+            "depth_white": 5,
+            "depth_black": 2,
+            "states_visited": 17
+          },
+          "elapsed_time": 108.62954521179199
+        },
+        {
+          "white_depth": 5,
+          "black_depth": 2,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 16,
+            "full_moves": 8,
+            "depth_white": 5,
+            "depth_black": 2,
+            "states_visited": 17
+          },
+          "elapsed_time": 119.877769947052
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    },
+    "5v3": {
+      "white_depth": 5,
+      "black_depth": 3,
+      "games": [
+        {
+          "white_depth": 5,
+          "black_depth": 3,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 13,
+            "full_moves": 7,
+            "depth_white": 5,
+            "depth_black": 3,
+            "states_visited": 14
+          },
+          "elapsed_time": 94.46041655540466
+        },
+        {
+          "white_depth": 5,
+          "black_depth": 3,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 13,
+            "full_moves": 7,
+            "depth_white": 5,
+            "depth_black": 3,
+            "states_visited": 14
+          },
+          "elapsed_time": 94.42977023124695
+        },
+        {
+          "white_depth": 5,
+          "black_depth": 3,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 13,
+            "full_moves": 7,
+            "depth_white": 5,
+            "depth_black": 3,
+            "states_visited": 14
+          },
+          "elapsed_time": 94.65645980834961
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    },
+    "5v4": {
+      "white_depth": 5,
+      "black_depth": 4,
+      "games": [
+        {
+          "white_depth": 5,
+          "black_depth": 4,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 21,
+            "full_moves": 11,
+            "depth_white": 5,
+            "depth_black": 4,
+            "states_visited": 22
+          },
+          "elapsed_time": 248.44951605796814
+        },
+        {
+          "white_depth": 5,
+          "black_depth": 4,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 21,
+            "full_moves": 11,
+            "depth_white": 5,
+            "depth_black": 4,
+            "states_visited": 22
+          },
+          "elapsed_time": 248.78779220581055
+        },
+        {
+          "white_depth": 5,
+          "black_depth": 4,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 21,
+            "full_moves": 11,
+            "depth_white": 5,
+            "depth_black": 4,
+            "states_visited": 22
+          },
+          "elapsed_time": 265.14622926712036
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    },
+    "5v5": {
+      "white_depth": 5,
+      "black_depth": 5,
+      "games": [
+        {
+          "white_depth": 5,
+          "black_depth": 5,
+          "repetition": 1,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 42,
+            "full_moves": 21,
+            "depth_white": 5,
+            "depth_black": 5,
+            "states_visited": 43
+          },
+          "elapsed_time": 980.4552805423737
+        },
+        {
+          "white_depth": 5,
+          "black_depth": 5,
+          "repetition": 2,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 42,
+            "full_moves": 21,
+            "depth_white": 5,
+            "depth_black": 5,
+            "states_visited": 43
+          },
+          "elapsed_time": 1209.7419035434723
+        },
+        {
+          "white_depth": 5,
+          "black_depth": 5,
+          "repetition": 3,
+          "winner": "Draw",
+          "stats": {
+            "half_moves": 42,
+            "full_moves": 21,
+            "depth_white": 5,
+            "depth_black": 5,
+            "states_visited": 43
+          },
+          "elapsed_time": 1286.807639837265
+        }
+      ],
+      "white_wins": 0,
+      "black_wins": 0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
+      "black_win_percentage": 0.0,
+      "draw_percentage": 100.0
+    }
+  },
+  "all_games": [
+    {
+      "white_depth": 1,
+      "black_depth": 1,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 12,
+        "full_moves": 6,
+        "depth_white": 1,
+        "depth_black": 1,
+        "states_visited": 13
+      },
+      "elapsed_time": 0.07547140121459961
+    },
+    {
+      "white_depth": 1,
+      "black_depth": 1,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 12,
+        "full_moves": 6,
+        "depth_white": 1,
+        "depth_black": 1,
+        "states_visited": 13
+      },
+      "elapsed_time": 0.07751941680908203
+    },
+    {
+      "white_depth": 1,
+      "black_depth": 1,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 12,
+        "full_moves": 6,
+        "depth_white": 1,
+        "depth_black": 1,
+        "states_visited": 13
+      },
+      "elapsed_time": 0.07625269889831543
+    },
+    {
+      "white_depth": 1,
+      "black_depth": 2,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 9,
+        "full_moves": 5,
+        "depth_white": 1,
+        "depth_black": 2,
+        "states_visited": 10
+      },
+      "elapsed_time": 0.0931549072265625
+    },
+    {
+      "white_depth": 1,
+      "black_depth": 2,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 9,
+        "full_moves": 5,
+        "depth_white": 1,
+        "depth_black": 2,
+        "states_visited": 10
+      },
+      "elapsed_time": 0.11319422721862793
+    },
+    {
+      "white_depth": 1,
+      "black_depth": 2,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 9,
+        "full_moves": 5,
+        "depth_white": 1,
+        "depth_black": 2,
+        "states_visited": 10
+      },
+      "elapsed_time": 0.09473800659179688
+    },
+    {
+      "white_depth": 1,
+      "black_depth": 3,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 21,
+        "full_moves": 11,
+        "depth_white": 1,
+        "depth_black": 3,
+        "states_visited": 22
+      },
+      "elapsed_time": 1.0063929557800293
+    },
+    {
+      "white_depth": 1,
+      "black_depth": 3,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 21,
+        "full_moves": 11,
+        "depth_white": 1,
+        "depth_black": 3,
+        "states_visited": 22
+      },
+      "elapsed_time": 1.0070574283599854
+    },
+    {
+      "white_depth": 1,
+      "black_depth": 3,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 21,
+        "full_moves": 11,
+        "depth_white": 1,
+        "depth_black": 3,
+        "states_visited": 22
+      },
+      "elapsed_time": 1.014153003692627
+    },
+    {
+      "white_depth": 1,
+      "black_depth": 4,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 9,
+        "full_moves": 5,
+        "depth_white": 1,
+        "depth_black": 4,
+        "states_visited": 10
+      },
+      "elapsed_time": 5.242432594299316
+    },
+    {
+      "white_depth": 1,
+      "black_depth": 4,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 9,
+        "full_moves": 5,
+        "depth_white": 1,
+        "depth_black": 4,
+        "states_visited": 10
+      },
+      "elapsed_time": 5.250701189041138
+    },
+    {
+      "white_depth": 1,
+      "black_depth": 4,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 9,
+        "full_moves": 5,
+        "depth_white": 1,
+        "depth_black": 4,
+        "states_visited": 10
+      },
+      "elapsed_time": 5.2498486042022705
+    },
+    {
+      "white_depth": 1,
+      "black_depth": 5,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 50,
+        "full_moves": 25,
+        "depth_white": 1,
+        "depth_black": 5,
+        "states_visited": 51
+      },
+      "elapsed_time": 224.65519094467163
+    },
+    {
+      "white_depth": 1,
+      "black_depth": 5,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 50,
+        "full_moves": 25,
+        "depth_white": 1,
+        "depth_black": 5,
+        "states_visited": 51
+      },
+      "elapsed_time": 233.4592261314392
+    },
+    {
+      "white_depth": 1,
+      "black_depth": 5,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 50,
+        "full_moves": 25,
+        "depth_white": 1,
+        "depth_black": 5,
+        "states_visited": 51
+      },
+      "elapsed_time": 224.4025580883026
+    },
+    {
+      "white_depth": 2,
+      "black_depth": 1,
+      "repetition": 1,
+      "winner": "White",
+      "stats": {
+        "half_moves": 33,
+        "full_moves": 17,
+        "depth_white": 2,
+        "depth_black": 1,
+        "states_visited": 34
+      },
+      "elapsed_time": 1.028670072555542
+    },
+    {
+      "white_depth": 2,
+      "black_depth": 1,
+      "repetition": 2,
+      "winner": "White",
+      "stats": {
+        "half_moves": 33,
+        "full_moves": 17,
+        "depth_white": 2,
+        "depth_black": 1,
+        "states_visited": 34
+      },
+      "elapsed_time": 1.0349969863891602
+    },
+    {
+      "white_depth": 2,
+      "black_depth": 1,
+      "repetition": 3,
+      "winner": "White",
+      "stats": {
+        "half_moves": 33,
+        "full_moves": 17,
+        "depth_white": 2,
+        "depth_black": 1,
+        "states_visited": 34
+      },
+      "elapsed_time": 1.0277268886566162
+    },
+    {
+      "white_depth": 2,
+      "black_depth": 2,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 24,
+        "full_moves": 12,
+        "depth_white": 2,
+        "depth_black": 2,
+        "states_visited": 25
+      },
+      "elapsed_time": 1.2846393585205078
+    },
+    {
+      "white_depth": 2,
+      "black_depth": 2,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 24,
+        "full_moves": 12,
+        "depth_white": 2,
+        "depth_black": 2,
+        "states_visited": 25
+      },
+      "elapsed_time": 1.291402816772461
+    },
+    {
+      "white_depth": 2,
+      "black_depth": 2,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 24,
+        "full_moves": 12,
+        "depth_white": 2,
+        "depth_black": 2,
+        "states_visited": 25
+      },
+      "elapsed_time": 1.2992992401123047
+    },
+    {
+      "white_depth": 2,
+      "black_depth": 3,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 26,
+        "full_moves": 13,
+        "depth_white": 2,
+        "depth_black": 3,
+        "states_visited": 27
+      },
+      "elapsed_time": 7.9365599155426025
+    },
+    {
+      "white_depth": 2,
+      "black_depth": 3,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 26,
+        "full_moves": 13,
+        "depth_white": 2,
+        "depth_black": 3,
+        "states_visited": 27
+      },
+      "elapsed_time": 7.973306179046631
+    },
+    {
+      "white_depth": 2,
+      "black_depth": 3,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 26,
+        "full_moves": 13,
+        "depth_white": 2,
+        "depth_black": 3,
+        "states_visited": 27
+      },
+      "elapsed_time": 7.9555275440216064
+    },
+    {
+      "white_depth": 2,
+      "black_depth": 4,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 26,
+        "full_moves": 13,
+        "depth_white": 2,
+        "depth_black": 4,
+        "states_visited": 27
+      },
+      "elapsed_time": 54.188955783843994
+    },
+    {
+      "white_depth": 2,
+      "black_depth": 4,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 26,
+        "full_moves": 13,
+        "depth_white": 2,
+        "depth_black": 4,
+        "states_visited": 27
+      },
+      "elapsed_time": 54.123061418533325
+    },
+    {
+      "white_depth": 2,
+      "black_depth": 4,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 26,
+        "full_moves": 13,
+        "depth_white": 2,
+        "depth_black": 4,
+        "states_visited": 27
+      },
+      "elapsed_time": 54.18520903587341
+    },
+    {
+      "white_depth": 2,
+      "black_depth": 5,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 24,
+        "full_moves": 12,
+        "depth_white": 2,
+        "depth_black": 5,
+        "states_visited": 25
+      },
+      "elapsed_time": 250.65300226211548
+    },
+    {
+      "white_depth": 2,
+      "black_depth": 5,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 24,
+        "full_moves": 12,
+        "depth_white": 2,
+        "depth_black": 5,
+        "states_visited": 25
+      },
+      "elapsed_time": 265.7165403366089
+    },
+    {
+      "white_depth": 2,
+      "black_depth": 5,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 24,
+        "full_moves": 12,
+        "depth_white": 2,
+        "depth_black": 5,
+        "states_visited": 25
+      },
+      "elapsed_time": 250.37033939361572
+    },
+    {
+      "white_depth": 3,
+      "black_depth": 1,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 31,
+        "full_moves": 16,
+        "depth_white": 3,
+        "depth_black": 1,
+        "states_visited": 32
+      },
+      "elapsed_time": 8.135130405426025
+    },
+    {
+      "white_depth": 3,
+      "black_depth": 1,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 31,
+        "full_moves": 16,
+        "depth_white": 3,
+        "depth_black": 1,
+        "states_visited": 32
+      },
+      "elapsed_time": 8.163368463516235
+    },
+    {
+      "white_depth": 3,
+      "black_depth": 1,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 31,
+        "full_moves": 16,
+        "depth_white": 3,
+        "depth_black": 1,
+        "states_visited": 32
+      },
+      "elapsed_time": 8.182752132415771
+    },
+    {
+      "white_depth": 3,
+      "black_depth": 2,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 9,
+        "full_moves": 5,
+        "depth_white": 3,
+        "depth_black": 2,
+        "states_visited": 10
+      },
+      "elapsed_time": 2.5522282123565674
+    },
+    {
+      "white_depth": 3,
+      "black_depth": 2,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 9,
+        "full_moves": 5,
+        "depth_white": 3,
+        "depth_black": 2,
+        "states_visited": 10
+      },
+      "elapsed_time": 2.5207324028015137
+    },
+    {
+      "white_depth": 3,
+      "black_depth": 2,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 9,
+        "full_moves": 5,
+        "depth_white": 3,
+        "depth_black": 2,
+        "states_visited": 10
+      },
+      "elapsed_time": 2.5407612323760986
+    },
+    {
+      "white_depth": 3,
+      "black_depth": 3,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 30,
+        "full_moves": 15,
+        "depth_white": 3,
+        "depth_black": 3,
+        "states_visited": 31
+      },
+      "elapsed_time": 8.180213212966919
+    },
+    {
+      "white_depth": 3,
+      "black_depth": 3,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 30,
+        "full_moves": 15,
+        "depth_white": 3,
+        "depth_black": 3,
+        "states_visited": 31
+      },
+      "elapsed_time": 8.21537160873413
+    },
+    {
+      "white_depth": 3,
+      "black_depth": 3,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 30,
+        "full_moves": 15,
+        "depth_white": 3,
+        "depth_black": 3,
+        "states_visited": 31
+      },
+      "elapsed_time": 8.240785837173462
+    },
+    {
+      "white_depth": 3,
+      "black_depth": 4,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 9,
+        "full_moves": 5,
+        "depth_white": 3,
+        "depth_black": 4,
+        "states_visited": 10
+      },
+      "elapsed_time": 5.9657981395721436
+    },
+    {
+      "white_depth": 3,
+      "black_depth": 4,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 9,
+        "full_moves": 5,
+        "depth_white": 3,
+        "depth_black": 4,
+        "states_visited": 10
+      },
+      "elapsed_time": 6.006144285202026
+    },
+    {
+      "white_depth": 3,
+      "black_depth": 4,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 9,
+        "full_moves": 5,
+        "depth_white": 3,
+        "depth_black": 4,
+        "states_visited": 10
+      },
+      "elapsed_time": 5.998414516448975
+    },
+    {
+      "white_depth": 3,
+      "black_depth": 5,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 19,
+        "full_moves": 10,
+        "depth_white": 3,
+        "depth_black": 5,
+        "states_visited": 20
+      },
+      "elapsed_time": 125.62271237373352
+    },
+    {
+      "white_depth": 3,
+      "black_depth": 5,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 19,
+        "full_moves": 10,
+        "depth_white": 3,
+        "depth_black": 5,
+        "states_visited": 20
+      },
+      "elapsed_time": 125.7728841304779
+    },
+    {
+      "white_depth": 3,
+      "black_depth": 5,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 19,
+        "full_moves": 10,
+        "depth_white": 3,
+        "depth_black": 5,
+        "states_visited": 20
+      },
+      "elapsed_time": 125.44824862480164
+    },
+    {
+      "white_depth": 4,
+      "black_depth": 1,
+      "repetition": 1,
+      "winner": "White",
+      "stats": {
+        "half_moves": 33,
+        "full_moves": 17,
+        "depth_white": 4,
+        "depth_black": 1,
+        "states_visited": 34
+      },
+      "elapsed_time": 19.649696350097656
+    },
+    {
+      "white_depth": 4,
+      "black_depth": 1,
+      "repetition": 2,
+      "winner": "White",
+      "stats": {
+        "half_moves": 33,
+        "full_moves": 17,
+        "depth_white": 4,
+        "depth_black": 1,
+        "states_visited": 34
+      },
+      "elapsed_time": 19.671661615371704
+    },
+    {
+      "white_depth": 4,
+      "black_depth": 1,
+      "repetition": 3,
+      "winner": "White",
+      "stats": {
+        "half_moves": 33,
+        "full_moves": 17,
+        "depth_white": 4,
+        "depth_black": 1,
+        "states_visited": 34
+      },
+      "elapsed_time": 20.865044355392456
+    },
+    {
+      "white_depth": 4,
+      "black_depth": 2,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 9,
+        "full_moves": 5,
+        "depth_white": 4,
+        "depth_black": 2,
+        "states_visited": 10
+      },
+      "elapsed_time": 15.064412832260132
+    },
+    {
+      "white_depth": 4,
+      "black_depth": 2,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 9,
+        "full_moves": 5,
+        "depth_white": 4,
+        "depth_black": 2,
+        "states_visited": 10
+      },
+      "elapsed_time": 15.687274694442749
+    },
+    {
+      "white_depth": 4,
+      "black_depth": 2,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 9,
+        "full_moves": 5,
+        "depth_white": 4,
+        "depth_black": 2,
+        "states_visited": 10
+      },
+      "elapsed_time": 14.360376596450806
+    },
+    {
+      "white_depth": 4,
+      "black_depth": 3,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 11,
+        "full_moves": 6,
+        "depth_white": 4,
+        "depth_black": 3,
+        "states_visited": 12
+      },
+      "elapsed_time": 18.835951805114746
+    },
+    {
+      "white_depth": 4,
+      "black_depth": 3,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 11,
+        "full_moves": 6,
+        "depth_white": 4,
+        "depth_black": 3,
+        "states_visited": 12
+      },
+      "elapsed_time": 18.85942792892456
+    },
+    {
+      "white_depth": 4,
+      "black_depth": 3,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 11,
+        "full_moves": 6,
+        "depth_white": 4,
+        "depth_black": 3,
+        "states_visited": 12
+      },
+      "elapsed_time": 18.87821078300476
+    },
+    {
+      "white_depth": 4,
+      "black_depth": 4,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 9,
+        "full_moves": 5,
+        "depth_white": 4,
+        "depth_black": 4,
+        "states_visited": 10
+      },
+      "elapsed_time": 16.65929889678955
+    },
+    {
+      "white_depth": 4,
+      "black_depth": 4,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 9,
+        "full_moves": 5,
+        "depth_white": 4,
+        "depth_black": 4,
+        "states_visited": 10
+      },
+      "elapsed_time": 16.63393807411194
+    },
+    {
+      "white_depth": 4,
+      "black_depth": 4,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 9,
+        "full_moves": 5,
+        "depth_white": 4,
+        "depth_black": 4,
+        "states_visited": 10
+      },
+      "elapsed_time": 16.644964694976807
+    },
+    {
+      "white_depth": 4,
+      "black_depth": 5,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 33,
+        "full_moves": 17,
+        "depth_white": 4,
+        "depth_black": 5,
+        "states_visited": 34
+      },
+      "elapsed_time": 307.21567392349243
+    },
+    {
+      "white_depth": 4,
+      "black_depth": 5,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 33,
+        "full_moves": 17,
+        "depth_white": 4,
+        "depth_black": 5,
+        "states_visited": 34
+      },
+      "elapsed_time": 306.94938254356384
+    },
+    {
+      "white_depth": 4,
+      "black_depth": 5,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 33,
+        "full_moves": 17,
+        "depth_white": 4,
+        "depth_black": 5,
+        "states_visited": 34
+      },
+      "elapsed_time": 317.980676651001
+    },
+    {
+      "white_depth": 5,
+      "black_depth": 1,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 19,
+        "full_moves": 10,
+        "depth_white": 5,
+        "depth_black": 1,
+        "states_visited": 20
+      },
+      "elapsed_time": 161.75013399124146
+    },
+    {
+      "white_depth": 5,
+      "black_depth": 1,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 19,
+        "full_moves": 10,
+        "depth_white": 5,
+        "depth_black": 1,
+        "states_visited": 20
+      },
+      "elapsed_time": 161.89529514312744
+    },
+    {
+      "white_depth": 5,
+      "black_depth": 1,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 19,
+        "full_moves": 10,
+        "depth_white": 5,
+        "depth_black": 1,
+        "states_visited": 20
+      },
+      "elapsed_time": 161.8800458908081
+    },
+    {
+      "white_depth": 5,
+      "black_depth": 2,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 16,
+        "full_moves": 8,
+        "depth_white": 5,
+        "depth_black": 2,
+        "states_visited": 17
+      },
+      "elapsed_time": 108.50288796424866
+    },
+    {
+      "white_depth": 5,
+      "black_depth": 2,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 16,
+        "full_moves": 8,
+        "depth_white": 5,
+        "depth_black": 2,
+        "states_visited": 17
+      },
+      "elapsed_time": 108.62954521179199
+    },
+    {
+      "white_depth": 5,
+      "black_depth": 2,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 16,
+        "full_moves": 8,
+        "depth_white": 5,
+        "depth_black": 2,
+        "states_visited": 17
+      },
+      "elapsed_time": 119.877769947052
+    },
+    {
+      "white_depth": 5,
+      "black_depth": 3,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 13,
+        "full_moves": 7,
+        "depth_white": 5,
+        "depth_black": 3,
+        "states_visited": 14
+      },
+      "elapsed_time": 94.46041655540466
+    },
+    {
+      "white_depth": 5,
+      "black_depth": 3,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 13,
+        "full_moves": 7,
+        "depth_white": 5,
+        "depth_black": 3,
+        "states_visited": 14
+      },
+      "elapsed_time": 94.42977023124695
+    },
+    {
+      "white_depth": 5,
+      "black_depth": 3,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 13,
+        "full_moves": 7,
+        "depth_white": 5,
+        "depth_black": 3,
+        "states_visited": 14
+      },
+      "elapsed_time": 94.65645980834961
+    },
+    {
+      "white_depth": 5,
+      "black_depth": 4,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 21,
+        "full_moves": 11,
+        "depth_white": 5,
+        "depth_black": 4,
+        "states_visited": 22
+      },
+      "elapsed_time": 248.44951605796814
+    },
+    {
+      "white_depth": 5,
+      "black_depth": 4,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 21,
+        "full_moves": 11,
+        "depth_white": 5,
+        "depth_black": 4,
+        "states_visited": 22
+      },
+      "elapsed_time": 248.78779220581055
+    },
+    {
+      "white_depth": 5,
+      "black_depth": 4,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 21,
+        "full_moves": 11,
+        "depth_white": 5,
+        "depth_black": 4,
+        "states_visited": 22
+      },
+      "elapsed_time": 265.14622926712036
+    },
+    {
+      "white_depth": 5,
+      "black_depth": 5,
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 42,
+        "full_moves": 21,
+        "depth_white": 5,
+        "depth_black": 5,
+        "states_visited": 43
+      },
+      "elapsed_time": 980.4552805423737
+    },
+    {
+      "white_depth": 5,
+      "black_depth": 5,
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 42,
+        "full_moves": 21,
+        "depth_white": 5,
+        "depth_black": 5,
+        "states_visited": 43
+      },
+      "elapsed_time": 1209.7419035434723
+    },
+    {
+      "white_depth": 5,
+      "black_depth": 5,
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 42,
+        "full_moves": 21,
+        "depth_white": 5,
+        "depth_black": 5,
+        "states_visited": 43
+      },
+      "elapsed_time": 1286.807639837265
+    }
+  ],
+  "config": {
+    "depth_range": [
+      1,
+      5
+    ],
+    "repetitions": 3
+  }
+}

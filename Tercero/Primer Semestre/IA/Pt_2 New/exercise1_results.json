@@ -1,0 +1,48 @@
+{
+  "white_wins": 0,
+  "black_wins": 0,
+  "draws": 3,
+  "games": [
+    {
+      "repetition": 1,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 9,
+        "full_moves": 5,
+        "depth_white": 4,
+        "depth_black": 4,
+        "states_visited": 10
+      },
+      "elapsed_time": 153.49913048744202
+    },
+    {
+      "repetition": 2,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 9,
+        "full_moves": 5,
+        "depth_white": 4,
+        "depth_black": 4,
+        "states_visited": 10
+      },
+      "elapsed_time": 116.53009748458862
+    },
+    {
+      "repetition": 3,
+      "winner": "Draw",
+      "stats": {
+        "half_moves": 9,
+        "full_moves": 5,
+        "depth_white": 4,
+        "depth_black": 4,
+        "states_visited": 10
+      },
+      "elapsed_time": 156.47948360443115
+    }
+  ],
+  "config": {
+    "depth_white": 4,
+    "depth_black": 4,
+    "repetitions": 3
+  }
+}
