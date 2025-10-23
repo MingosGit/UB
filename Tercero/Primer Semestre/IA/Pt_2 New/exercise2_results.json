@@ -16,7 +16,7 @@
             "depth_black": 3,
             "states_visited": 31
           },
-          "elapsed_time": 21.975198984146118
+          "elapsed_time": 22.010982751846313
         },
         {
           "white_depth": 3,
@@ -30,7 +30,7 @@
             "depth_black": 3,
             "states_visited": 31
           },
-          "elapsed_time": 21.9067542552948
+          "elapsed_time": 21.955353021621704
         },
         {
           "white_depth": 3,
@@ -44,7 +44,7 @@
             "depth_black": 3,
             "states_visited": 31
           },
-          "elapsed_time": 21.937891006469727
+          "elapsed_time": 22.257436990737915
         }
       ],
       "white_wins": 0,
@@ -71,7 +71,7 @@
             "depth_black": 4,
             "states_visited": 10
           },
-          "elapsed_time": 20.327308654785156
+          "elapsed_time": 20.643454790115356
         },
         {
           "white_depth": 3,
@@ -85,7 +85,7 @@
             "depth_black": 4,
             "states_visited": 10
           },
-          "elapsed_time": 20.244527339935303
+          "elapsed_time": 20.36005473136902
         },
         {
           "white_depth": 3,
@@ -99,7 +99,7 @@
             "depth_black": 4,
             "states_visited": 10
           },
-          "elapsed_time": 20.244433403015137
+          "elapsed_time": 20.383471488952637
         }
       ],
       "white_wins": 0,
@@ -126,7 +126,7 @@
             "depth_black": 3,
             "states_visited": 34
           },
-          "elapsed_time": 72.07219886779785
+          "elapsed_time": 71.80572700500488
         },
         {
           "white_depth": 4,
@@ -140,7 +140,7 @@
             "depth_black": 3,
             "states_visited": 34
           },
-          "elapsed_time": 72.36175465583801
+          "elapsed_time": 71.80422520637512
         },
         {
           "white_depth": 4,
@@ -154,7 +154,7 @@
             "depth_black": 3,
             "states_visited": 34
           },
-          "elapsed_time": 76.38664722442627
+          "elapsed_time": 72.25642251968384
         }
       ],
       "white_wins": 0,
@@ -181,7 +181,7 @@
             "depth_black": 4,
             "states_visited": 10
           },
-          "elapsed_time": 134.95387148857117
+          "elapsed_time": 116.95784044265747
         },
         {
           "white_depth": 4,
@@ -195,7 +195,7 @@
             "depth_black": 4,
             "states_visited": 10
           },
-          "elapsed_time": 116.60945844650269
+          "elapsed_time": 116.63944220542908
         },
         {
           "white_depth": 4,
@@ -209,7 +209,7 @@
             "depth_black": 4,
             "states_visited": 10
           },
-          "elapsed_time": 116.36594915390015
+          "elapsed_time": 116.57767415046692
         }
       ],
       "white_wins": 0,
@@ -234,7 +234,7 @@
         "depth_black": 3,
         "states_visited": 31
       },
-      "elapsed_time": 21.975198984146118
+      "elapsed_time": 22.010982751846313
     },
     {
       "white_depth": 3,
@@ -248,7 +248,7 @@
         "depth_black": 3,
         "states_visited": 31
       },
-      "elapsed_time": 21.9067542552948
+      "elapsed_time": 21.955353021621704
     },
     {
       "white_depth": 3,
@@ -262,7 +262,7 @@
         "depth_black": 3,
         "states_visited": 31
       },
-      "elapsed_time": 21.937891006469727
+      "elapsed_time": 22.257436990737915
     },
     {
       "white_depth": 3,
@@ -276,7 +276,7 @@
         "depth_black": 4,
         "states_visited": 10
       },
-      "elapsed_time": 20.327308654785156
+      "elapsed_time": 20.643454790115356
     },
     {
       "white_depth": 3,
@@ -290,7 +290,7 @@
         "depth_black": 4,
         "states_visited": 10
       },
-      "elapsed_time": 20.244527339935303
+      "elapsed_time": 20.36005473136902
     },
     {
       "white_depth": 3,
@@ -304,7 +304,7 @@
         "depth_black": 4,
         "states_visited": 10
       },
-      "elapsed_time": 20.244433403015137
+      "elapsed_time": 20.383471488952637
     },
     {
       "white_depth": 4,
@@ -318,7 +318,7 @@
         "depth_black": 3,
         "states_visited": 34
       },
-      "elapsed_time": 72.07219886779785
+      "elapsed_time": 71.80572700500488
     },
     {
       "white_depth": 4,
@@ -332,7 +332,7 @@
         "depth_black": 3,
         "states_visited": 34
       },
-      "elapsed_time": 72.36175465583801
+      "elapsed_time": 71.80422520637512
     },
     {
       "white_depth": 4,
@@ -346,7 +346,7 @@
         "depth_black": 3,
         "states_visited": 34
       },
-      "elapsed_time": 76.38664722442627
+      "elapsed_time": 72.25642251968384
     },
     {
       "white_depth": 4,
@@ -360,7 +360,7 @@
         "depth_black": 4,
         "states_visited": 10
       },
-      "elapsed_time": 134.95387148857117
+      "elapsed_time": 116.95784044265747
     },
     {
       "white_depth": 4,
@@ -374,7 +374,7 @@
         "depth_black": 4,
         "states_visited": 10
       },
-      "elapsed_time": 116.60945844650269
+      "elapsed_time": 116.63944220542908
     },
     {
       "white_depth": 4,
@@ -388,7 +388,7 @@
         "depth_black": 4,
         "states_visited": 10
       },
-      "elapsed_time": 116.36594915390015
+      "elapsed_time": 116.57767415046692
     }
   ],
   "config": {

@@ -2401,9 +2401,8 @@ def run_exercise_2(depth_values=[3, 4], repetitions=3, verbose=False,
             TA[0][5] = 12
             
             aichess = Aichess(TA, True)
-            
-            moves_filename = f"moves_ex2_{depthWhite}{depthBlack}{rep}.txt" if save_to_file else None
-            states_filename = f"states_ex2_{depthWhite}{depthBlack}{rep}.txt" if save_to_file else None
+            moves_filename = f"moves_ex2_{depthWhite}_{depthBlack}_{rep}.txt" if save_to_file else None
+            states_filename = f"states_ex2_{depthWhite}_{depthBlack}_{rep}.txt" if save_to_file else None
             
             start_time = time.time()
             result = aichess.minimaxGame(depthWhite, depthBlack, 
@@ -3015,16 +3014,16 @@ if __name__ == "__main__":
     print("="*70)
 
     
-    # EJERCICIO 1: Minimax vs Minimax (profundidad 4 como se requiere)
-    # Este es el más lento: minimax puro a profundidad 4
-    run_exercise_1(
-        depth_white=4,           # Requerido por el enunciado
-        depth_black=4,           # Requerido por el enunciado
-        repetitions=3,           # Requerido por el enunciado
-        verbose=False,           # En False para ir más rápido
-        save_to_file=True,
-        results_file='exercise1_results.json'
-    )
+    # # EJERCICIO 1: Minimax vs Minimax (profundidad 4 como se requiere)
+    # # Este es el más lento: minimax puro a profundidad 4
+    # run_exercise_1(
+    #     depth_white=4,           # Requerido por el enunciado
+    #     depth_black=4,           # Requerido por el enunciado
+    #     repetitions=3,           # Requerido por el enunciado
+    #     verbose=False,           # En False para ir más rápido
+    #     save_to_file=True,
+    #     results_file='exercise1_results.json'
+    # )
     
     # EJERCICIO 2: Profundidades variables (3-4 como se requiere)
     run_exercise_2(
