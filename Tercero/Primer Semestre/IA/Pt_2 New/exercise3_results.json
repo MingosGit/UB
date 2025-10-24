@@ -7,37 +7,37 @@
       "repetition": 1,
       "winner": "Draw",
       "stats": {
-        "half_moves": 9,
-        "full_moves": 5,
+        "half_moves": 22,
+        "full_moves": 11,
         "depth_white": 4,
         "depth_black": 4,
-        "states_visited": 10
+        "states_visited": 23
       },
-      "elapsed_time": 51.3626012802124
+      "elapsed_time": 258.10643434524536
     },
     {
       "repetition": 2,
       "winner": "Draw",
       "stats": {
-        "half_moves": 9,
-        "full_moves": 5,
+        "half_moves": 22,
+        "full_moves": 11,
         "depth_white": 4,
         "depth_black": 4,
-        "states_visited": 10
+        "states_visited": 23
       },
-      "elapsed_time": 51.2162868976593
+      "elapsed_time": 257.5024995803833
     },
     {
       "repetition": 3,
       "winner": "Draw",
       "stats": {
-        "half_moves": 9,
-        "full_moves": 5,
+        "half_moves": 22,
+        "full_moves": 11,
         "depth_white": 4,
         "depth_black": 4,
-        "states_visited": 10
+        "states_visited": 23
       },
-      "elapsed_time": 51.151928424835205
+      "elapsed_time": 258.16764783859253
     }
   ],
   "config": {

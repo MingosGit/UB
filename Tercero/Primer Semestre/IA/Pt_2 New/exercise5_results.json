@@ -7,37 +7,37 @@
       "repetition": 1,
       "winner": "Black",
       "stats": {
-        "half_moves": 20,
-        "full_moves": 10,
+        "half_moves": 22,
+        "full_moves": 11,
         "depth_white": 4,
         "depth_black": 4,
-        "states_visited": 21
+        "states_visited": 23
       },
-      "elapsed_time": 113.23866176605225
+      "elapsed_time": 135.2761025428772
     },
     {
       "repetition": 2,
       "winner": "Black",
       "stats": {
-        "half_moves": 20,
-        "full_moves": 10,
+        "half_moves": 22,
+        "full_moves": 11,
         "depth_white": 4,
         "depth_black": 4,
-        "states_visited": 21
+        "states_visited": 23
       },
-      "elapsed_time": 112.1126983165741
+      "elapsed_time": 135.56848549842834
     },
     {
       "repetition": 3,
       "winner": "Black",
       "stats": {
-        "half_moves": 20,
-        "full_moves": 10,
+        "half_moves": 22,
+        "full_moves": 11,
         "depth_white": 4,
         "depth_black": 4,
-        "states_visited": 21
+        "states_visited": 23
       },
-      "elapsed_time": 112.99694609642029
+      "elapsed_time": 135.59740662574768
     }
   ],
   "config": {

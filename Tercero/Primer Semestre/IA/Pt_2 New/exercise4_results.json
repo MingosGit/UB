@@ -16,7 +16,7 @@
             "depth_black": 1,
             "states_visited": 13
           },
-          "elapsed_time": 0.07547140121459961
+          "elapsed_time": 0.07395529747009277
         },
         {
           "white_depth": 1,
@@ -30,7 +30,7 @@
             "depth_black": 1,
             "states_visited": 13
           },
-          "elapsed_time": 0.07751941680908203
+          "elapsed_time": 0.08033061027526855
         },
         {
           "white_depth": 1,
@@ -44,7 +44,7 @@
             "depth_black": 1,
             "states_visited": 13
           },
-          "elapsed_time": 0.07625269889831543
+          "elapsed_time": 0.07630300521850586
         }
       ],
       "white_wins": 0,
@@ -62,51 +62,51 @@
           "white_depth": 1,
           "black_depth": 2,
           "repetition": 1,
-          "winner": "Draw",
+          "winner": "Black",
           "stats": {
-            "half_moves": 9,
-            "full_moves": 5,
+            "half_moves": 34,
+            "full_moves": 17,
             "depth_white": 1,
             "depth_black": 2,
-            "states_visited": 10
+            "states_visited": 35
           },
-          "elapsed_time": 0.0931549072265625
+          "elapsed_time": 0.7354903221130371
         },
         {
           "white_depth": 1,
           "black_depth": 2,
           "repetition": 2,
-          "winner": "Draw",
+          "winner": "Black",
           "stats": {
-            "half_moves": 9,
-            "full_moves": 5,
+            "half_moves": 34,
+            "full_moves": 17,
             "depth_white": 1,
             "depth_black": 2,
-            "states_visited": 10
+            "states_visited": 35
           },
-          "elapsed_time": 0.11319422721862793
+          "elapsed_time": 0.7303187847137451
         },
         {
           "white_depth": 1,
           "black_depth": 2,
           "repetition": 3,
-          "winner": "Draw",
+          "winner": "Black",
           "stats": {
-            "half_moves": 9,
-            "full_moves": 5,
+            "half_moves": 34,
+            "full_moves": 17,
             "depth_white": 1,
             "depth_black": 2,
-            "states_visited": 10
+            "states_visited": 35
           },
-          "elapsed_time": 0.09473800659179688
+          "elapsed_time": 0.7368614673614502
         }
       ],
       "white_wins": 0,
-      "black_wins": 0,
-      "draws": 3,
+      "black_wins": 3,
+      "draws": 0,
       "white_win_percentage": 0.0,
-      "black_win_percentage": 0.0,
-      "draw_percentage": 100.0
+      "black_win_percentage": 100.0,
+      "draw_percentage": 0.0
     },
     "1v3": {
       "white_depth": 1,
@@ -124,7 +124,7 @@
             "depth_black": 3,
             "states_visited": 22
           },
-          "elapsed_time": 1.0063929557800293
+          "elapsed_time": 0.980276346206665
         },
         {
           "white_depth": 1,
@@ -138,7 +138,7 @@
             "depth_black": 3,
             "states_visited": 22
           },
-          "elapsed_time": 1.0070574283599854
+          "elapsed_time": 0.9777355194091797
         },
         {
           "white_depth": 1,
@@ -152,7 +152,7 @@
             "depth_black": 3,
             "states_visited": 22
           },
-          "elapsed_time": 1.014153003692627
+          "elapsed_time": 0.9787025451660156
         }
       ],
       "white_wins": 0,
@@ -172,13 +172,13 @@
           "repetition": 1,
           "winner": "Draw",
           "stats": {
-            "half_moves": 9,
-            "full_moves": 5,
+            "half_moves": 21,
+            "full_moves": 11,
             "depth_white": 1,
             "depth_black": 4,
-            "states_visited": 10
+            "states_visited": 22
           },
-          "elapsed_time": 5.242432594299316
+          "elapsed_time": 17.715348720550537
         },
         {
           "white_depth": 1,
@@ -186,13 +186,13 @@
           "repetition": 2,
           "winner": "Draw",
           "stats": {
-            "half_moves": 9,
-            "full_moves": 5,
+            "half_moves": 21,
+            "full_moves": 11,
             "depth_white": 1,
             "depth_black": 4,
-            "states_visited": 10
+            "states_visited": 22
           },
-          "elapsed_time": 5.250701189041138
+          "elapsed_time": 17.717187643051147
         },
         {
           "white_depth": 1,
@@ -200,13 +200,13 @@
           "repetition": 3,
           "winner": "Draw",
           "stats": {
-            "half_moves": 9,
-            "full_moves": 5,
+            "half_moves": 21,
+            "full_moves": 11,
             "depth_white": 1,
             "depth_black": 4,
-            "states_visited": 10
+            "states_visited": 22
           },
-          "elapsed_time": 5.2498486042022705
+          "elapsed_time": 17.82724118232727
         }
       ],
       "white_wins": 0,
@@ -224,51 +224,51 @@
           "white_depth": 1,
           "black_depth": 5,
           "repetition": 1,
-          "winner": "Draw",
+          "winner": "Black",
           "stats": {
-            "half_moves": 50,
-            "full_moves": 25,
+            "half_moves": 30,
+            "full_moves": 15,
             "depth_white": 1,
             "depth_black": 5,
-            "states_visited": 51
+            "states_visited": 31
           },
-          "elapsed_time": 224.65519094467163
+          "elapsed_time": 105.03074288368225
         },
         {
           "white_depth": 1,
           "black_depth": 5,
           "repetition": 2,
-          "winner": "Draw",
+          "winner": "Black",
           "stats": {
-            "half_moves": 50,
-            "full_moves": 25,
+            "half_moves": 30,
+            "full_moves": 15,
             "depth_white": 1,
             "depth_black": 5,
-            "states_visited": 51
+            "states_visited": 31
           },
-          "elapsed_time": 233.4592261314392
+          "elapsed_time": 105.16049194335938
         },
         {
           "white_depth": 1,
           "black_depth": 5,
           "repetition": 3,
-          "winner": "Draw",
+          "winner": "Black",
           "stats": {
-            "half_moves": 50,
-            "full_moves": 25,
+            "half_moves": 30,
+            "full_moves": 15,
             "depth_white": 1,
             "depth_black": 5,
-            "states_visited": 51
+            "states_visited": 31
           },
-          "elapsed_time": 224.4025580883026
+          "elapsed_time": 105.07660818099976
         }
       ],
       "white_wins": 0,
-      "black_wins": 0,
-      "draws": 3,
+      "black_wins": 3,
+      "draws": 0,
       "white_win_percentage": 0.0,
-      "black_win_percentage": 0.0,
-      "draw_percentage": 100.0
+      "black_win_percentage": 100.0,
+      "draw_percentage": 0.0
     },
     "2v1": {
       "white_depth": 2,
@@ -278,51 +278,51 @@
           "white_depth": 2,
           "black_depth": 1,
           "repetition": 1,
-          "winner": "White",
+          "winner": "Draw",
           "stats": {
-            "half_moves": 33,
-            "full_moves": 17,
+            "half_moves": 25,
+            "full_moves": 13,
             "depth_white": 2,
             "depth_black": 1,
-            "states_visited": 34
+            "states_visited": 26
           },
-          "elapsed_time": 1.028670072555542
+          "elapsed_time": 0.9636266231536865
         },
         {
           "white_depth": 2,
           "black_depth": 1,
           "repetition": 2,
-          "winner": "White",
+          "winner": "Draw",
           "stats": {
-            "half_moves": 33,
-            "full_moves": 17,
+            "half_moves": 25,
+            "full_moves": 13,
             "depth_white": 2,
             "depth_black": 1,
-            "states_visited": 34
+            "states_visited": 26
           },
-          "elapsed_time": 1.0349969863891602
+          "elapsed_time": 0.9786326885223389
         },
         {
           "white_depth": 2,
           "black_depth": 1,
           "repetition": 3,
-          "winner": "White",
+          "winner": "Draw",
           "stats": {
-            "half_moves": 33,
-            "full_moves": 17,
+            "half_moves": 25,
+            "full_moves": 13,
             "depth_white": 2,
             "depth_black": 1,
-            "states_visited": 34
+            "states_visited": 26
           },
-          "elapsed_time": 1.0277268886566162
+          "elapsed_time": 0.9678759574890137
         }
       ],
-      "white_wins": 3,
+      "white_wins": 0,
       "black_wins": 0,
-      "draws": 0,
-      "white_win_percentage": 100.0,
+      "draws": 3,
+      "white_win_percentage": 0.0,
       "black_win_percentage": 0.0,
-      "draw_percentage": 0.0
+      "draw_percentage": 100.0
     },
     "2v2": {
       "white_depth": 2,
@@ -334,13 +334,13 @@
           "repetition": 1,
           "winner": "Draw",
           "stats": {
-            "half_moves": 24,
-            "full_moves": 12,
+            "half_moves": 29,
+            "full_moves": 15,
             "depth_white": 2,
             "depth_black": 2,
-            "states_visited": 25
+            "states_visited": 30
           },
-          "elapsed_time": 1.2846393585205078
+          "elapsed_time": 1.986921787261963
         },
         {
           "white_depth": 2,
@@ -348,13 +348,13 @@
           "repetition": 2,
           "winner": "Draw",
           "stats": {
-            "half_moves": 24,
-            "full_moves": 12,
+            "half_moves": 29,
+            "full_moves": 15,
             "depth_white": 2,
             "depth_black": 2,
-            "states_visited": 25
+            "states_visited": 30
           },
-          "elapsed_time": 1.291402816772461
+          "elapsed_time": 1.9959659576416016
         },
         {
           "white_depth": 2,
@@ -362,13 +362,13 @@
           "repetition": 3,
           "winner": "Draw",
           "stats": {
-            "half_moves": 24,
-            "full_moves": 12,
+            "half_moves": 29,
+            "full_moves": 15,
             "depth_white": 2,
             "depth_black": 2,
-            "states_visited": 25
+            "states_visited": 30
           },
-          "elapsed_time": 1.2992992401123047
+          "elapsed_time": 1.9887311458587646
         }
       ],
       "white_wins": 0,
@@ -388,13 +388,13 @@
           "repetition": 1,
           "winner": "Draw",
           "stats": {
-            "half_moves": 26,
-            "full_moves": 13,
+            "half_moves": 36,
+            "full_moves": 18,
             "depth_white": 2,
             "depth_black": 3,
-            "states_visited": 27
+            "states_visited": 37
           },
-          "elapsed_time": 7.9365599155426025
+          "elapsed_time": 10.472609758377075
         },
         {
           "white_depth": 2,
@@ -402,13 +402,13 @@
           "repetition": 2,
           "winner": "Draw",
           "stats": {
-            "half_moves": 26,
-            "full_moves": 13,
+            "half_moves": 36,
+            "full_moves": 18,
             "depth_white": 2,
             "depth_black": 3,
-            "states_visited": 27
+            "states_visited": 37
           },
-          "elapsed_time": 7.973306179046631
+          "elapsed_time": 10.476958274841309
         },
         {
           "white_depth": 2,
@@ -416,13 +416,13 @@
           "repetition": 3,
           "winner": "Draw",
           "stats": {
-            "half_moves": 26,
-            "full_moves": 13,
+            "half_moves": 36,
+            "full_moves": 18,
             "depth_white": 2,
             "depth_black": 3,
-            "states_visited": 27
+            "states_visited": 37
           },
-          "elapsed_time": 7.9555275440216064
+          "elapsed_time": 10.474756717681885
         }
       ],
       "white_wins": 0,
@@ -442,13 +442,13 @@
           "repetition": 1,
           "winner": "Draw",
           "stats": {
-            "half_moves": 26,
-            "full_moves": 13,
+            "half_moves": 32,
+            "full_moves": 16,
             "depth_white": 2,
             "depth_black": 4,
-            "states_visited": 27
+            "states_visited": 33
           },
-          "elapsed_time": 54.188955783843994
+          "elapsed_time": 36.43903994560242
         },
         {
           "white_depth": 2,
@@ -456,13 +456,13 @@
           "repetition": 2,
           "winner": "Draw",
           "stats": {
-            "half_moves": 26,
-            "full_moves": 13,
+            "half_moves": 32,
+            "full_moves": 16,
             "depth_white": 2,
             "depth_black": 4,
-            "states_visited": 27
+            "states_visited": 33
           },
-          "elapsed_time": 54.123061418533325
+          "elapsed_time": 36.39856553077698
         },
         {
           "white_depth": 2,
@@ -470,13 +470,13 @@
           "repetition": 3,
           "winner": "Draw",
           "stats": {
-            "half_moves": 26,
-            "full_moves": 13,
+            "half_moves": 32,
+            "full_moves": 16,
             "depth_white": 2,
             "depth_black": 4,
-            "states_visited": 27
+            "states_visited": 33
           },
-          "elapsed_time": 54.18520903587341
+          "elapsed_time": 36.46080923080444
         }
       ],
       "white_wins": 0,
@@ -496,13 +496,13 @@
           "repetition": 1,
           "winner": "Draw",
           "stats": {
-            "half_moves": 24,
-            "full_moves": 12,
+            "half_moves": 28,
+            "full_moves": 14,
             "depth_white": 2,
             "depth_black": 5,
-            "states_visited": 25
+            "states_visited": 29
           },
-          "elapsed_time": 250.65300226211548
+          "elapsed_time": 220.23767256736755
         },
         {
           "white_depth": 2,
@@ -510,13 +510,13 @@
           "repetition": 2,
           "winner": "Draw",
           "stats": {
-            "half_moves": 24,
-            "full_moves": 12,
+            "half_moves": 28,
+            "full_moves": 14,
             "depth_white": 2,
             "depth_black": 5,
-            "states_visited": 25
+            "states_visited": 29
           },
-          "elapsed_time": 265.7165403366089
+          "elapsed_time": 220.31660223007202
         },
         {
           "white_depth": 2,
@@ -524,13 +524,13 @@
           "repetition": 3,
           "winner": "Draw",
           "stats": {
-            "half_moves": 24,
-            "full_moves": 12,
+            "half_moves": 28,
+            "full_moves": 14,
             "depth_white": 2,
             "depth_black": 5,
-            "states_visited": 25
+            "states_visited": 29
           },
-          "elapsed_time": 250.37033939361572
+          "elapsed_time": 219.83836889266968
         }
       ],
       "white_wins": 0,
@@ -556,7 +556,7 @@
             "depth_black": 1,
             "states_visited": 32
           },
-          "elapsed_time": 8.135130405426025
+          "elapsed_time": 8.023749828338623
         },
         {
           "white_depth": 3,
@@ -570,7 +570,7 @@
             "depth_black": 1,
             "states_visited": 32
           },
-          "elapsed_time": 8.163368463516235
+          "elapsed_time": 8.022242784500122
         },
         {
           "white_depth": 3,
@@ -584,7 +584,7 @@
             "depth_black": 1,
             "states_visited": 32
           },
-          "elapsed_time": 8.182752132415771
+          "elapsed_time": 8.023956060409546
         }
       ],
       "white_wins": 0,
@@ -604,13 +604,13 @@
           "repetition": 1,
           "winner": "Draw",
           "stats": {
-            "half_moves": 9,
-            "full_moves": 5,
+            "half_moves": 33,
+            "full_moves": 17,
             "depth_white": 3,
             "depth_black": 2,
-            "states_visited": 10
+            "states_visited": 34
           },
-          "elapsed_time": 2.5522282123565674
+          "elapsed_time": 12.693368196487427
         },
         {
           "white_depth": 3,
@@ -618,13 +618,13 @@
           "repetition": 2,
           "winner": "Draw",
           "stats": {
-            "half_moves": 9,
-            "full_moves": 5,
+            "half_moves": 33,
+            "full_moves": 17,
             "depth_white": 3,
             "depth_black": 2,
-            "states_visited": 10
+            "states_visited": 34
           },
-          "elapsed_time": 2.5207324028015137
+          "elapsed_time": 12.68423080444336
         },
         {
           "white_depth": 3,
@@ -632,13 +632,13 @@
           "repetition": 3,
           "winner": "Draw",
           "stats": {
-            "half_moves": 9,
-            "full_moves": 5,
+            "half_moves": 33,
+            "full_moves": 17,
             "depth_white": 3,
             "depth_black": 2,
-            "states_visited": 10
+            "states_visited": 34
           },
-          "elapsed_time": 2.5407612323760986
+          "elapsed_time": 12.7195463180542
         }
       ],
       "white_wins": 0,
@@ -664,7 +664,7 @@
             "depth_black": 3,
             "states_visited": 31
           },
-          "elapsed_time": 8.180213212966919
+          "elapsed_time": 8.036309719085693
         },
         {
           "white_depth": 3,
@@ -678,7 +678,7 @@
             "depth_black": 3,
             "states_visited": 31
           },
-          "elapsed_time": 8.21537160873413
+          "elapsed_time": 8.042144298553467
         },
         {
           "white_depth": 3,
@@ -692,7 +692,7 @@
             "depth_black": 3,
             "states_visited": 31
           },
-          "elapsed_time": 8.240785837173462
+          "elapsed_time": 8.044938325881958
         }
       ],
       "white_wins": 0,
@@ -712,13 +712,13 @@
           "repetition": 1,
           "winner": "Draw",
           "stats": {
-            "half_moves": 9,
-            "full_moves": 5,
+            "half_moves": 56,
+            "full_moves": 28,
             "depth_white": 3,
             "depth_black": 4,
-            "states_visited": 10
+            "states_visited": 57
           },
-          "elapsed_time": 5.9657981395721436
+          "elapsed_time": 74.70644855499268
         },
         {
           "white_depth": 3,
@@ -726,13 +726,13 @@
           "repetition": 2,
           "winner": "Draw",
           "stats": {
-            "half_moves": 9,
-            "full_moves": 5,
+            "half_moves": 56,
+            "full_moves": 28,
             "depth_white": 3,
             "depth_black": 4,
-            "states_visited": 10
+            "states_visited": 57
           },
-          "elapsed_time": 6.006144285202026
+          "elapsed_time": 74.50491666793823
         },
         {
           "white_depth": 3,
@@ -740,13 +740,13 @@
           "repetition": 3,
           "winner": "Draw",
           "stats": {
-            "half_moves": 9,
-            "full_moves": 5,
+            "half_moves": 56,
+            "full_moves": 28,
             "depth_white": 3,
             "depth_black": 4,
-            "states_visited": 10
+            "states_visited": 57
           },
-          "elapsed_time": 5.998414516448975
+          "elapsed_time": 74.48252248764038
         }
       ],
       "white_wins": 0,
@@ -766,13 +766,13 @@
           "repetition": 1,
           "winner": "Draw",
           "stats": {
-            "half_moves": 19,
-            "full_moves": 10,
+            "half_moves": 34,
+            "full_moves": 17,
             "depth_white": 3,
             "depth_black": 5,
-            "states_visited": 20
+            "states_visited": 35
           },
-          "elapsed_time": 125.62271237373352
+          "elapsed_time": 319.81797528266907
         },
         {
           "white_depth": 3,
@@ -780,13 +780,13 @@
           "repetition": 2,
           "winner": "Draw",
           "stats": {
-            "half_moves": 19,
-            "full_moves": 10,
+            "half_moves": 34,
+            "full_moves": 17,
             "depth_white": 3,
             "depth_black": 5,
-            "states_visited": 20
+            "states_visited": 35
           },
-          "elapsed_time": 125.7728841304779
+          "elapsed_time": 319.7466287612915
         },
         {
           "white_depth": 3,
@@ -794,13 +794,13 @@
           "repetition": 3,
           "winner": "Draw",
           "stats": {
-            "half_moves": 19,
-            "full_moves": 10,
+            "half_moves": 34,
+            "full_moves": 17,
             "depth_white": 3,
             "depth_black": 5,
-            "states_visited": 20
+            "states_visited": 35
           },
-          "elapsed_time": 125.44824862480164
+          "elapsed_time": 319.5856523513794
         }
       ],
       "white_wins": 0,
@@ -826,7 +826,7 @@
             "depth_black": 1,
             "states_visited": 34
           },
-          "elapsed_time": 19.649696350097656
+          "elapsed_time": 19.692415237426758
         },
         {
           "white_depth": 4,
@@ -840,7 +840,7 @@
             "depth_black": 1,
             "states_visited": 34
           },
-          "elapsed_time": 19.671661615371704
+          "elapsed_time": 19.71558666229248
         },
         {
           "white_depth": 4,
@@ -854,7 +854,7 @@
             "depth_black": 1,
             "states_visited": 34
           },
-          "elapsed_time": 20.865044355392456
+          "elapsed_time": 19.694639682769775
         }
       ],
       "white_wins": 3,
@@ -874,13 +874,13 @@
           "repetition": 1,
           "winner": "Draw",
           "stats": {
-            "half_moves": 9,
-            "full_moves": 5,
+            "half_moves": 44,
+            "full_moves": 22,
             "depth_white": 4,
             "depth_black": 2,
-            "states_visited": 10
+            "states_visited": 45
           },
-          "elapsed_time": 15.064412832260132
+          "elapsed_time": 59.47694683074951
         },
         {
           "white_depth": 4,
@@ -888,13 +888,13 @@
           "repetition": 2,
           "winner": "Draw",
           "stats": {
-            "half_moves": 9,
-            "full_moves": 5,
+            "half_moves": 44,
+            "full_moves": 22,
             "depth_white": 4,
             "depth_black": 2,
-            "states_visited": 10
+            "states_visited": 45
           },
-          "elapsed_time": 15.687274694442749
+          "elapsed_time": 59.5175085067749
         },
         {
           "white_depth": 4,
@@ -902,13 +902,13 @@
           "repetition": 3,
           "winner": "Draw",
           "stats": {
-            "half_moves": 9,
-            "full_moves": 5,
+            "half_moves": 44,
+            "full_moves": 22,
             "depth_white": 4,
             "depth_black": 2,
-            "states_visited": 10
+            "states_visited": 45
           },
-          "elapsed_time": 14.360376596450806
+          "elapsed_time": 59.44349002838135
         }
       ],
       "white_wins": 0,
@@ -928,13 +928,13 @@
           "repetition": 1,
           "winner": "Draw",
           "stats": {
-            "half_moves": 11,
-            "full_moves": 6,
+            "half_moves": 26,
+            "full_moves": 13,
             "depth_white": 4,
             "depth_black": 3,
-            "states_visited": 12
+            "states_visited": 27
           },
-          "elapsed_time": 18.835951805114746
+          "elapsed_time": 37.99239730834961
         },
         {
           "white_depth": 4,
@@ -942,13 +942,13 @@
           "repetition": 2,
           "winner": "Draw",
           "stats": {
-            "half_moves": 11,
-            "full_moves": 6,
+            "half_moves": 26,
+            "full_moves": 13,
             "depth_white": 4,
             "depth_black": 3,
-            "states_visited": 12
+            "states_visited": 27
           },
-          "elapsed_time": 18.85942792892456
+          "elapsed_time": 38.0156786441803
         },
         {
           "white_depth": 4,
@@ -956,13 +956,13 @@
           "repetition": 3,
           "winner": "Draw",
           "stats": {
-            "half_moves": 11,
-            "full_moves": 6,
+            "half_moves": 26,
+            "full_moves": 13,
             "depth_white": 4,
             "depth_black": 3,
-            "states_visited": 12
+            "states_visited": 27
           },
-          "elapsed_time": 18.87821078300476
+          "elapsed_time": 38.06771659851074
         }
       ],
       "white_wins": 0,
@@ -982,13 +982,13 @@
           "repetition": 1,
           "winner": "Draw",
           "stats": {
-            "half_moves": 9,
-            "full_moves": 5,
+            "half_moves": 22,
+            "full_moves": 11,
             "depth_white": 4,
             "depth_black": 4,
-            "states_visited": 10
+            "states_visited": 23
           },
-          "elapsed_time": 16.65929889678955
+          "elapsed_time": 61.30982184410095
         },
         {
           "white_depth": 4,
@@ -996,13 +996,13 @@
           "repetition": 2,
           "winner": "Draw",
           "stats": {
-            "half_moves": 9,
-            "full_moves": 5,
+            "half_moves": 22,
+            "full_moves": 11,
             "depth_white": 4,
             "depth_black": 4,
-            "states_visited": 10
+            "states_visited": 23
           },
-          "elapsed_time": 16.63393807411194
+          "elapsed_time": 61.36416745185852
         },
         {
           "white_depth": 4,
@@ -1010,13 +1010,13 @@
           "repetition": 3,
           "winner": "Draw",
           "stats": {
-            "half_moves": 9,
-            "full_moves": 5,
+            "half_moves": 22,
+            "full_moves": 11,
             "depth_white": 4,
             "depth_black": 4,
-            "states_visited": 10
+            "states_visited": 23
           },
-          "elapsed_time": 16.644964694976807
+          "elapsed_time": 61.333033323287964
         }
       ],
       "white_wins": 0,
@@ -1036,13 +1036,13 @@
           "repetition": 1,
           "winner": "Draw",
           "stats": {
-            "half_moves": 33,
-            "full_moves": 17,
+            "half_moves": 36,
+            "full_moves": 18,
             "depth_white": 4,
             "depth_black": 5,
-            "states_visited": 34
+            "states_visited": 37
           },
-          "elapsed_time": 307.21567392349243
+          "elapsed_time": 193.48264908790588
         },
         {
           "white_depth": 4,
@@ -1050,13 +1050,13 @@
           "repetition": 2,
           "winner": "Draw",
           "stats": {
-            "half_moves": 33,
-            "full_moves": 17,
+            "half_moves": 36,
+            "full_moves": 18,
             "depth_white": 4,
             "depth_black": 5,
-            "states_visited": 34
+            "states_visited": 37
           },
-          "elapsed_time": 306.94938254356384
+          "elapsed_time": 193.4830801486969
         },
         {
           "white_depth": 4,
@@ -1064,13 +1064,13 @@
           "repetition": 3,
           "winner": "Draw",
           "stats": {
-            "half_moves": 33,
-            "full_moves": 17,
+            "half_moves": 36,
+            "full_moves": 18,
             "depth_white": 4,
             "depth_black": 5,
-            "states_visited": 34
+            "states_visited": 37
           },
-          "elapsed_time": 317.980676651001
+          "elapsed_time": 193.49888277053833
         }
       ],
       "white_wins": 0,
@@ -1088,7 +1088,7 @@
           "white_depth": 5,
           "black_depth": 1,
           "repetition": 1,
-          "winner": "Draw",
+          "winner": "White",
           "stats": {
             "half_moves": 19,
             "full_moves": 10,
@@ -1096,13 +1096,13 @@
             "depth_black": 1,
             "states_visited": 20
           },
-          "elapsed_time": 161.75013399124146
+          "elapsed_time": 52.59414267539978
         },
         {
           "white_depth": 5,
           "black_depth": 1,
           "repetition": 2,
-          "winner": "Draw",
+          "winner": "White",
           "stats": {
             "half_moves": 19,
             "full_moves": 10,
@@ -1110,13 +1110,13 @@
             "depth_black": 1,
             "states_visited": 20
           },
-          "elapsed_time": 161.89529514312744
+          "elapsed_time": 52.643428802490234
         },
         {
           "white_depth": 5,
           "black_depth": 1,
           "repetition": 3,
-          "winner": "Draw",
+          "winner": "White",
           "stats": {
             "half_moves": 19,
             "full_moves": 10,
@@ -1124,15 +1124,15 @@
             "depth_black": 1,
             "states_visited": 20
           },
-          "elapsed_time": 161.8800458908081
+          "elapsed_time": 52.59299159049988
         }
       ],
-      "white_wins": 0,
+      "white_wins": 3,
       "black_wins": 0,
-      "draws": 3,
-      "white_win_percentage": 0.0,
+      "draws": 0,
+      "white_win_percentage": 100.0,
       "black_win_percentage": 0.0,
-      "draw_percentage": 100.0
+      "draw_percentage": 0.0
     },
     "5v2": {
       "white_depth": 5,
@@ -1142,51 +1142,51 @@
           "white_depth": 5,
           "black_depth": 2,
           "repetition": 1,
-          "winner": "Draw",
+          "winner": "White",
           "stats": {
-            "half_moves": 16,
-            "full_moves": 8,
+            "half_moves": 13,
+            "full_moves": 7,
             "depth_white": 5,
             "depth_black": 2,
-            "states_visited": 17
+            "states_visited": 14
           },
-          "elapsed_time": 108.50288796424866
+          "elapsed_time": 65.12399291992188
         },
         {
           "white_depth": 5,
           "black_depth": 2,
           "repetition": 2,
-          "winner": "Draw",
+          "winner": "White",
           "stats": {
-            "half_moves": 16,
-            "full_moves": 8,
+            "half_moves": 13,
+            "full_moves": 7,
             "depth_white": 5,
             "depth_black": 2,
-            "states_visited": 17
+            "states_visited": 14
           },
-          "elapsed_time": 108.62954521179199
+          "elapsed_time": 65.13318014144897
         },
         {
           "white_depth": 5,
           "black_depth": 2,
           "repetition": 3,
-          "winner": "Draw",
+          "winner": "White",
           "stats": {
-            "half_moves": 16,
-            "full_moves": 8,
+            "half_moves": 13,
+            "full_moves": 7,
             "depth_white": 5,
             "depth_black": 2,
-            "states_visited": 17
+            "states_visited": 14
           },
-          "elapsed_time": 119.877769947052
+          "elapsed_time": 65.12454676628113
         }
       ],
-      "white_wins": 0,
+      "white_wins": 3,
       "black_wins": 0,
-      "draws": 3,
-      "white_win_percentage": 0.0,
+      "draws": 0,
+      "white_win_percentage": 100.0,
       "black_win_percentage": 0.0,
-      "draw_percentage": 100.0
+      "draw_percentage": 0.0
     },
     "5v3": {
       "white_depth": 5,
@@ -1198,13 +1198,13 @@
           "repetition": 1,
           "winner": "Draw",
           "stats": {
-            "half_moves": 13,
-            "full_moves": 7,
+            "half_moves": 12,
+            "full_moves": 6,
             "depth_white": 5,
             "depth_black": 3,
-            "states_visited": 14
+            "states_visited": 13
           },
-          "elapsed_time": 94.46041655540466
+          "elapsed_time": 61.88391613960266
         },
         {
           "white_depth": 5,
@@ -1212,13 +1212,13 @@
           "repetition": 2,
           "winner": "Draw",
           "stats": {
-            "half_moves": 13,
-            "full_moves": 7,
+            "half_moves": 12,
+            "full_moves": 6,
             "depth_white": 5,
             "depth_black": 3,
-            "states_visited": 14
+            "states_visited": 13
           },
-          "elapsed_time": 94.42977023124695
+          "elapsed_time": 61.819602251052856
         },
         {
           "white_depth": 5,
@@ -1226,13 +1226,13 @@
           "repetition": 3,
           "winner": "Draw",
           "stats": {
-            "half_moves": 13,
-            "full_moves": 7,
+            "half_moves": 12,
+            "full_moves": 6,
             "depth_white": 5,
             "depth_black": 3,
-            "states_visited": 14
+            "states_visited": 13
           },
-          "elapsed_time": 94.65645980834961
+          "elapsed_time": 61.901511430740356
         }
       ],
       "white_wins": 0,
@@ -1252,13 +1252,13 @@
           "repetition": 1,
           "winner": "Draw",
           "stats": {
-            "half_moves": 21,
-            "full_moves": 11,
+            "half_moves": 19,
+            "full_moves": 10,
             "depth_white": 5,
             "depth_black": 4,
-            "states_visited": 22
+            "states_visited": 20
           },
-          "elapsed_time": 248.44951605796814
+          "elapsed_time": 124.16827440261841
         },
         {
           "white_depth": 5,
@@ -1266,13 +1266,13 @@
           "repetition": 2,
           "winner": "Draw",
           "stats": {
-            "half_moves": 21,
-            "full_moves": 11,
+            "half_moves": 19,
+            "full_moves": 10,
             "depth_white": 5,
             "depth_black": 4,
-            "states_visited": 22
+            "states_visited": 20
           },
-          "elapsed_time": 248.78779220581055
+          "elapsed_time": 124.05006551742554
         },
         {
           "white_depth": 5,
@@ -1280,13 +1280,13 @@
           "repetition": 3,
           "winner": "Draw",
           "stats": {
-            "half_moves": 21,
-            "full_moves": 11,
+            "half_moves": 19,
+            "full_moves": 10,
             "depth_white": 5,
             "depth_black": 4,
-            "states_visited": 22
+            "states_visited": 20
           },
-          "elapsed_time": 265.14622926712036
+          "elapsed_time": 124.20235705375671
         }
       ],
       "white_wins": 0,
@@ -1306,13 +1306,13 @@
           "repetition": 1,
           "winner": "Draw",
           "stats": {
-            "half_moves": 42,
-            "full_moves": 21,
+            "half_moves": 12,
+            "full_moves": 6,
             "depth_white": 5,
             "depth_black": 5,
-            "states_visited": 43
+            "states_visited": 13
           },
-          "elapsed_time": 980.4552805423737
+          "elapsed_time": 115.9461281299591
         },
         {
           "white_depth": 5,
@@ -1320,13 +1320,13 @@
           "repetition": 2,
           "winner": "Draw",
           "stats": {
-            "half_moves": 42,
-            "full_moves": 21,
+            "half_moves": 12,
+            "full_moves": 6,
             "depth_white": 5,
             "depth_black": 5,
-            "states_visited": 43
+            "states_visited": 13
           },
-          "elapsed_time": 1209.7419035434723
+          "elapsed_time": 115.94581031799316
         },
         {
           "white_depth": 5,
@@ -1334,13 +1334,13 @@
           "repetition": 3,
           "winner": "Draw",
           "stats": {
-            "half_moves": 42,
-            "full_moves": 21,
+            "half_moves": 12,
+            "full_moves": 6,
             "depth_white": 5,
             "depth_black": 5,
-            "states_visited": 43
+            "states_visited": 13
           },
-          "elapsed_time": 1286.807639837265
+          "elapsed_time": 115.96207404136658
         }
       ],
       "white_wins": 0,
@@ -1364,7 +1364,7 @@
         "depth_black": 1,
         "states_visited": 13
       },
-      "elapsed_time": 0.07547140121459961
+      "elapsed_time": 0.07395529747009277
     },
     {
       "white_depth": 1,
@@ -1378,7 +1378,7 @@
         "depth_black": 1,
         "states_visited": 13
       },
-      "elapsed_time": 0.07751941680908203
+      "elapsed_time": 0.08033061027526855
     },
     {
       "white_depth": 1,
@@ -1392,49 +1392,49 @@
         "depth_black": 1,
         "states_visited": 13
       },
-      "elapsed_time": 0.07625269889831543
+      "elapsed_time": 0.07630300521850586
     },
     {
       "white_depth": 1,
       "black_depth": 2,
       "repetition": 1,
-      "winner": "Draw",
+      "winner": "Black",
       "stats": {
-        "half_moves": 9,
-        "full_moves": 5,
+        "half_moves": 34,
+        "full_moves": 17,
         "depth_white": 1,
         "depth_black": 2,
-        "states_visited": 10
+        "states_visited": 35
       },
-      "elapsed_time": 0.0931549072265625
+      "elapsed_time": 0.7354903221130371
     },
     {
       "white_depth": 1,
       "black_depth": 2,
       "repetition": 2,
-      "winner": "Draw",
+      "winner": "Black",
       "stats": {
-        "half_moves": 9,
-        "full_moves": 5,
+        "half_moves": 34,
+        "full_moves": 17,
         "depth_white": 1,
         "depth_black": 2,
-        "states_visited": 10
+        "states_visited": 35
       },
-      "elapsed_time": 0.11319422721862793
+      "elapsed_time": 0.7303187847137451
     },
     {
       "white_depth": 1,
       "black_depth": 2,
       "repetition": 3,
-      "winner": "Draw",
+      "winner": "Black",
       "stats": {
-        "half_moves": 9,
-        "full_moves": 5,
+        "half_moves": 34,
+        "full_moves": 17,
         "depth_white": 1,
         "depth_black": 2,
-        "states_visited": 10
+        "states_visited": 35
       },
-      "elapsed_time": 0.09473800659179688
+      "elapsed_time": 0.7368614673614502
     },
     {
       "white_depth": 1,
@@ -1448,7 +1448,7 @@
         "depth_black": 3,
         "states_visited": 22
       },
-      "elapsed_time": 1.0063929557800293
+      "elapsed_time": 0.980276346206665
     },
     {
       "white_depth": 1,
@@ -1462,7 +1462,7 @@
         "depth_black": 3,
         "states_visited": 22
       },
-      "elapsed_time": 1.0070574283599854
+      "elapsed_time": 0.9777355194091797
     },
     {
       "white_depth": 1,
@@ -1476,7 +1476,7 @@
         "depth_black": 3,
         "states_visited": 22
       },
-      "elapsed_time": 1.014153003692627
+      "elapsed_time": 0.9787025451660156
     },
     {
       "white_depth": 1,
@@ -1484,13 +1484,13 @@
       "repetition": 1,
       "winner": "Draw",
       "stats": {
-        "half_moves": 9,
-        "full_moves": 5,
+        "half_moves": 21,
+        "full_moves": 11,
         "depth_white": 1,
         "depth_black": 4,
-        "states_visited": 10
+        "states_visited": 22
       },
-      "elapsed_time": 5.242432594299316
+      "elapsed_time": 17.715348720550537
     },
     {
       "white_depth": 1,
@@ -1498,13 +1498,13 @@
       "repetition": 2,
       "winner": "Draw",
       "stats": {
-        "half_moves": 9,
-        "full_moves": 5,
+        "half_moves": 21,
+        "full_moves": 11,
         "depth_white": 1,
         "depth_black": 4,
-        "states_visited": 10
+        "states_visited": 22
       },
-      "elapsed_time": 5.250701189041138
+      "elapsed_time": 17.717187643051147
     },
     {
       "white_depth": 1,
@@ -1512,97 +1512,97 @@
       "repetition": 3,
       "winner": "Draw",
       "stats": {
-        "half_moves": 9,
-        "full_moves": 5,
+        "half_moves": 21,
+        "full_moves": 11,
         "depth_white": 1,
         "depth_black": 4,
-        "states_visited": 10
+        "states_visited": 22
       },
-      "elapsed_time": 5.2498486042022705
+      "elapsed_time": 17.82724118232727
     },
     {
       "white_depth": 1,
       "black_depth": 5,
       "repetition": 1,
-      "winner": "Draw",
+      "winner": "Black",
       "stats": {
-        "half_moves": 50,
-        "full_moves": 25,
+        "half_moves": 30,
+        "full_moves": 15,
         "depth_white": 1,
         "depth_black": 5,
-        "states_visited": 51
+        "states_visited": 31
       },
-      "elapsed_time": 224.65519094467163
+      "elapsed_time": 105.03074288368225
     },
     {
       "white_depth": 1,
       "black_depth": 5,
       "repetition": 2,
-      "winner": "Draw",
+      "winner": "Black",
       "stats": {
-        "half_moves": 50,
-        "full_moves": 25,
+        "half_moves": 30,
+        "full_moves": 15,
         "depth_white": 1,
         "depth_black": 5,
-        "states_visited": 51
+        "states_visited": 31
       },
-      "elapsed_time": 233.4592261314392
+      "elapsed_time": 105.16049194335938
     },
     {
       "white_depth": 1,
       "black_depth": 5,
       "repetition": 3,
-      "winner": "Draw",
+      "winner": "Black",
       "stats": {
-        "half_moves": 50,
-        "full_moves": 25,
+        "half_moves": 30,
+        "full_moves": 15,
         "depth_white": 1,
         "depth_black": 5,
-        "states_visited": 51
+        "states_visited": 31
       },
-      "elapsed_time": 224.4025580883026
+      "elapsed_time": 105.07660818099976
     },
     {
       "white_depth": 2,
       "black_depth": 1,
       "repetition": 1,
-      "winner": "White",
+      "winner": "Draw",
       "stats": {
-        "half_moves": 33,
-        "full_moves": 17,
+        "half_moves": 25,
+        "full_moves": 13,
         "depth_white": 2,
         "depth_black": 1,
-        "states_visited": 34
+        "states_visited": 26
       },
-      "elapsed_time": 1.028670072555542
+      "elapsed_time": 0.9636266231536865
     },
     {
       "white_depth": 2,
       "black_depth": 1,
       "repetition": 2,
-      "winner": "White",
+      "winner": "Draw",
       "stats": {
-        "half_moves": 33,
-        "full_moves": 17,
+        "half_moves": 25,
+        "full_moves": 13,
         "depth_white": 2,
         "depth_black": 1,
-        "states_visited": 34
+        "states_visited": 26
       },
-      "elapsed_time": 1.0349969863891602
+      "elapsed_time": 0.9786326885223389
     },
     {
       "white_depth": 2,
       "black_depth": 1,
       "repetition": 3,
-      "winner": "White",
+      "winner": "Draw",
       "stats": {
-        "half_moves": 33,
-        "full_moves": 17,
+        "half_moves": 25,
+        "full_moves": 13,
         "depth_white": 2,
         "depth_black": 1,
-        "states_visited": 34
+        "states_visited": 26
       },
-      "elapsed_time": 1.0277268886566162
+      "elapsed_time": 0.9678759574890137
     },
     {
       "white_depth": 2,
@@ -1610,13 +1610,13 @@
       "repetition": 1,
       "winner": "Draw",
       "stats": {
-        "half_moves": 24,
-        "full_moves": 12,
+        "half_moves": 29,
+        "full_moves": 15,
         "depth_white": 2,
         "depth_black": 2,
-        "states_visited": 25
+        "states_visited": 30
       },
-      "elapsed_time": 1.2846393585205078
+      "elapsed_time": 1.986921787261963
     },
     {
       "white_depth": 2,
@@ -1624,13 +1624,13 @@
       "repetition": 2,
       "winner": "Draw",
       "stats": {
-        "half_moves": 24,
-        "full_moves": 12,
+        "half_moves": 29,
+        "full_moves": 15,
         "depth_white": 2,
         "depth_black": 2,
-        "states_visited": 25
+        "states_visited": 30
       },
-      "elapsed_time": 1.291402816772461
+      "elapsed_time": 1.9959659576416016
     },
     {
       "white_depth": 2,
@@ -1638,13 +1638,13 @@
       "repetition": 3,
       "winner": "Draw",
       "stats": {
-        "half_moves": 24,
-        "full_moves": 12,
+        "half_moves": 29,
+        "full_moves": 15,
         "depth_white": 2,
         "depth_black": 2,
-        "states_visited": 25
+        "states_visited": 30
       },
-      "elapsed_time": 1.2992992401123047
+      "elapsed_time": 1.9887311458587646
     },
     {
       "white_depth": 2,
@@ -1652,13 +1652,13 @@
       "repetition": 1,
       "winner": "Draw",
       "stats": {
-        "half_moves": 26,
-        "full_moves": 13,
+        "half_moves": 36,
+        "full_moves": 18,
         "depth_white": 2,
         "depth_black": 3,
-        "states_visited": 27
+        "states_visited": 37
       },
-      "elapsed_time": 7.9365599155426025
+      "elapsed_time": 10.472609758377075
     },
     {
       "white_depth": 2,
@@ -1666,13 +1666,13 @@
       "repetition": 2,
       "winner": "Draw",
       "stats": {
-        "half_moves": 26,
-        "full_moves": 13,
+        "half_moves": 36,
+        "full_moves": 18,
         "depth_white": 2,
         "depth_black": 3,
-        "states_visited": 27
+        "states_visited": 37
       },
-      "elapsed_time": 7.973306179046631
+      "elapsed_time": 10.476958274841309
     },
     {
       "white_depth": 2,
@@ -1680,13 +1680,13 @@
       "repetition": 3,
       "winner": "Draw",
       "stats": {
-        "half_moves": 26,
-        "full_moves": 13,
+        "half_moves": 36,
+        "full_moves": 18,
         "depth_white": 2,
         "depth_black": 3,
-        "states_visited": 27
+        "states_visited": 37
       },
-      "elapsed_time": 7.9555275440216064
+      "elapsed_time": 10.474756717681885
     },
     {
       "white_depth": 2,
@@ -1694,13 +1694,13 @@
       "repetition": 1,
       "winner": "Draw",
       "stats": {
-        "half_moves": 26,
-        "full_moves": 13,
+        "half_moves": 32,
+        "full_moves": 16,
         "depth_white": 2,
         "depth_black": 4,
-        "states_visited": 27
+        "states_visited": 33
       },
-      "elapsed_time": 54.188955783843994
+      "elapsed_time": 36.43903994560242
     },
     {
       "white_depth": 2,
@@ -1708,13 +1708,13 @@
       "repetition": 2,
       "winner": "Draw",
       "stats": {
-        "half_moves": 26,
-        "full_moves": 13,
+        "half_moves": 32,
+        "full_moves": 16,
         "depth_white": 2,
         "depth_black": 4,
-        "states_visited": 27
+        "states_visited": 33
       },
-      "elapsed_time": 54.123061418533325
+      "elapsed_time": 36.39856553077698
     },
     {
       "white_depth": 2,
@@ -1722,13 +1722,13 @@
       "repetition": 3,
       "winner": "Draw",
       "stats": {
-        "half_moves": 26,
-        "full_moves": 13,
+        "half_moves": 32,
+        "full_moves": 16,
         "depth_white": 2,
         "depth_black": 4,
-        "states_visited": 27
+        "states_visited": 33
       },
-      "elapsed_time": 54.18520903587341
+      "elapsed_time": 36.46080923080444
     },
     {
       "white_depth": 2,
@@ -1736,13 +1736,13 @@
       "repetition": 1,
       "winner": "Draw",
       "stats": {
-        "half_moves": 24,
-        "full_moves": 12,
+        "half_moves": 28,
+        "full_moves": 14,
         "depth_white": 2,
         "depth_black": 5,
-        "states_visited": 25
+        "states_visited": 29
       },
-      "elapsed_time": 250.65300226211548
+      "elapsed_time": 220.23767256736755
     },
     {
       "white_depth": 2,
@@ -1750,13 +1750,13 @@
       "repetition": 2,
       "winner": "Draw",
       "stats": {
-        "half_moves": 24,
-        "full_moves": 12,
+        "half_moves": 28,
+        "full_moves": 14,
         "depth_white": 2,
         "depth_black": 5,
-        "states_visited": 25
+        "states_visited": 29
       },
-      "elapsed_time": 265.7165403366089
+      "elapsed_time": 220.31660223007202
     },
     {
       "white_depth": 2,
@@ -1764,13 +1764,13 @@
       "repetition": 3,
       "winner": "Draw",
       "stats": {
-        "half_moves": 24,
-        "full_moves": 12,
+        "half_moves": 28,
+        "full_moves": 14,
         "depth_white": 2,
         "depth_black": 5,
-        "states_visited": 25
+        "states_visited": 29
       },
-      "elapsed_time": 250.37033939361572
+      "elapsed_time": 219.83836889266968
     },
     {
       "white_depth": 3,
@@ -1784,7 +1784,7 @@
         "depth_black": 1,
         "states_visited": 32
       },
-      "elapsed_time": 8.135130405426025
+      "elapsed_time": 8.023749828338623
     },
     {
       "white_depth": 3,
@@ -1798,7 +1798,7 @@
         "depth_black": 1,
         "states_visited": 32
       },
-      "elapsed_time": 8.163368463516235
+      "elapsed_time": 8.022242784500122
     },
     {
       "white_depth": 3,
@@ -1812,7 +1812,7 @@
         "depth_black": 1,
         "states_visited": 32
       },
-      "elapsed_time": 8.182752132415771
+      "elapsed_time": 8.023956060409546
     },
     {
       "white_depth": 3,
@@ -1820,13 +1820,13 @@
       "repetition": 1,
       "winner": "Draw",
       "stats": {
-        "half_moves": 9,
-        "full_moves": 5,
+        "half_moves": 33,
+        "full_moves": 17,
         "depth_white": 3,
         "depth_black": 2,
-        "states_visited": 10
+        "states_visited": 34
       },
-      "elapsed_time": 2.5522282123565674
+      "elapsed_time": 12.693368196487427
     },
     {
       "white_depth": 3,
@@ -1834,13 +1834,13 @@
       "repetition": 2,
       "winner": "Draw",
       "stats": {
-        "half_moves": 9,
-        "full_moves": 5,
+        "half_moves": 33,
+        "full_moves": 17,
         "depth_white": 3,
         "depth_black": 2,
-        "states_visited": 10
+        "states_visited": 34
       },
-      "elapsed_time": 2.5207324028015137
+      "elapsed_time": 12.68423080444336
     },
     {
       "white_depth": 3,
@@ -1848,13 +1848,13 @@
       "repetition": 3,
       "winner": "Draw",
       "stats": {
-        "half_moves": 9,
-        "full_moves": 5,
+        "half_moves": 33,
+        "full_moves": 17,
         "depth_white": 3,
         "depth_black": 2,
-        "states_visited": 10
+        "states_visited": 34
       },
-      "elapsed_time": 2.5407612323760986
+      "elapsed_time": 12.7195463180542
     },
     {
       "white_depth": 3,
@@ -1868,7 +1868,7 @@
         "depth_black": 3,
         "states_visited": 31
       },
-      "elapsed_time": 8.180213212966919
+      "elapsed_time": 8.036309719085693
     },
     {
       "white_depth": 3,
@@ -1882,7 +1882,7 @@
         "depth_black": 3,
         "states_visited": 31
       },
-      "elapsed_time": 8.21537160873413
+      "elapsed_time": 8.042144298553467
     },
     {
       "white_depth": 3,
@@ -1896,7 +1896,7 @@
         "depth_black": 3,
         "states_visited": 31
       },
-      "elapsed_time": 8.240785837173462
+      "elapsed_time": 8.044938325881958
     },
     {
       "white_depth": 3,
@@ -1904,13 +1904,13 @@
       "repetition": 1,
       "winner": "Draw",
       "stats": {
-        "half_moves": 9,
-        "full_moves": 5,
+        "half_moves": 56,
+        "full_moves": 28,
         "depth_white": 3,
         "depth_black": 4,
-        "states_visited": 10
+        "states_visited": 57
       },
-      "elapsed_time": 5.9657981395721436
+      "elapsed_time": 74.70644855499268
     },
     {
       "white_depth": 3,
@@ -1918,13 +1918,13 @@
       "repetition": 2,
       "winner": "Draw",
       "stats": {
-        "half_moves": 9,
-        "full_moves": 5,
+        "half_moves": 56,
+        "full_moves": 28,
         "depth_white": 3,
         "depth_black": 4,
-        "states_visited": 10
+        "states_visited": 57
       },
-      "elapsed_time": 6.006144285202026
+      "elapsed_time": 74.50491666793823
     },
     {
       "white_depth": 3,
@@ -1932,13 +1932,13 @@
       "repetition": 3,
       "winner": "Draw",
       "stats": {
-        "half_moves": 9,
-        "full_moves": 5,
+        "half_moves": 56,
+        "full_moves": 28,
         "depth_white": 3,
         "depth_black": 4,
-        "states_visited": 10
+        "states_visited": 57
       },
-      "elapsed_time": 5.998414516448975
+      "elapsed_time": 74.48252248764038
     },
     {
       "white_depth": 3,
@@ -1946,13 +1946,13 @@
       "repetition": 1,
       "winner": "Draw",
       "stats": {
-        "half_moves": 19,
-        "full_moves": 10,
+        "half_moves": 34,
+        "full_moves": 17,
         "depth_white": 3,
         "depth_black": 5,
-        "states_visited": 20
+        "states_visited": 35
       },
-      "elapsed_time": 125.62271237373352
+      "elapsed_time": 319.81797528266907
     },
     {
       "white_depth": 3,
@@ -1960,13 +1960,13 @@
       "repetition": 2,
       "winner": "Draw",
       "stats": {
-        "half_moves": 19,
-        "full_moves": 10,
+        "half_moves": 34,
+        "full_moves": 17,
         "depth_white": 3,
         "depth_black": 5,
-        "states_visited": 20
+        "states_visited": 35
       },
-      "elapsed_time": 125.7728841304779
+      "elapsed_time": 319.7466287612915
     },
     {
       "white_depth": 3,
@@ -1974,13 +1974,13 @@
       "repetition": 3,
       "winner": "Draw",
       "stats": {
-        "half_moves": 19,
-        "full_moves": 10,
+        "half_moves": 34,
+        "full_moves": 17,
         "depth_white": 3,
         "depth_black": 5,
-        "states_visited": 20
+        "states_visited": 35
       },
-      "elapsed_time": 125.44824862480164
+      "elapsed_time": 319.5856523513794
     },
     {
       "white_depth": 4,
@@ -1994,7 +1994,7 @@
         "depth_black": 1,
         "states_visited": 34
       },
-      "elapsed_time": 19.649696350097656
+      "elapsed_time": 19.692415237426758
     },
     {
       "white_depth": 4,
@@ -2008,7 +2008,7 @@
         "depth_black": 1,
         "states_visited": 34
       },
-      "elapsed_time": 19.671661615371704
+      "elapsed_time": 19.71558666229248
     },
     {
       "white_depth": 4,
@@ -2022,7 +2022,7 @@
         "depth_black": 1,
         "states_visited": 34
       },
-      "elapsed_time": 20.865044355392456
+      "elapsed_time": 19.694639682769775
     },
     {
       "white_depth": 4,
@@ -2030,13 +2030,13 @@
       "repetition": 1,
       "winner": "Draw",
       "stats": {
-        "half_moves": 9,
-        "full_moves": 5,
+        "half_moves": 44,
+        "full_moves": 22,
         "depth_white": 4,
         "depth_black": 2,
-        "states_visited": 10
+        "states_visited": 45
       },
-      "elapsed_time": 15.064412832260132
+      "elapsed_time": 59.47694683074951
     },
     {
       "white_depth": 4,
@@ -2044,13 +2044,13 @@
       "repetition": 2,
       "winner": "Draw",
       "stats": {
-        "half_moves": 9,
-        "full_moves": 5,
+        "half_moves": 44,
+        "full_moves": 22,
         "depth_white": 4,
         "depth_black": 2,
-        "states_visited": 10
+        "states_visited": 45
       },
-      "elapsed_time": 15.687274694442749
+      "elapsed_time": 59.5175085067749
     },
     {
       "white_depth": 4,
@@ -2058,13 +2058,13 @@
       "repetition": 3,
       "winner": "Draw",
       "stats": {
-        "half_moves": 9,
-        "full_moves": 5,
+        "half_moves": 44,
+        "full_moves": 22,
         "depth_white": 4,
         "depth_black": 2,
-        "states_visited": 10
+        "states_visited": 45
       },
-      "elapsed_time": 14.360376596450806
+      "elapsed_time": 59.44349002838135
     },
     {
       "white_depth": 4,
@@ -2072,13 +2072,13 @@
       "repetition": 1,
       "winner": "Draw",
       "stats": {
-        "half_moves": 11,
-        "full_moves": 6,
+        "half_moves": 26,
+        "full_moves": 13,
         "depth_white": 4,
         "depth_black": 3,
-        "states_visited": 12
+        "states_visited": 27
       },
-      "elapsed_time": 18.835951805114746
+      "elapsed_time": 37.99239730834961
     },
     {
       "white_depth": 4,
@@ -2086,13 +2086,13 @@
       "repetition": 2,
       "winner": "Draw",
       "stats": {
-        "half_moves": 11,
-        "full_moves": 6,
+        "half_moves": 26,
+        "full_moves": 13,
         "depth_white": 4,
         "depth_black": 3,
-        "states_visited": 12
+        "states_visited": 27
       },
-      "elapsed_time": 18.85942792892456
+      "elapsed_time": 38.0156786441803
     },
     {
       "white_depth": 4,
@@ -2100,13 +2100,13 @@
       "repetition": 3,
       "winner": "Draw",
       "stats": {
-        "half_moves": 11,
-        "full_moves": 6,
+        "half_moves": 26,
+        "full_moves": 13,
         "depth_white": 4,
         "depth_black": 3,
-        "states_visited": 12
+        "states_visited": 27
       },
-      "elapsed_time": 18.87821078300476
+      "elapsed_time": 38.06771659851074
     },
     {
       "white_depth": 4,
@@ -2114,13 +2114,13 @@
       "repetition": 1,
       "winner": "Draw",
       "stats": {
-        "half_moves": 9,
-        "full_moves": 5,
+        "half_moves": 22,
+        "full_moves": 11,
         "depth_white": 4,
         "depth_black": 4,
-        "states_visited": 10
+        "states_visited": 23
       },
-      "elapsed_time": 16.65929889678955
+      "elapsed_time": 61.30982184410095
     },
     {
       "white_depth": 4,
@@ -2128,13 +2128,13 @@
       "repetition": 2,
       "winner": "Draw",
       "stats": {
-        "half_moves": 9,
-        "full_moves": 5,
+        "half_moves": 22,
+        "full_moves": 11,
         "depth_white": 4,
         "depth_black": 4,
-        "states_visited": 10
+        "states_visited": 23
       },
-      "elapsed_time": 16.63393807411194
+      "elapsed_time": 61.36416745185852
     },
     {
       "white_depth": 4,
@@ -2142,13 +2142,13 @@
       "repetition": 3,
       "winner": "Draw",
       "stats": {
-        "half_moves": 9,
-        "full_moves": 5,
+        "half_moves": 22,
+        "full_moves": 11,
         "depth_white": 4,
         "depth_black": 4,
-        "states_visited": 10
+        "states_visited": 23
       },
-      "elapsed_time": 16.644964694976807
+      "elapsed_time": 61.333033323287964
     },
     {
       "white_depth": 4,
@@ -2156,13 +2156,13 @@
       "repetition": 1,
       "winner": "Draw",
       "stats": {
-        "half_moves": 33,
-        "full_moves": 17,
+        "half_moves": 36,
+        "full_moves": 18,
         "depth_white": 4,
         "depth_black": 5,
-        "states_visited": 34
+        "states_visited": 37
       },
-      "elapsed_time": 307.21567392349243
+      "elapsed_time": 193.48264908790588
     },
     {
       "white_depth": 4,
@@ -2170,13 +2170,13 @@
       "repetition": 2,
       "winner": "Draw",
       "stats": {
-        "half_moves": 33,
-        "full_moves": 17,
+        "half_moves": 36,
+        "full_moves": 18,
         "depth_white": 4,
         "depth_black": 5,
-        "states_visited": 34
+        "states_visited": 37
       },
-      "elapsed_time": 306.94938254356384
+      "elapsed_time": 193.4830801486969
     },
     {
       "white_depth": 4,
@@ -2184,19 +2184,19 @@
       "repetition": 3,
       "winner": "Draw",
       "stats": {
-        "half_moves": 33,
-        "full_moves": 17,
+        "half_moves": 36,
+        "full_moves": 18,
         "depth_white": 4,
         "depth_black": 5,
-        "states_visited": 34
+        "states_visited": 37
       },
-      "elapsed_time": 317.980676651001
+      "elapsed_time": 193.49888277053833
     },
     {
       "white_depth": 5,
       "black_depth": 1,
       "repetition": 1,
-      "winner": "Draw",
+      "winner": "White",
       "stats": {
         "half_moves": 19,
         "full_moves": 10,
@@ -2204,13 +2204,13 @@
         "depth_black": 1,
         "states_visited": 20
       },
-      "elapsed_time": 161.75013399124146
+      "elapsed_time": 52.59414267539978
     },
     {
       "white_depth": 5,
       "black_depth": 1,
       "repetition": 2,
-      "winner": "Draw",
+      "winner": "White",
       "stats": {
         "half_moves": 19,
         "full_moves": 10,
@@ -2218,13 +2218,13 @@
         "depth_black": 1,
         "states_visited": 20
       },
-      "elapsed_time": 161.89529514312744
+      "elapsed_time": 52.643428802490234
     },
     {
       "white_depth": 5,
       "black_depth": 1,
       "repetition": 3,
-      "winner": "Draw",
+      "winner": "White",
       "stats": {
         "half_moves": 19,
         "full_moves": 10,
@@ -2232,49 +2232,49 @@
         "depth_black": 1,
         "states_visited": 20
       },
-      "elapsed_time": 161.8800458908081
+      "elapsed_time": 52.59299159049988
     },
     {
       "white_depth": 5,
       "black_depth": 2,
       "repetition": 1,
-      "winner": "Draw",
+      "winner": "White",
       "stats": {
-        "half_moves": 16,
-        "full_moves": 8,
+        "half_moves": 13,
+        "full_moves": 7,
         "depth_white": 5,
         "depth_black": 2,
-        "states_visited": 17
+        "states_visited": 14
       },
-      "elapsed_time": 108.50288796424866
+      "elapsed_time": 65.12399291992188
     },
     {
       "white_depth": 5,
       "black_depth": 2,
       "repetition": 2,
-      "winner": "Draw",
+      "winner": "White",
       "stats": {
-        "half_moves": 16,
-        "full_moves": 8,
+        "half_moves": 13,
+        "full_moves": 7,
         "depth_white": 5,
         "depth_black": 2,
-        "states_visited": 17
+        "states_visited": 14
       },
-      "elapsed_time": 108.62954521179199
+      "elapsed_time": 65.13318014144897
     },
     {
       "white_depth": 5,
       "black_depth": 2,
       "repetition": 3,
-      "winner": "Draw",
+      "winner": "White",
       "stats": {
-        "half_moves": 16,
-        "full_moves": 8,
+        "half_moves": 13,
+        "full_moves": 7,
         "depth_white": 5,
         "depth_black": 2,
-        "states_visited": 17
+        "states_visited": 14
       },
-      "elapsed_time": 119.877769947052
+      "elapsed_time": 65.12454676628113
     },
     {
       "white_depth": 5,
@@ -2282,13 +2282,13 @@
       "repetition": 1,
       "winner": "Draw",
       "stats": {
-        "half_moves": 13,
-        "full_moves": 7,
+        "half_moves": 12,
+        "full_moves": 6,
         "depth_white": 5,
         "depth_black": 3,
-        "states_visited": 14
+        "states_visited": 13
       },
-      "elapsed_time": 94.46041655540466
+      "elapsed_time": 61.88391613960266
     },
     {
       "white_depth": 5,
@@ -2296,13 +2296,13 @@
       "repetition": 2,
       "winner": "Draw",
       "stats": {
-        "half_moves": 13,
-        "full_moves": 7,
+        "half_moves": 12,
+        "full_moves": 6,
         "depth_white": 5,
         "depth_black": 3,
-        "states_visited": 14
+        "states_visited": 13
       },
-      "elapsed_time": 94.42977023124695
+      "elapsed_time": 61.819602251052856
     },
     {
       "white_depth": 5,
@@ -2310,13 +2310,13 @@
       "repetition": 3,
       "winner": "Draw",
       "stats": {
-        "half_moves": 13,
-        "full_moves": 7,
+        "half_moves": 12,
+        "full_moves": 6,
         "depth_white": 5,
         "depth_black": 3,
-        "states_visited": 14
+        "states_visited": 13
       },
-      "elapsed_time": 94.65645980834961
+      "elapsed_time": 61.901511430740356
     },
     {
       "white_depth": 5,
@@ -2324,13 +2324,13 @@
       "repetition": 1,
       "winner": "Draw",
       "stats": {
-        "half_moves": 21,
-        "full_moves": 11,
+        "half_moves": 19,
+        "full_moves": 10,
         "depth_white": 5,
         "depth_black": 4,
-        "states_visited": 22
+        "states_visited": 20
       },
-      "elapsed_time": 248.44951605796814
+      "elapsed_time": 124.16827440261841
     },
     {
       "white_depth": 5,
@@ -2338,13 +2338,13 @@
       "repetition": 2,
       "winner": "Draw",
       "stats": {
-        "half_moves": 21,
-        "full_moves": 11,
+        "half_moves": 19,
+        "full_moves": 10,
         "depth_white": 5,
         "depth_black": 4,
-        "states_visited": 22
+        "states_visited": 20
       },
-      "elapsed_time": 248.78779220581055
+      "elapsed_time": 124.05006551742554
     },
     {
       "white_depth": 5,
@@ -2352,13 +2352,13 @@
       "repetition": 3,
       "winner": "Draw",
       "stats": {
-        "half_moves": 21,
-        "full_moves": 11,
+        "half_moves": 19,
+        "full_moves": 10,
         "depth_white": 5,
         "depth_black": 4,
-        "states_visited": 22
+        "states_visited": 20
       },
-      "elapsed_time": 265.14622926712036
+      "elapsed_time": 124.20235705375671
     },
     {
       "white_depth": 5,
@@ -2366,13 +2366,13 @@
       "repetition": 1,
       "winner": "Draw",
       "stats": {
-        "half_moves": 42,
-        "full_moves": 21,
+        "half_moves": 12,
+        "full_moves": 6,
         "depth_white": 5,
         "depth_black": 5,
-        "states_visited": 43
+        "states_visited": 13
       },
-      "elapsed_time": 980.4552805423737
+      "elapsed_time": 115.9461281299591
     },
     {
       "white_depth": 5,
@@ -2380,13 +2380,13 @@
       "repetition": 2,
       "winner": "Draw",
       "stats": {
-        "half_moves": 42,
-        "full_moves": 21,
+        "half_moves": 12,
+        "full_moves": 6,
         "depth_white": 5,
         "depth_black": 5,
-        "states_visited": 43
+        "states_visited": 13
       },
-      "elapsed_time": 1209.7419035434723
+      "elapsed_time": 115.94581031799316
     },
     {
       "white_depth": 5,
@@ -2394,13 +2394,13 @@
       "repetition": 3,
       "winner": "Draw",
       "stats": {
-        "half_moves": 42,
-        "full_moves": 21,
+        "half_moves": 12,
+        "full_moves": 6,
         "depth_white": 5,
         "depth_black": 5,
-        "states_visited": 43
+        "states_visited": 13
       },
-      "elapsed_time": 1286.807639837265
+      "elapsed_time": 115.96207404136658
     }
   ],
   "config": {
