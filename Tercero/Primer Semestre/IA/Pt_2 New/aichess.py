@@ -4,6 +4,7 @@
 Created on Thu Sep  8 11:22:03 2022
 
 @author: ignasi
+@author: Daniel Barceló y Jose Candon (Completed implementation)
 """
 import copy
 import math
@@ -590,9 +591,7 @@ class Aichess():
         return True
 
     def heuristica(self, currentState, color, depth=0, use_cache=True):
-        # VERSIÓN OPTIMIZADA con evaluación MÁS FUERTE para K+R vs K+R
         # El parámetro depth ayuda a romper simetrías en posiciones iguales
-        # use_cache: si es False, desactiva la caché (para minimax puro)
         
         if use_cache:
             stateKey = self.stateToKey(currentState)
@@ -641,7 +640,7 @@ class Aichess():
         # CASO 1: MATERIAL IGUAL (K+R vs K+R) - ESTRATEGIA BALANCEADA: ATACAR + DEFENDER
         # ============================================================================
         # K+R vs K+R es teóricamente tablas, PERO el jugador más agresivo tiene ventaja práctica.
-        # Nueva filosofía: ATACAR activamente mientras mantienes tu torre segura.
+        # ATACAR activamente mientras mantienes tu torre segura.
         # Crear amenazas, dar jaques, coordinar rey + torre para presionar.
         # ============================================================================
         if wrState is not None and brState is not None:
@@ -655,47 +654,46 @@ class Aichess():
             distWkBr = max(abs(filaWk - filaBr), abs(columnaWk - columnaBr))
             distBkWr = max(abs(filaBk - filaWr), abs(columnaBk - columnaWr))
             
-            # ========== SEGURIDAD CRÍTICA: EVITAR PERDER NUESTRA TORRE ==========
+            # ==========  EVITAR PERDER NUESTRA TORRE ==========
             if distBkWr == 1:
-                value -= 5000  # Torre colgando junto al rey rival - ¡EVÍTALO!
+                value -= 5000  # Torre colgando junto al rey rival 
             elif distBkWr == 2:
                 value -= 500   # Zona de peligro moderada
             
-            # Penalizar estar en jaque (pero menos que antes - el jaque es parte del juego)
+            # Penalizar estar en jaque 
             if distRookToWhiteKing == 1:
-                value -= 150  # REDUCIDO: estar en jaque no es tan malo si puedes escapar
+                value -= 150  
             
-            # ========== ATAQUE ACTIVO: DAR JAQUES Y CREAR AMENAZAS ==========
-            # CAMBIO CLAVE: Recompensar MUCHO MÁS por dar jaques
+            # ========== DAR JAQUES Y CREAR AMENAZAS ==========
             rookGivesCheck = (filaWr == filaBk or columnaWr == columnaBk)
             blackRookGivesCheck = (filaBr == filaWk or columnaBr == columnaWk)
             
             if rookGivesCheck and distRookToBlackKing >= 2:
-                value += 500  # AUMENTADO: Dar jaques es bueno incluso a distancia 2
+                value += 500  # Dar jaques es bueno incluso a distancia 2
             
             # Penalizar si el OPONENTE da jaque a NOSOTROS
             if blackRookGivesCheck and distRookToWhiteKing >= 2:
                 value -= 500  # Mal: el enemigo nos da jaque
             
-            # ========== PRESIÓN AL REY ENEMIGO: Acorralarlo hacia el borde ==========
+            # ========== PRESIÓN AL REY ENEMIGO Acorralarlo hacia el borde ==========
             # Recompensar por restringir la movilidad del rey enemigo
             bkEdgeDistance = min(filaBk, 7 - filaBk, columnaBk, 7 - columnaBk)
-            value -= bkEdgeDistance * 60  # AUMENTADO: Forzar al rey enemigo al borde
+            value -= bkEdgeDistance * 60  # Forzar al rey enemigo al borde
             
             # Recompensar si nuestro rey enemigo está en las esquinas (más vulnerable)
             if (filaBk <= 1 or filaBk >= 6) and (columnaBk <= 1 or columnaBk >= 6):
                 value += 200  # Rey enemigo cerca de esquina
             
             # ========== COORDINACIÓN AGRESIVA REY + TORRE ==========
-            # CAMBIO CLAVE: Recompensar coordinación ofensiva
+            # Recompensar coordinación ofensiva
             if distWkBk >= 2 and distWkBk <= 3:
-                value += 250  # AUMENTADO: Rey coordinando para atacar
+                value += 250  #  Rey coordinando para atacar
             elif distWkBk == 1:
-                value -= 100  # REDUCIDO: Reyes adyacentes puede ser táctico
+                value -= 100  # Reyes adyacentes puede ser táctico
             
             # Recompensar si nuestro rey está cerca de la torre enemiga (amenaza)
             if distWkBr == 2:
-                value += 300  # NUEVO: Rey amenazando torre enemiga
+                value += 300  # Rey amenazando torre enemiga
             elif distWkBr == 1:
                 # Capturar SOLO si podemos ganar el final resultante K+R vs K
                 if distWkBk <= 3:
@@ -709,7 +707,7 @@ class Aichess():
             
             # ========== ACTIVIDAD DEL REY: Centralizado y activo ==========
             wkCentrality = min(filaWk, 7 - filaWk, columnaWk, 7 - columnaWk)
-            value += wkCentrality * 50  # AUMENTADO: Rey activo es clave
+            value += wkCentrality * 50  #  Rey activo es clave
             
             # ========== AMENAZAS TÁCTICAS: Torre atacando torre enemiga ==========
             distWrBr_row = abs(filaWr - filaBr)
@@ -719,11 +717,11 @@ class Aichess():
                 distWrBr = max(distWrBr_row, distWrBr_col)
                 if distWrBr == 1:  # Torres adyacentes en la misma línea
                     if distWkBk <= 3:
-                        value += 1000  # REDUCIDO: Preparación de captura favorable
+                        value += 1000  # Preparación de captura favorable
                     else:
-                        value -= 6000  # REDUCIDO: Mala captura
+                        value -= 6000  # Mala captura
                 elif distWrBr == 2:
-                    value += 200  # NUEVO: Torre amenazando en la distancia
+                    value += 200  # Torre amenazando en la distancia
             
             # ========== CONTROL DEL ESPACIO ==========
             # Recompensar si nuestra torre controla líneas importantes
@@ -742,7 +740,7 @@ class Aichess():
         elif wrState is not None and brState is None:
             filaWr, columnaWr = wrState[0], wrState[1]
             
-            # CRÍTICO: ¡Comprobar si el rey negro puede recapturar nuestra torre!
+            # ¡Comprobar si el rey negro puede recapturar nuestra torre!
             # Ocurre cuando acabamos de capturar la torre negra y el rey negro está adyacente
             distBkWr = max(abs(filaBk - filaWr), abs(columnaBk - columnaWr))
             if distBkWr == 1:
@@ -752,10 +750,9 @@ class Aichess():
                 self.heuristicCache[cacheKey] = value
                 return value
             
-            # COMPROBACIÓN DE AFOGADO: Solo en profundidad 0 (hojas) para ahorrar tiempo
-            # Comprobación rápida: si el rey negro no tiene jugadas y la torre está demasiado cerca
+            # COMPROBACIÓN DE AFOGADO
+            # Comprobación si el rey negro no tiene jugadas y la torre está demasiado cerca
             if depth == 0:
-                # Heurística simple de ahogado: rey atrapado en la esquina con torre adyacente
                 bkCorner = (filaBk == 0 or filaBk == 7) and (columnaBk == 0 or columnaBk == 7)
                 rookAdjacent = (max(abs(filaWr - filaBk), abs(columnaWr - columnaBk)) == 1)
                 notInCheck = not ((filaWr == filaBk or columnaWr == columnaBk))
@@ -765,7 +762,7 @@ class Aichess():
                     return value
             
             # ============================================================================
-            # TÉCNICA CORRECTA K+R vs K (Chess.com):
+            # TÉCNICA CORRECTA K+R vs K:
             # Fase 1: CORTAR al rey con la torre (limitar a media tabla)
             # Fase 2: EMPUJAR al rey a la banda con rey+torre coordinados
             # Fase 3: ATRAPAR al rey en la banda con el rey bloqueando y torre dando jaques
@@ -847,7 +844,7 @@ class Aichess():
         elif wrState is None and brState is not None:
             filaBr, columnaBr = brState[0], brState[1]
             
-            # COMPROBACIÓN DE AFOGADO: Solo a profundidad 0 (simplificado)
+            # COMPROBACIÓN DE AFOGADO: Solo a profundidad 0 
             if depth == 0:
                 distWkBr = max(abs(filaWk - filaBr), abs(columnaWk - columnaBr))
                 wkCorner = (filaWk == 0 or filaWk == 7) and (columnaWk == 0 or columnaWk == 7)
@@ -907,13 +904,9 @@ class Aichess():
             elif distRookToWhiteKing <= 3:
                 value -= 800
 
-        # Bonus mínimo por profundidad para romper simetrías (mantener pequeño por rendimiento)
-        # CORRECCIÓN: El parámetro 'color' NO debe afectar el signo del valor
-        # La heurística SIEMPRE evalúa desde perspectiva de Blanco (positivo=bueno para Blanco)
-        # El algoritmo minimax/alphabeta ya maneja max/min correctamente
         value += depth * 0.1  # Pequeño bonus por profundidad para romper simetrías
 
-        # IMPORTANTE: NO invertir la perspectiva para Negro en la heurística
+        # NO invertir la perspectiva para Negro en la heurística
         # La evaluación es siempre desde la perspectiva de Blanco.
         # El algoritmo minimax maneja la lógica de min/max, no esta función.
         # Devuelve el valor tal cual (positivo = mejor para Blanco, negativo = mejor para Negro)
@@ -1009,15 +1002,14 @@ class Aichess():
     def minimaxNoPruning(self, state, depth, isWhite, positionHistory=None):
         """
         Minimax Puro SIN poda Alfa-Beta
-        Este es el minimax VERDADERO: explora TODOS los nodos, SIN PODA
-        Sin embargo, usamos tabla de transposición para VELOCIDAD (optimización legal que no cambia resultados)
+        Sin embargo, usamos tabla de transposición para VELOCIDAD (optimización que no cambia resultados)
         Usado para el Ejercicio 1 y Ejercicio 3 para comparar contra alfa-beta
         """
         # Inicializar historial de posiciones si no se proporciona
         if positionHistory is None:
             positionHistory = {}
         
-        # OPTIMIZACIÓN LEGAL: Usar tabla de transposición (no cambia resultados de minimax, solo cachea)
+        #Usar tabla de transposición (no cambia resultados de minimax, solo cachea)
         # Esto es matemáticamente equivalente a minimax puro pero MUCHO más rápido
         # Incluir 'minimax' en la clave para separar de la caché de alfabeta
         stateKey = self.stateToKey(state)
@@ -1032,7 +1024,7 @@ class Aichess():
             self.transpositionTable[ttKey] = result
             return result
         
-        # DETECCIÓN TEMPRANA DE JAQUE MATE (optimización legal - no es necesario buscar más profundo)
+        # DETECCIÓN TEMPRANA DE JAQUE MATE
         if isWhite:
             if self.isBlackInCheckMate(state):
                 value = 999999  # Ganan las Blancas
@@ -1200,8 +1192,8 @@ class Aichess():
 
     def alphabeta(self, state, depth, isWhite, alpha=float('-inf'), beta=float('inf'), lastState=None, positionHistory=None):
         """
-        Algoritmo de poda Alfa-Beta OPTIMIZADO
-        CRÍTICO: Solo comprueba jaque mate a profundidades SUPERFICIALES (depth <= 2)
+        Algoritmo de poda Alfa-Beta
+        Solo comprueba jaque mate a profundidades SUPERFICIALES (depth <= 2)
         En niveles más profundos, usa solo evaluación heurística (sin detección costosa de jaque mate)
         """
         # Inicializar historial de posiciones si no se proporciona
@@ -1215,7 +1207,7 @@ class Aichess():
         if ttKey in self.transpositionTable:
             return self.transpositionTable[ttKey]
         
-        # OPTIMIZACIÓN: Solo comprobar repeticiones en profundidad == maxDepth (nivel superior)
+        # Solo comprobar repeticiones en profundidad == maxDepth (nivel superior)
         # Comprobar en cada profundidad es demasiado costoso para búsquedas profundas
         # El bucle del juego maneja la detección de triple repetición
         if False and depth <= 3:
@@ -1248,8 +1240,7 @@ class Aichess():
                 return result
         
         
-        # OPTIMIZACIÓN: Se eliminaron todas las comprobaciones de jaque mate/ahogado de minimax
-        # Razón: Demasiado costoso a profundidad 5, la heurística lo maneja bien
+        # Se eliminaron todas las comprobaciones de jaque mate/ahogado de minimax
         # El bucle principal del juego aún comprueba estados terminales
         # Esto proporciona una aceleración MASIVA para búsquedas profundas
         
@@ -1261,9 +1252,9 @@ class Aichess():
             
             # Maximizar para las Blancas
             bestValue = float('-inf')
-            bestState = None  # CAMBIADO: No inicializar con un estado potencialmente inválido
+            bestState = None  #  No inicializar con un estado potencialmente inválido
             
-            # OPTIMIZACIÓN: Omitir completamente el ordenamiento de movimientos (desactivado por velocidad)
+            # Omitir completamente el ordenamiento de movimientos (desactivado por velocidad)
             orderedStates = nextStates
             
             validMoveFound = False  # Rastrear si encontramos algún movimiento válido
@@ -1281,7 +1272,7 @@ class Aichess():
                 if wkState is None or bkState is None:
                     continue
                 
-                # CRÍTICO: Comprobar si los reyes están adyacentes (posición ILEGAL)
+                # Comprobar si los reyes están adyacentes (posición ILEGAL)
                 wkPos = wkState[0:2]
                 bkPos = bkState[0:2]
                 kingDistance = max(abs(wkPos[0] - bkPos[0]), abs(wkPos[1] - bkPos[1]))
@@ -1295,7 +1286,7 @@ class Aichess():
                 # Este es un movimiento válido
                 validMoveFound = True
                 
-                # OPTIMIZACIÓN: Actualizar historial de posiciones SIN copiar (mucho más rápido)
+                # Actualizar historial de posiciones SIN copiar (mucho más rápido)
                 # Incrementamos, recursamos, luego decrementamos (deshacer)
                 fullStateKey = self.stateToKey(fullState)
                 prevCount = positionHistory.get(fullStateKey, 0)
@@ -1307,7 +1298,7 @@ class Aichess():
                 # Recursión
                 value, _ = self.alphabeta(fullState, depth - 1, False, alpha, beta, lastState=state, positionHistory=positionHistory)
                 
-                # CRÍTICO: Restaurar historial de posiciones (deshacer el incremento)
+                # Restaurar historial de posiciones (deshacer el incremento)
                 positionHistory[fullStateKey] = prevCount
                 if prevCount == 0:
                     del positionHistory[fullStateKey]  # Limpiar para ahorrar memoria
@@ -1346,9 +1337,9 @@ class Aichess():
             
             # Minimizar para las Negras
             bestValue = float('inf')
-            bestState = None  # CAMBIADO: No inicializar con un estado potencialmente inválido
+            bestState = None  #  No inicializar con un estado potencialmente inválido
             
-            # OPTIMIZACIÓN: Omitir completamente el ordenamiento de movimientos (desactivado por velocidad)
+            # Omitir completamente el ordenamiento de movimientos (desactivado por velocidad)
             orderedStates = nextStates
             
             validMoveFound = False  # Rastrear si encontramos algún movimiento válido
@@ -1366,7 +1357,7 @@ class Aichess():
                 if wkState is None or bkState is None:
                     continue
                 
-                # CRÍTICO: Comprobar si los reyes están adyacentes (posición ILEGAL)
+                # Comprobar si los reyes están adyacentes (posición ILEGAL)
                 wkPos = wkState[0:2]
                 bkPos = bkState[0:2]
                 kingDistance = max(abs(wkPos[0] - bkPos[0]), abs(wkPos[1] - bkPos[1]))
@@ -1380,7 +1371,7 @@ class Aichess():
                 # Este es un movimiento válido
                 validMoveFound = True
                 
-                # OPTIMIZACIÓN: Actualizar historial de posiciones SIN copiar (mucho más rápido)
+                # Actualizar historial de posiciones SIN copiar (MUCHO más rápido)
                 fullStateKey = self.stateToKey(fullState)
                 prevCount = positionHistory.get(fullStateKey, 0)
                 positionHistory[fullStateKey] = prevCount + 1
@@ -1391,7 +1382,7 @@ class Aichess():
                 # Recursión
                 value, _ = self.alphabeta(fullState, depth - 1, True, alpha, beta, lastState=state, positionHistory=positionHistory)
                 
-                # CRÍTICO: Restaurar historial de posiciones (deshacer)
+                # Restaurar historial de posiciones (deshacer)
                 positionHistory[fullStateKey] = prevCount
                 if prevCount == 0:
                     del positionHistory[fullStateKey]  # Limpiar para ahorrar memoria
@@ -1526,7 +1517,7 @@ class Aichess():
             # Ejecutar minimax sin poda para las Blancas
             _, bestStateWhite = self.minimaxNoPruning(currentState, depthWhite, True, positionHistory=positionHistory)
             
-            # CRÍTICO: Validar que los reyes no estén adyacentes (comprobación de emergencia)
+            # Validar que los reyes no estén adyacentes (comprobación de emergencia)
             wkState = self.getPieceState(bestStateWhite, 6)
             bkState = self.getPieceState(bestStateWhite, 12)
             if wkState is not None and bkState is not None:
@@ -1552,7 +1543,7 @@ class Aichess():
             if save_to_file:
                 moveLog.append(self._board_to_string(currentState))
             
-            # CRÍTICO: Comprobar jaque mate ANTES de comprobar repetición
+            # Comprobar jaque mate ANTES de comprobar repetición
             # El jaque mate tiene prioridad sobre las tablas por repetición
             if self.isBlackInCheckMate(currentState):
                 if verbose:
@@ -1577,7 +1568,7 @@ class Aichess():
                     }
                 }
             
-            # CRÍTICO: Comprobar ahogado ANTES de repetición
+            # Comprobar ahogado ANTES de repetición
             # Ahogado = tablas, tiene prioridad
             if self.isBlackInStaleMate(currentState):
                 if verbose:
@@ -1637,7 +1628,7 @@ class Aichess():
             # Ejecutar minimax sin poda para las Negras
             _, bestStateBlack = self.minimaxNoPruning(currentState, depthBlack, False, positionHistory=positionHistory)
             
-            # CRÍTICO: Validar que los reyes no estén adyacentes (comprobación de emergencia)
+            # Validar que los reyes no estén adyacentes (comprobación de emergencia)
             wkState = self.getPieceState(bestStateBlack, 6)
             bkState = self.getPieceState(bestStateBlack, 12)
             if wkState is not None and bkState is not None:
@@ -1663,7 +1654,7 @@ class Aichess():
             if save_to_file:
                 moveLog.append(self._board_to_string(currentState))
             
-            # CRÍTICO: Comprobar jaque mate ANTES de comprobar repetición
+            # Comprobar jaque mate ANTES de comprobar repetición
             # El jaque mate tiene prioridad sobre las tablas por repetición
             if self.isWhiteInCheckMate(currentState):
                 if verbose:
@@ -1688,7 +1679,7 @@ class Aichess():
                     }
                 }
             
-            # CRÍTICO: Comprobar ahogado ANTES de repetición
+            # Comprobar ahogado ANTES de repetición
             # Ahogado = tablas, tiene prioridad
             if self.isWhiteInStaleMate(currentState):
                 if verbose:
@@ -2025,40 +2016,36 @@ class Aichess():
                 'states_visited': len(visitedStates)
             }
         }
-    def orderMoves(self, moveStates, currentState, isWhite):
-        """
-        DISABLED for speed - ordering overhead not worth it in K+R endgames
-        """
-        return moveStates
+
     def expectimaxValue(self, state, depth, isWhite):
         """
-        Expectimax algorithm - White maximizes, Black uses expected value (chance node)
+        Algoritmo Expectimax: el blanco maximiza, el negro utiliza el valor esperado (nodo de oportunidad)
         
-        Args:
-            state: Current board state
-            depth: Search depth remaining
-            isWhite: True if White's turn (maximizing), False if Black's turn (chance node)
+        Argumentos:
+            state: estado actual del tablero
+            depth: profundidad de búsqueda restante
+            isWhite: verdadero si es el turno del blanco (maximización), falso si es el turno del negro (nodo de oportunidad)
             
-        Returns:
-            (value, bestState) tuple
+        Devuelve:
+            tupla (valor, mejor estado)
         """
-        # Terminal conditions
+        # CONDICIONES TERMINALES
         if depth == 0:
             value = self.heuristica(state, True)
             return (value, state)
         
-        # Check for checkmate (use large consistent magnitudes)
+        # Comprueba si hay jaque mate (utiliza magnitudes grandes y consistentes).
         if self.isWhiteInCheckMate(state):
             return (-999999, state)
         if self.isBlackInCheckMate(state):
             return (999999, state)
         
-        # Sync board simulator with the provided state before generating moves
+        # Sincronizar el simulador de tablero con el estado proporcionado antes de generar movimientos
         self.newBoardSim(state)
         
         # Get possible next states
         if isWhite:
-            # White maximizes (deterministic player)
+            # Blanco maximiza (jugador determinista)
             nextStates = self.getListNextStatesW(self.getWhiteState(state))
             if len(nextStates) == 0:
                 return (self.heuristica(state, True), state)
@@ -2079,7 +2066,7 @@ class Aichess():
                 if wkState is None or bkState is None:
                     continue
                 
-                # Illegal if kings are adjacent
+                # ES ILEGAL REYES ADYACENTES
                 wkPos = wkState[0:2]
                 bkPos = bkState[0:2]
                 if max(abs(wkPos[0] - bkPos[0]), abs(wkPos[1] - bkPos[1])) <= 1:
@@ -2089,7 +2076,7 @@ class Aichess():
                     continue
                 
                 validMoveFound = True
-                # Keep simulator in sync for deeper generations
+                # Mantén el simulador sincronizado para obtener generaciones más profundas
                 self.newBoardSim(fullState)
                 value, _ = self.expectimaxValue(fullState, depth - 1, False)
                 
@@ -2101,9 +2088,9 @@ class Aichess():
                 return (self.heuristica(state, True), state)
             return (bestValue, bestState)
         else:
-            # Black uses EXPECTED VALUE (chance node)
-            # Uses standard mathematical expectation: E[X] = Σ(x_i * p_i)
-            # With uniform probability: E[X] = (1/n) * Σ(x_i) = mean(x_i)
+            # Black utiliza el VALOR ESPERADO (nodo de probabilidad)
+            # Utiliza la esperanza matemática estándar: E[X] = Σ(x_i * p_i)
+            # Con probabilidad uniforme: E[X] = (1/n) * Σ(x_i) = media(x_i)
             nextStates = self.getListNextStatesB(self.getBlackState(state))
             if len(nextStates) == 0:
                 return (self.heuristica(state, True), state)
@@ -2123,7 +2110,7 @@ class Aichess():
                 if wkState is None or bkState is None:
                     continue
                 
-                # Illegal if kings are adjacent
+                # ES ILEGAL REYES ADYACENTES
                 wkPos = wkState[0:2]
                 bkPos = bkState[0:2]
                 if max(abs(wkPos[0] - bkPos[0]), abs(wkPos[1] - bkPos[1])) <= 1:
@@ -2133,7 +2120,7 @@ class Aichess():
                     continue
                 
                 validStates.append(fullState)
-                # Keep simulator in sync for deeper generations
+                # Mantén el simulador sincronizado para obtener generaciones más profundas.
                 self.newBoardSim(fullState)
                 value, _ = self.expectimaxValue(fullState, depth - 1, True)
                 validValues.append(value)
@@ -2141,30 +2128,31 @@ class Aichess():
             if len(validValues) == 0:
                 return (self.heuristica(state, True), state)
             
-            # STANDARD EXPECTATION: E[X] = Σ(x_i * p_i)
-            # With uniform probability p_i = 1/n for all moves:
+            # EXPECTATIVA ESTÁNDAR: E[X] = Σ(x_i * p_i)
+            # Con probabilidad uniforme p_i = 1/n para todos los movimientos:
             # E[X] = (1/n) * Σ(x_i) = mean(x_i)
             expectedValue = self.mean(validValues)
             
-            # Return a representative state (closest to expected value)
+            # Devuelve un estado representativo (el más cercano al valor esperado).
             bestIdx = min(range(len(validValues)), key=lambda i: abs(validValues[i] - expectedValue))
             
             return (expectedValue, validStates[bestIdx])
+
     def expectimaxGame(self, depthWhite, depthBlack, whiteUsesExpectimax=True, blackUsesAlphaBeta=True,
                        verbose=True, save_to_file=False, moves_file="moves.txt", states_file="states.txt"):
         """
-        Play a game where White uses Expectimax and Black uses Alpha-Beta (or vice versa)
+        Juega una partida en la que las blancas utilizan Expectimax y las negras utilizan Alpha-Beta (o viceversa).
         
-        Args:
-            depthWhite: Search depth for White
-            depthBlack: Search depth for Black
-            whiteUsesExpectimax: If True, White uses expectimax; if False, uses alpha-beta
-            blackUsesAlphaBeta: If True, Black uses alpha-beta; if False, uses expectimax
-            verbose: If True, print board state after each move
-            save_to_file: If True, save moves and states to files
+        Argumentos:
+            depthWhite: profundidad de búsqueda para las blancas.
+            depthBlack: profundidad de búsqueda para las negras.
+            whiteUsesExpectimax: si es True, las blancas utilizan Expectimax; si es False, utilizan Alpha-Beta.
+            blackUsesAlphaBeta: Si es verdadero, el negro usa alfa-beta; si es falso, usa expectimax.
+            verbose: Si es verdadero, imprime el estado del tablero después de cada movimiento.
+            save_to_file: Si es verdadero, guarda los movimientos y los estados en archivos.
             
-        Returns:
-            Dictionary with winner and game statistics
+        Devuelve:
+            Diccionario con el ganador y las estadísticas del juego.
         """
         self.transpositionTable.clear()
         self.heuristicCache.clear()
@@ -2200,7 +2188,7 @@ class Aichess():
         while moveCount < maxMoves:
             moveCount += 1
             
-            # Check for insufficient material
+            # comprobar si hay material insuficiente
             wrState = self.getPieceState(currentState, 2)
             brState = self.getPieceState(currentState, 8)
             if wrState is None and brState is None:
@@ -2220,7 +2208,7 @@ class Aichess():
                     }
                 }
             
-            # White's turn
+            # Truno blancas
             if verbose:
                 print(f"\n--- Move {moveCount}: White's turn ---")
             if save_to_file:
@@ -2229,7 +2217,7 @@ class Aichess():
             if whiteUsesExpectimax:
                 _, bestStateWhite = self.expectimaxValue(currentState, depthWhite, True)
             else:
-                # FIXED: Pass positionHistory for proper transposition table usage
+                # Pasar la posición del historial para un uso adecuado de la tabla de transposición.
                 _, bestStateWhite = self.alphabeta(currentState, depthWhite, True, positionHistory=positionHistory)
             
             currentState = bestStateWhite
@@ -2241,7 +2229,7 @@ class Aichess():
             if save_to_file:
                 moveLog.append(self._board_to_string(currentState))
             
-            # Priority: checkmate -> stalemate -> repetition
+            # checkmate -> empate -> repetition
             if self.isBlackInCheckMate(currentState):
                 if verbose:
                     print("\n*** WHITE WINS BY CHECKMATE! ***")
@@ -2258,7 +2246,7 @@ class Aichess():
                         'states_visited': len(visitedStates)
                     }
                 }
-            # Stalemate for Black
+            # Empate para Black
             if self.isBlackInStaleMate(currentState):
                 if verbose:
                     print("\n*** DRAW BY STALEMATE (Black has no legal moves but not in check) ***")
@@ -2275,7 +2263,7 @@ class Aichess():
                         'states_visited': len(visitedStates)
                     }
                 }
-            # Then repetition
+            # Repeticion
             posKey = self.stateToKey(currentState)
             positionHistory[posKey] = positionHistory.get(posKey, 0) + 1
             if positionHistory[posKey] >= 3:
@@ -2295,17 +2283,17 @@ class Aichess():
                     }
                 }
             
-            # Black's turn
+            # Turno negras
             if verbose:
                 print(f"\n--- Move {moveCount}: Black's turn ---")
             if save_to_file:
                 moveLog.append(f"\n--- Move {moveCount}: Black's turn ---\n")
             
             if blackUsesAlphaBeta:
-                # FIXED: Pass positionHistory for proper transposition table usage
+                # Pasar la posición del historial para un uso adecuado de la tabla de transposición.
                 _, bestStateBlack = self.alphabeta(currentState, depthBlack, False, positionHistory=positionHistory)
             else:
-                # Black uses expectimax
+                # Black usan expectimax
                 _, bestStateBlack = self.expectimaxValue(currentState, depthBlack, False)
             
             currentState = bestStateBlack
@@ -2317,7 +2305,7 @@ class Aichess():
             if save_to_file:
                 moveLog.append(self._board_to_string(currentState))
             
-            # Priority: checkmate -> stalemate -> repetition
+            #  checkmate -> empate -> repetition
             if self.isWhiteInCheckMate(currentState):
                 if verbose:
                     print("\n*** BLACK WINS BY CHECKMATE! ***")
@@ -2334,7 +2322,7 @@ class Aichess():
                         'states_visited': len(visitedStates)
                     }
                 }
-            # Stalemate for White
+            # Empate para White
             if self.isWhiteInStaleMate(currentState):
                 if verbose:
                     print("\n*** DRAW BY STALEMATE (White has no legal moves but not in check) ***")
@@ -2351,7 +2339,7 @@ class Aichess():
                         'states_visited': len(visitedStates)
                     }
                 }
-            # Then repetition
+            # Reèticion
             posKey = self.stateToKey(currentState)
             positionHistory[posKey] = positionHistory.get(posKey, 0) + 1
             if positionHistory[posKey] >= 3:
