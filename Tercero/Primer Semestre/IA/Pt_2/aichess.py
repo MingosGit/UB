@@ -923,7 +923,7 @@ class Aichess():
 # ===================================================================================================
 
     def stateToKey(self, state):
-        """Convertir el estado a una clave hasheable para la tabla de transposición - OPTIMIZADO"""
+        """Convertir el estado a una clave hasheable para la tabla de transposición"""
         # En lugar de ordenar (lento), crear un frozenset de tuplas
         # Esto es MUCHO más rápido que sorted()
         return frozenset(tuple(piece) for piece in state)
@@ -3165,60 +3165,57 @@ if __name__ == "__main__":
     aichess.chess.boardSim.print_board()
     
     # Run all exercises with default parameters
-    # OPTIMIZED FOR SPEED: Using lower depths where reasonable
     
     print("\n" + "="*70)
-    print("RUNNING ALL EXERCISES - OPTIMIZED FOR SPEED")
+    print("RUNNING ALL EXERCISES")
     print("="*70)
 
     
-    # # EJERCICIO 1: Minimax vs Minimax (profundidad 4 como se requiere)
-    # # Este es el más lento: minimax puro a profundidad 4
+    # # EJERCICIO 1: Minimax vs Minimax (profundidad 4)
     run_exercise_1(
-        depth_white=4,           # Requerido por el enunciado
-        depth_black=4,           # Requerido por el enunciado
-        repetitions=3,           # Requerido por el enunciado
-        verbose=True,           # En False para ir más rápido
-        save_to_file=True,
+        depth_white=4,           # Profundidad blancas
+        depth_black=4,           # Profundidad negras
+        repetitions=3,           # 3 repeticiones
+        verbose=False,           # En False para un output mas pequeño
+        save_to_file=True,       # Genera ficheros moves y states
         results_file='exercise1_results.json'
     )
     
-    # # EJERCICIO 2: Profundidades variables (3-4 como se requiere)
+    # # EJERCICIO 2: Profundidades variables (3-4)
     run_exercise_2(
-        depth_values=[3, 4],     # Requerido por el enunciado: de 3 a 4
-        repetitions=3,           # Se puede reducir a 2 para ir más rápido si hace falta
-        verbose=False,           # False para ir más rápido
-        save_to_file=True,
-        generate_plot=True,
+        depth_values=[3, 4],     # de 3 a 4
+        repetitions=3,           # 3 repeticiones
+        verbose=False,           # En False para un output mas pequeño
+        save_to_file=True,       # Genera ficheros moves y states
+        generate_plot=True,      # Generar plots
         results_file='exercise2_results.json'
     )
     
     # EJERCICIO 3: Minimax vs Alpha-Beta (profundidad 4)
     run_exercise_3(
-        depth=4,                 # Requerido por el enunciado
-        repetitions=3,           # Requerido por el enunciado
-        verbose=False,           # False para ir más rápido
-        save_to_file=True,
+        depth=4,                 # Profundidad para negras y blancas
+        repetitions=3,           # 3 repeticiones
+        verbose=False,           # En False para un output mas pequeño
+        save_to_file=True,       # Genera ficheros moves y states
         results_file='exercise3_results.json'
     )
     
     # EJERCICIO 4: Alpha-Beta vs Alpha-Beta (1-5)
-    # Esto es RÁPIDO porque ambos usan poda alpha-beta
     run_exercise_4(
-        depth_range=(1, 5),      # Requerido: de 1 a 5
-        repetitions=3,           # Requerido: 3 simulaciones cada una
-        verbose=False,
-        save_to_file=True,
-        generate_plot=True,
+        depth_range=(1, 5),      #  de 1 a 5
+        repetitions=3,           # 3 simulaciones cada una
+        verbose=False,           # En False para un output mas pequeño
+        save_to_file=True,       # Genera ficheros moves y states
+        generate_plot=True,      # Generar plots
         results_file='exercise4_results.json'
     )
     
     # EJERCICIO 5: Expectimax vs Alpha-Beta
     run_exercise_5(
-        depth=4,                 # Se puede usar profundidad 4
-        repetitions=3,           # Requerido: 3 simulaciones
-        verbose=False,
-        save_to_file=True,
-        generate_plot=True,
+        depth=4,                 # Profundidad 4
+        repetitions=3,           # 3 simulaciones
+        verbose=False,           # En False para un output mas pequeño
+        save_to_file=True,       # Genera ficheros moves y states
+        generate_plot=True,      # Generar plots
         results_file='exercise5_results.json'
     )

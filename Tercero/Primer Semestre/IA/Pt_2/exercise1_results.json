@@ -13,7 +13,7 @@
         "depth_black": 4,
         "states_visited": 45
       },
-      "elapsed_time": 1123.9320454597473
+      "elapsed_time": 1127.8137772083282
     },
     {
       "repetition": 2,
@@ -25,7 +25,7 @@
         "depth_black": 4,
         "states_visited": 45
       },
-      "elapsed_time": 1123.779126405716
+      "elapsed_time": 1125.1885254383087
     },
     {
       "repetition": 3,
@@ -37,7 +37,7 @@
         "depth_black": 4,
         "states_visited": 45
       },
-      "elapsed_time": 1123.3936166763306
+      "elapsed_time": 1125.8864958286285
     }
   ],
   "config": {
