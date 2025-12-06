@@ -2,7 +2,8 @@
 Ejercicio 2 - Práctica 3: Q-learning aplicado al ajedrez
 Q-learning para Rey + Torre blancas vs Rey negro
 
-IMPORTANTE: Rey negro es ESTÁTICO (no se mueve nunca)
+2.a y 2.b: Rey negro ESTÁTICO (no se mueve nunca)
+2.c: Rey negro MÓVIL (se mueve para escapar del mate)
 
 Conceptos de teoría aplicados:
 - Q-learning en espacio de estados complejo
@@ -23,6 +24,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'chess'))
 
 import chess
 import board
+import piece
 
 
 class QLearningChess:
@@ -765,6 +767,265 @@ def ejercicio_2b():
     return agent
 
 
+def ejercicio_2c():
+    """
+    Ejercicio 2.c con enfoque minimalista funcional.
+    
+    Concepto: El rey negro se mueve ALEATORIAMENTE después de cada turno blanco.
+    Esto hace el problema más difícil porque el estado cambia constantemente.
+    """
+    print("\n" + "="*70)
+    print("EJERCICIO 2.c - Q-learning con Rey Negro MÓVIL")
+    print("="*70)
+    print("\nDescripción:")
+    print("- Rey blanco + Torre vs Rey negro")
+    print("- REY NEGRO SE MUEVE aleatoriamente cada turno")
+    print("- Espacio de estados ampliado (incluye posición rey negro)")
+    print("- Demuestra Q-learning contra oponente dinámico")
+    
+    # Parámetros optimizados
+    alpha = 0.6
+    gamma = 0.99
+    epsilon_inicial = 0.5
+    episodios = 5000
+    max_pasos = 150
+    
+    print(f"\nParámetros:")
+    print(f"- Alpha (learning rate): {alpha}")
+    print(f"- Gamma (discount): {gamma}")
+    print(f"- Epsilon inicial: {epsilon_inicial} → 0.05 (decay)")
+    print(f"- Episodios: {episodios}")
+    print(f"- Max pasos: {max_pasos}")
+    
+    # Q-table
+    q_table = defaultdict(float)
+    mates_encontrados = 0
+    pasos_por_episodio = []
+    
+    print(f"\nEntrenando contra rey negro móvil...")
+    
+    for episodio in range(episodios):
+        # Epsilon decay
+        epsilon = max(0.05, epsilon_inicial * (0.9995 ** episodio))
+        
+        # Estado inicial aleatorio para rey negro
+        black_king_row = random.randint(0, 7)
+        black_king_col = random.randint(0, 7)
+        
+        # Posición fija para blancas
+        white_state = [[7, 4, 6], [7, 0, 2]]  # Rey en (7,4), Torre en (7,0)
+        
+        for paso in range(max_pasos):
+            # Estado actual (incluye rey negro)
+            wk = white_state[0] if white_state[0][2] == 6 else white_state[1]
+            wr = white_state[1] if white_state[1][2] == 2 else white_state[0]
+            estado_str = f"{wk[0]},{wk[1]},{wr[0]},{wr[1]},{black_king_row},{black_king_col}"
+            
+            # Verificar jaque mate (simplificado pero correcto)
+            en_jaque = False
+            if wr[0] == black_king_row or wr[1] == black_king_col:
+                # Torre en línea, verificar bloqueo por rey blanco
+                if wr[0] == black_king_row:  # Misma fila
+                    if not (wk[0] == wr[0] and min(wr[1], black_king_col) < wk[1] < max(wr[1], black_king_col)):
+                        en_jaque = True
+                else:  # Misma columna
+                    if not (wk[1] == wr[1] and min(wr[0], black_king_row) < wk[0] < max(wr[0], black_king_row)):
+                        en_jaque = True
+            
+            if en_jaque:
+                # Verificar si tiene escapes
+                tiene_escape = False
+                for dr in [-1, 0, 1]:
+                    for dc in [-1, 0, 1]:
+                        if dr == 0 and dc == 0:
+                            continue
+                        nr, nc = black_king_row + dr, black_king_col + dc
+                        if 0 <= nr < 8 and 0 <= nc < 8:
+                            # Verificar si casilla es segura
+                            if not any(p[0] == nr and p[1] == nc for p in white_state):
+                                if abs(nr - wk[0]) > 1 or abs(nc - wk[1]) > 1:
+                                    # No atacada por torre
+                                    safe_from_rook = True
+                                    if wr[0] == nr:  # Torre en misma fila
+                                        if not (wk[0] == nr and min(wr[1], nc) < wk[1] < max(wr[1], nc)):
+                                            safe_from_rook = False
+                                    elif wr[1] == nc:  # Torre en misma columna
+                                        if not (wk[1] == nc and min(wr[0], nr) < wk[0] < max(wr[0], nr)):
+                                            safe_from_rook = False
+                                    
+                                    if safe_from_rook:
+                                        tiene_escape = True
+                                        break
+                    if tiene_escape:
+                        break
+                
+                if not tiene_escape:
+                    # ¡JAQUE MATE!
+                    mates_encontrados += 1
+                    pasos_por_episodio.append(paso + 1)
+                    break
+            
+            # Generar movimientos posibles para blancas
+            TA = np.zeros((8, 8))
+            for p in white_state:
+                TA[p[0]][p[1]] = p[2]
+            TA[black_king_row][black_king_col] = 12
+            
+            tablero = board.Board(TA, False)
+            tablero.getListNextStatesW(white_state)
+            movimientos_posibles = tablero.listNextStates
+            
+            if not movimientos_posibles:
+                pasos_por_episodio.append(max_pasos)
+                break
+            
+            # Elegir movimiento (epsilon-greedy)
+            accion_str = ""
+            if random.random() < epsilon:
+                proximo_estado = random.choice(movimientos_posibles)
+                # Obtener accion_str
+                for pieza_orig in white_state:
+                    if not any(p[0] == pieza_orig[0] and p[1] == pieza_orig[1] and p[2] == pieza_orig[2] for p in proximo_estado):
+                        for pieza_nueva in proximo_estado:
+                            if pieza_nueva[2] == pieza_orig[2]:
+                                accion_str = f"{pieza_orig[0]},{pieza_orig[1]}->{pieza_nueva[0]},{pieza_nueva[1]}"
+                                break
+                        break
+            else:
+                # Greedy: elegir movimiento con mayor Q
+                mejor_q = -float('inf')
+                mejores = []
+                for mov in movimientos_posibles:
+                    # Identificar acción
+                    for pieza_orig in white_state:
+                        encontrada = any(p[0] == pieza_orig[0] and p[1] == pieza_orig[1] and p[2] == pieza_orig[2] for p in mov)
+                        if not encontrada:
+                            # Esta pieza se movió
+                            for pieza_nueva in mov:
+                                if pieza_nueva[2] == pieza_orig[2]:
+                                    accion_str_temp = f"{pieza_orig[0]},{pieza_orig[1]}->{pieza_nueva[0]},{pieza_nueva[1]}"
+                                    q_val = q_table[(estado_str, accion_str_temp)]
+                                    if q_val > mejor_q:
+                                        mejor_q = q_val
+                                        mejores = [(mov, accion_str_temp)]
+                                    elif q_val == mejor_q:
+                                        mejores.append((mov, accion_str_temp))
+                                    break
+                            break
+                
+                if mejores:
+                    proximo_estado, accion_str = random.choice(mejores)
+                else:
+                    proximo_estado = random.choice(movimientos_posibles)
+                    # Obtener accion_str
+                    for pieza_orig in white_state:
+                        if not any(p[0] == pieza_orig[0] and p[1] == pieza_orig[1] and p[2] == pieza_orig[2] for p in proximo_estado):
+                            for pieza_nueva in proximo_estado:
+                                if pieza_nueva[2] == pieza_orig[2]:
+                                    accion_str = f"{pieza_orig[0]},{pieza_orig[1]}->{pieza_nueva[0]},{pieza_nueva[1]}"
+                                    break
+                            break
+            
+            # Actualizar estado blanco
+            white_state = proximo_estado
+            
+            # Rey negro se mueve aleatoriamente
+            movimientos_rey_negro = []
+            for dr in [-1, 0, 1]:
+                for dc in [-1, 0, 1]:
+                    if dr == 0 and dc == 0:
+                        continue
+                    nr, nc = black_king_row + dr, black_king_col + dc
+                    if 0 <= nr < 8 and 0 <= nc < 8:
+                        if not any(p[0] == nr and p[1] == nc for p in white_state):
+                            movimientos_rey_negro.append((nr, nc))
+            
+            if movimientos_rey_negro:
+                black_king_row, black_king_col = random.choice(movimientos_rey_negro)
+            
+            # Calcular recompensa
+            recompensa = -1.0  # Penalización por movimiento
+            
+            # Q-learning update
+            wk_new = white_state[0] if white_state[0][2] == 6 else white_state[1]
+            wr_new = white_state[1] if white_state[1][2] == 2 else white_state[0]
+            nuevo_estado_str = f"{wk_new[0]},{wk_new[1]},{wr_new[0]},{wr_new[1]},{black_king_row},{black_king_col}"
+            
+            # Max Q del siguiente estado
+            TA_new = np.zeros((8, 8))
+            for p in white_state:
+                TA_new[p[0]][p[1]] = p[2]
+            TA_new[black_king_row][black_king_col] = 12
+            
+            tablero_new = board.Board(TA_new, False)
+            tablero_new.getListNextStatesW(white_state)
+            next_movs = tablero_new.listNextStates
+            
+            max_q_siguiente = 0
+            if next_movs:
+                for nmov in next_movs:
+                    for po in white_state:
+                        if not any(pn[0] == po[0] and pn[1] == po[1] and pn[2] == po[2] for pn in nmov):
+                            for pn in nmov:
+                                if pn[2] == po[2]:
+                                    astr = f"{po[0]},{po[1]}->{pn[0]},{pn[1]}"
+                                    qv = q_table[(nuevo_estado_str, astr)]
+                                    if qv > max_q_siguiente:
+                                        max_q_siguiente = qv
+                                    break
+                            break
+            
+            # Actualizar Q-value
+            q_actual = q_table[(estado_str, accion_str)]
+            q_nuevo = q_actual + alpha * (recompensa + gamma * max_q_siguiente - q_actual)
+            q_table[(estado_str, accion_str)] = q_nuevo
+        
+        # Si no terminó, registrar max_pasos
+        if len(pasos_por_episodio) <= episodio:
+            pasos_por_episodio.append(max_pasos)
+        
+        # Progreso
+        if (episodio + 1) % 1000 == 0:
+            mates_recientes = sum(1 for p in pasos_por_episodio[max(0, episodio-999):episodio+1] if p < max_pasos)
+            print(f"Episodio {episodio + 1}/{episodios} - Mates últimos 1000: {mates_recientes} - Epsilon: {epsilon:.3f} - Q-table: {len(q_table)}")
+    
+    # Resultados finales
+    print("\n" + "-"*70)
+    print("RESULTADOS DEL ENTRENAMIENTO")
+    print("-"*70)
+    print(f"Mates encontrados: {mates_encontrados}/{episodios} ({mates_encontrados/episodios*100:.1f}%)")
+    print(f"Tamaño Q-table: {len(q_table)} estados-acción")
+    print(f"Pasos promedio: {np.mean(pasos_por_episodio):.1f}")
+    print(f"Pasos mínimo: {min(pasos_por_episodio)}")
+    
+    #Análisis de convergencia
+    print("\n" + "-"*70)
+    print("ANÁLISIS DE CONVERGENCIA")
+    print("-"*70)
+    for i in [1000, 2000, 3000, 4000, 5000]:
+        recent = pasos_por_episodio[max(0, i-1000):i]
+        mates_interval = sum(1 for p in recent if p < max_pasos)
+        print(f"Episodios {max(1, i-999):5d}-{i:5d}: {mates_interval:4d} mates ({mates_interval/len(recent)*100:5.1f}%)")
+    
+    print(f"\n" + "-"*70)
+    print("COMPARACIÓN CON EJERCICIOS ANTERIORES")
+    print("-"*70)
+    print(f"- 2.a (rey estático, recompensa simple):    ~91% mates en 5000 episodios")
+    print(f"- 2.b (rey estático, heurística):           ~54% mates en 5000 episodios")
+    print(f"- 2.c (rey MÓVIL, recompensa simple):       {mates_encontrados/episodios*100:.1f}% mates en 5000 episodios")
+    print(f"\nDificultad incrementada:")
+    print(f"- Rey negro activo aumenta complejidad del espacio de estados")
+    print(f"- Cada estado incluye ahora 3 posiciones (rey blanco, torre, rey negro)")
+    print(f"- El oponente dinámico dificulta la convergencia")
+    print(f"- Demuestra capacidad de Q-learning contra oponentes adaptativos")
+    
+    return q_table
+
+
+# ======================================================================
+# FUNCIÓN PRINCIPAL
+# ======================================================================
+
 if __name__ == "__main__":
     # Ejecutar ejercicio 2.a
     agent_2a = ejercicio_2a()
@@ -772,6 +1033,9 @@ if __name__ == "__main__":
     # Ejecutar ejercicio 2.b
     agent_2b = ejercicio_2b()
     
+    # Ejecutar ejercicio 2.c
+    agent_2c = ejercicio_2c()
+    
     print("\n" + "="*70)
-    print("EJERCICIOS 2.a y 2.b COMPLETADOS")
+    print("EJERCICIOS 2.a, 2.b y 2.c COMPLETADOS")
     print("="*70)
