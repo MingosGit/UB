@@ -780,35 +780,6 @@ def ejercicio_2b(results_2a=None):
     pct_2b = (results['mates_found'] / num_episodes) * 100
     print(f"- 2.b encontró {results['mates_found']} mates en {num_episodes} episodios ({pct_2b:.1f}%)")
     
-    # Análisis de la heurística
-    print(f"\nAnálisis de la heurística:")
-    pct_relative = (results['mates_found'] / num_episodes) / (results_2a['mates_found'] / 5000) if results_2a else 0
-    if results_2a and pct_relative >= 0.75:
-        print(f"✅ La heurística funciona comparablemente a la recompensa simple")
-        print(f"\nVentajas observadas:")
-        print(f"- Guía el aprendizaje con conocimiento del dominio de ajedrez")
-        print(f"- Los Q-values son más informativos (reflejan calidad de posiciones)")
-        print(f"- Permite usar alpha más alto sin inestabilidad ({agent.alpha} vs 0.3)")
-        print(f"- Aprende patrones estratégicos (proximidad rey, control escapes, jaques)")
-        print(f"\nConclusión:")
-        print(f"- La heurística demuestra cómo el conocimiento del dominio mejora RL")
-        print(f"- Especialmente útil en espacios de estados más complejos")
-    elif results_2a and pct_relative >= 0.5:
-        print(f"⚠️  La heurística obtuvo rendimiento moderado comparado con 2.a")
-        print(f"\nObservaciones:")
-        print(f"- La heurística funciona pero requiere más episodios para converger")
-        print(f"- El espacio de estados es manejable, recompensa simple es suficiente")
-        print(f"- Trade-off: Q-values más informativos vs. convergencia más lenta")
-        print(f"\nConclusión:")
-        print(f"- Heurísticas brillan en espacios ENORMES con recompensas ESCASAS")
-        print(f"- En problemas bien definidos, la simplicidad puede ser ventajosa")
-    else:
-        print(f"❌ La heurística necesita ajustes adicionales")
-        print(f"\nPosibles mejoras:")
-        print(f"- Aumentar número de episodios (20K+)")
-        print(f"- Ajustar pesos de los componentes heurísticos")
-        print(f"- Considerar alpha adaptativo")
-    
     return agent, results
 
 
@@ -1026,24 +997,6 @@ def ejercicio_2c():
         mates_interval = sum(1 for p in recent if p < max_pasos)
         print(f"Episodios {max(1, i-999):5d}-{i:5d}: {mates_interval:4d} mates ({mates_interval/len(recent)*100:5.1f}%)")
     
-    print(f"\n" + "-"*70)
-    print("COMPARACIÓN CON EJERCICIOS ANTERIORES")
-    print("-"*70)
-    print(f"- 2.a (rey estático, recompensa simple):    ~91% mates en 5000 episodios")
-    print(f"- 2.b (rey estático, heurística):           ~92% mates en 5000 episodios")
-    print(f"- 2.c (rey MÓVIL, recompensa simple):       {mates_encontrados/episodios*100:.1f}% mates en 5000 episodios")
-    print(f"\nDificultad incrementada:")
-    print(f"- Rey negro activo aumenta complejidad del espacio de estados")
-    print(f"- Cada estado incluye ahora 3 posiciones (rey blanco, torre, rey negro)")
-    print(f"- El oponente dinámico dificulta la convergencia")
-    print(f"- Espacio de estados: ~64³ = 262,144 estados posibles (vs ~4,096 en 2.a/2.b)")
-    print(f"\nObservación sobre convergencia:")
-    print(f"- La tasa de mates NO aumenta consistentemente (puede decrecer)")
-    print(f"- Razón: el rey negro aleatorio hace el problema NO DETERMINISTA")
-    print(f"- Cada episodio enfrenta un oponente diferente (diferentes posiciones iniciales)")
-    print(f"- Q-learning converge mejor en entornos DETERMINISTAS o CASI-DETERMINISTAS")
-    print(f"- Para mejorar: usar más episodios (50K+) o algoritmos más robustos (SARSA, Actor-Critic)")
-    
     return q_table
 
 
@@ -1060,19 +1013,3 @@ if __name__ == "__main__":
     
     # Ejecutar ejercicio 2.c
     agent_2c = ejercicio_2c()
-    
-    print("\n" + "="*70)
-    print("EJERCICIOS 2.a, 2.b y 2.c COMPLETADOS")
-    print("="*70)
-    print(f"\n📊 RESUMEN FINAL:")
-    print(f"- 2.a (recompensa simple):     {results_2a['mates_found']}/5000 mates ({results_2a['mates_found']/50:.1f}%)")
-    print(f"- 2.b (recompensa heurística): {results_2b['mates_found']}/5000 mates ({results_2b['mates_found']/50:.1f}%)")
-    print(f"\n💡 Lección aprendida:")
-    pct_2a = results_2a['mates_found'] / 50
-    pct_2b = results_2b['mates_found'] / 50
-    if pct_2b >= pct_2a * 0.9:
-        print(f"   ✅ La heurística funciona comparablemente a la recompensa simple.")
-        print(f"   La heurística guía el aprendizaje con conocimiento del dominio.")
-    else:
-        print(f"   La recompensa simple supera a la heurística en este problema.")
-        print(f"   Razón: El espacio de estados es manejable y la señal de recompensa es clara.")
