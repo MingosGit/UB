@@ -39,7 +39,7 @@ class QLearningChess:
     - IMPORTANTE: Rey negro NO se mueve (posición estática)
     """
     
-    def __init__(self, black_king_pos: Tuple[int, int]):
+    def __init__(self, black_king_pos: Tuple[int, int], show_board: bool = False):
         # Parámetros de Q-learning
         self.alpha = 0.3   # Learning rate (aumentado para aprendizaje más rápido)
         self.gamma = 0.99  # Discount factor (muy alto para planificación a largo plazo)
@@ -47,6 +47,9 @@ class QLearningChess:
         
         # Posición ESTÁTICA del rey negro
         self.black_king_pos = black_king_pos
+        
+        # Visualización de tableros
+        self.show_board = show_board
         
         # Q-table: {(state_string, action_string): Q-value}
         self.q_table = defaultdict(float)
@@ -524,6 +527,16 @@ class QLearningChess:
             state_str = self.state_to_string(state)
             sequence.append(state.copy())
             
+            # Mostrar tablero si está activado
+            if self.show_board:
+                print(f"\n--- Movimiento {move_num} ---")
+                board_array = np.zeros((8, 8))
+                board_array[self.black_king_pos[0]][self.black_king_pos[1]] = 12
+                for piece in state:
+                    board_array[piece[0]][piece[1]] = piece[2]
+                temp_board = board.Board(board_array, False)
+                temp_board.print_board()
+            
             # Verificar mate
             if self.is_checkmate(state):
                 # len(sequence)-1 porque incluimos el estado inicial
@@ -607,7 +620,7 @@ def ejercicio_2a():
     ]
     
     # Crear agente con rey negro estático
-    agent = QLearningChess(black_king_pos)
+    agent = QLearningChess(black_king_pos, show_board=True)
     
     print(f"\nParámetros: α={agent.alpha}, γ={agent.gamma}, ε={agent.epsilon}")
     print("Justificación: α alto→convergencia rápida | γ muy alto→planificación largo plazo | ε→decae")
@@ -640,9 +653,6 @@ def ejercicio_2a():
     print(f"- Mínimo de pasos alcanzado: {min_steps}")
     
     # Q-table sample
-    print("\n" + "="*70)
-    print("MUESTRA DE Q-TABLE")
-    print("="*70)
     agent.print_q_table_sample(num_samples=2)
     
     # Secuencia óptima
@@ -694,7 +704,7 @@ def ejercicio_2b(results_2a=None):
     ]
     
     # Crear agente con rey negro estático
-    agent = QLearningChess(black_king_pos)
+    agent = QLearningChess(black_king_pos, show_board=True)
     agent.alpha = 0.3  # Mismo que 2.a - evita inestabilidad con heurística
     agent.gamma = 0.95  # Ligeramente menor - la heurística da señal inmediata
     
@@ -729,9 +739,6 @@ def ejercicio_2b(results_2a=None):
     print(f"- Mínimo de pasos alcanzado: {min_steps}")
     
     # Muestra de Q-table
-    print("\n" + "="*70)
-    print("MUESTRA DE Q-TABLE")
-    print("="*70)
     agent.print_q_table_sample(num_samples=2)
     
     # Secuencia óptima
@@ -927,6 +934,81 @@ def ejercicio_2c():
         mates_interval = sum(1 for p in recent if p < max_pasos)
         print(f"Episodios {max(1, i-999):5d}-{i:5d}: {mates_interval:4d} mates ({mates_interval/len(recent)*100:5.1f}%)")
     
+    # DEMOSTRACIÓN: Partida de ejemplo con rey negro móvil
+    print("\n" + "="*70)
+    print("PARTIDA DE DEMOSTRACIÓN (Rey Negro Móvil)")
+    print("="*70)
+    print("Usando política greedy aprendida contra rey negro que se mueve aleatoriamente\n")
+    
+    # Posición inicial para demostración
+    demo_black_king = (0, 4)
+    demo_white_state = [[7, 4, 6], [7, 0, 2]]
+    
+    print(f"Posición inicial: Rey blanco (7,4), Torre blanca (7,0), Rey negro (0,4)")
+    
+    for movimiento in range(30):
+        # Mostrar tablero actual
+        print(f"\n--- Movimiento {movimiento} ---")
+        board_array = np.zeros((8, 8))
+        board_array[demo_black_king[0]][demo_black_king[1]] = 12
+        for piece in demo_white_state:
+            board_array[piece[0]][piece[1]] = piece[2]
+        temp_board = board.Board(board_array, False)
+        temp_board.print_board()
+        
+        # Verificar mate
+        agent_helper.black_king_pos = demo_black_king
+        if agent_helper.is_checkmate(demo_white_state):
+            print(f"\n¡JAQUE MATE en {movimiento} movimientos!")
+            break
+        
+        # Estado actual
+        estado_str = f"{demo_white_state[0][0]},{demo_white_state[0][1]},{demo_white_state[1][0]},{demo_white_state[1][1]},{demo_black_king[0]},{demo_black_king[1]}"
+        
+        # Obtener acciones posibles
+        possible_actions = agent_helper.get_possible_actions(demo_white_state, demo_black_king)
+        
+        if not possible_actions:
+            print("\nNo hay movimientos posibles. Partida terminada.")
+            break
+        
+        # Elegir mejor acción según Q-table
+        best_action = None
+        max_q = -float('inf')
+        for act in possible_actions:
+            action_str = agent_helper.action_to_string(act[0], act[1])
+            q_val = q_table[(estado_str, action_str)]
+            if q_val > max_q:
+                max_q = q_val
+                best_action = act
+        
+        if best_action is None:
+            best_action = random.choice(possible_actions)
+        
+        # Mostrar movimiento blanco
+        print(f"\nBlancas: {agent_helper.action_to_string(best_action[0], best_action[1])} (Q={max_q:.2f})")
+        
+        # Ejecutar movimiento blanco
+        demo_white_state = agent_helper.execute_action(demo_white_state, best_action)
+        
+        # Rey negro se mueve aleatoriamente
+        movimientos_posibles = []
+        for dr in [-1, 0, 1]:
+            for dc in [-1, 0, 1]:
+                if dr == 0 and dc == 0:
+                    continue
+                nr, nc = demo_black_king[0] + dr, demo_black_king[1] + dc
+                if 0 <= nr < 8 and 0 <= nc < 8:
+                    if not any(p[0] == nr and p[1] == nc for p in demo_white_state):
+                        movimientos_posibles.append((nr, nc))
+        
+        if movimientos_posibles:
+            old_pos = demo_black_king
+            demo_black_king = random.choice(movimientos_posibles)
+            print(f"Negras: Rey de ({old_pos[0]},{old_pos[1]}) a ({demo_black_king[0]},{demo_black_king[1]}) (aleatorio)")
+        else:
+            print("Negras: Rey sin movimientos legales")
+    
     return q_table
 
 
@@ -936,10 +1018,10 @@ def ejercicio_2c():
 
 if __name__ == "__main__":
     # Ejecutar ejercicio 2.a
-    agent_2a, results_2a = ejercicio_2a()
+    #agent_2a, results_2a = ejercicio_2a()
     
-    # Ejecutar ejercicio 2.b (pasando resultados de 2.a para comparación)
-    agent_2b, results_2b = ejercicio_2b(results_2a)
+    ## Ejecutar ejercicio 2.b (pasando resultados de 2.a para comparación)
+    #agent_2b, results_2b = ejercicio_2b(results_2a)
     
     # Ejecutar ejercicio 2.c
     agent_2c = ejercicio_2c()
