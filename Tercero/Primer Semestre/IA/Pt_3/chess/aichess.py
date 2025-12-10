@@ -713,6 +713,48 @@ class Aichess():
         else:
             print("No checkmate found within search limits.")
 
+    # auxiliary_P3.py content
+
+    def stringToState(self, stringWhiteState):
+        """
+        Convert a string representation of white pieces' state to a list.
+
+        Input:
+        - stringWhiteState (str): String representation of the white pieces' state.
+
+        Returns:
+        - whiteState (list): List representing the state of white pieces.
+        """
+        whiteState = []
+        whiteState.append([int(stringWhiteState[0]), int(stringWhiteState[2]), 6])
+        if len(stringWhiteState) > 4:
+            whiteState.append([int(stringWhiteState[4]), int(stringWhiteState[6]), 2])
+
+        return whiteState
+
+    def stateToString(self, whiteState):
+        """
+        Convert the white pieces' state to a string representation.
+
+        Input:
+        - whiteState (list): List representing the state of white pieces.
+
+        Returns:
+        - stringState (str): String representation of the white pieces' state.
+        """
+        wkState = self.getPieceState(whiteState, 6)
+        wrState = self.getPieceState(whiteState, 2)
+        stringState = str(wkState[0]) + "," + str(wkState[1]) + ","
+        if wrState is not None:
+            stringState += str(wrState[0]) + "," + str(wrState[1])
+        return stringState
+
+
+
+
+
+
+
 
 
 if __name__ == "__main__":

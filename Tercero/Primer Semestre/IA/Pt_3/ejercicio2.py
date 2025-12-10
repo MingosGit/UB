@@ -609,14 +609,8 @@ def ejercicio_2a():
     # Crear agente con rey negro estático
     agent = QLearningChess(black_king_pos)
     
-    print(f"\nParámetros de Q-learning:")
-    print(f"- Alpha (learning rate): {agent.alpha}")
-    print(f"- Gamma (discount factor): {agent.gamma}")
-    print(f"- Epsilon inicial (exploration): {agent.epsilon}")
-    print(f"\nJustificación:")
-    print(f"- Alpha = {agent.alpha}: actualización rápida para convergencia")
-    print(f"- Gamma = {agent.gamma}: muy alto para recompensas futuras (mate lejano)")
-    print(f"- Epsilon = {agent.epsilon}: exploración adaptativa (decae con episodios)")
+    print(f"\nParámetros: α={agent.alpha}, γ={agent.gamma}, ε={agent.epsilon}")
+    print("Justificación: α alto→convergencia rápida | γ muy alto→planificación largo plazo | ε→decae")
     
     # Entrenar
     num_episodes = 5000
@@ -704,11 +698,8 @@ def ejercicio_2b(results_2a=None):
     agent.alpha = 0.3  # Mismo que 2.a - evita inestabilidad con heurística
     agent.gamma = 0.95  # Ligeramente menor - la heurística da señal inmediata
     
-    print(f"\nParámetros (optimizados para heurística):")
-    print(f"- Alpha: {agent.alpha} (igual que 2.a - evita inestabilidad)")
-    print(f"- Gamma: {agent.gamma} (menor que 2.a - la heurística da señal inmediata)")
-    print(f"- Epsilon: {agent.epsilon} inicial con decaimiento")
-    print(f"- Razón: la heurística guía pero necesita estabilidad en aprendizaje")
+    print(f"\nParámetros: α={agent.alpha}, γ={agent.gamma}, ε={agent.epsilon} (con decaimiento)")
+    print("Justificación: α igual que 2.a | γ menor→señal heurística inmediata | estabilidad en aprendizaje")
     
     # Entrenar CON MÁS EPISODIOS para demostrar convergencia
     num_episodes = 5000  # REDUCIDO: heurística no necesita más episodios
@@ -808,13 +799,8 @@ def ejercicio_2c():
     episodios = 5000
     max_pasos = 150
     
-    print(f"\nParámetros (optimizados para oponente estocástico):")
-    print(f"- Alpha (learning rate): {alpha} (reducido para estabilidad)")
-    print(f"- Gamma (discount): {gamma} (balance planificación/recompensa inmediata)")
-    print(f"- Epsilon inicial: {epsilon_inicial} → 0.05 (decay lineal)")
-    print(f"- Episodios: {episodios}")
-    print(f"- Max pasos: {max_pasos}")
-    print(f"- Posiciones iniciales: esquinas/bordes (realistas para mate)")
+    print(f"\nParámetros: α={alpha}, γ={gamma}, ε={epsilon_inicial}→0.05, episodios={episodios}, max_pasos={max_pasos}")
+    print("Justificación: α reducido→estabilidad vs oponente estocástico | γ→balance | posiciones iniciales: esquinas/bordes")
     
     # Q-table expandida (incluye posición rey negro en el estado)
     q_table = defaultdict(float)
