@@ -802,8 +802,8 @@ def ejercicio_2c():
     print("- MDP correcto: estado incluye posición rey negro tras su movimiento")
     
     # Parámetros optimizados
-    alpha = 0.4  # Reducido para estabilidad (oponente estocástico)
-    gamma = 0.95  # Ligeramente reducido (planificación media)
+    alpha = 0.4
+    gamma = 0.95
     epsilon_inicial = 0.5
     episodios = 5000
     max_pasos = 150
@@ -816,110 +816,70 @@ def ejercicio_2c():
     print(f"- Max pasos: {max_pasos}")
     print(f"- Posiciones iniciales: esquinas/bordes (realistas para mate)")
     
-    # Q-table y helper para detección de mate
+    # Q-table expandida (incluye posición rey negro en el estado)
     q_table = defaultdict(float)
     mates_encontrados = 0
     pasos_por_episodio = []
     
-    # Crear agente auxiliar para usar is_checkmate() robusto
-    dummy_agent = QLearningChess((0, 0))  # Posición temporal
+    # Agente auxiliar para reutilizar funciones (evita duplicación de código)
+    agent_helper = QLearningChess((0, 0))
     
     print(f"\nEntrenando contra rey negro móvil...")
     
     for episodio in range(episodios):
-        # Epsilon decay más agresivo
+        # Epsilon decay
         epsilon = max(0.05, epsilon_inicial - (episodio / episodios) * 0.45)
         
-        # Estado inicial: rey negro en esquinas/bordes (posiciones realistas de mate)
+        # Posiciones iniciales realistas
         posiciones_iniciales = [(0,0), (0,4), (0,7), (4,0), (4,7), (7,0), (7,7)]
         black_king_row, black_king_col = random.choice(posiciones_iniciales)
         
         # Posición fija para blancas
-        white_state = [[7, 4, 6], [7, 0, 2]]  # Rey en (7,4), Torre en (7,0)
+        white_state = [[7, 4, 6], [7, 0, 2]]
         
-        # Asegurar que rey negro no esté en misma posición que piezas blancas
+        # Asegurar que rey negro no colisiona
         while any(p[0] == black_king_row and p[1] == black_king_col for p in white_state):
             black_king_row, black_king_col = random.choice(posiciones_iniciales)
         
         for paso in range(max_pasos):
-            # Estado actual (incluye rey negro)
-            wk = white_state[0] if white_state[0][2] == 6 else white_state[1]
-            wr = white_state[1] if white_state[1][2] == 2 else white_state[0]
-            estado_str = f"{wk[0]},{wk[1]},{wr[0]},{wr[1]},{black_king_row},{black_king_col}"
+            # Estado expandido (incluye rey negro)
+            estado_str = f"{white_state[0][0]},{white_state[0][1]},{white_state[1][0]},{white_state[1][1]},{black_king_row},{black_king_col}"
             
-            # Verificar jaque mate usando función ROBUSTA
-            dummy_agent.black_king_pos = (black_king_row, black_king_col)
-            if dummy_agent.is_checkmate(white_state):
-                # ¡JAQUE MATE!
+            # Verificar jaque mate (reutilizando función de la clase)
+            agent_helper.black_king_pos = (black_king_row, black_king_col)
+            if agent_helper.is_checkmate(white_state):
                 mates_encontrados += 1
                 pasos_por_episodio.append(paso + 1)
                 break
             
-            # Generar movimientos posibles para blancas
-            TA = np.zeros((8, 8))
-            for p in white_state:
-                TA[p[0]][p[1]] = p[2]
-            TA[black_king_row][black_king_col] = 12
+            # Obtener acciones posibles (reutilizando función de la clase)
+            possible_actions = agent_helper.get_possible_actions(white_state, (black_king_row, black_king_col))
             
-            tablero = board.Board(TA, False)
-            tablero.getListNextStatesW(white_state)
-            movimientos_posibles = tablero.listNextStates
-            
-            if not movimientos_posibles:
+            if not possible_actions:
                 pasos_por_episodio.append(max_pasos)
                 break
             
-            # Elegir movimiento (epsilon-greedy)
-            accion_str = ""
+            # Epsilon-greedy (reutilizando lógica)
             if random.random() < epsilon:
-                proximo_estado = random.choice(movimientos_posibles)
-                # Obtener accion_str
-                for pieza_orig in white_state:
-                    if not any(p[0] == pieza_orig[0] and p[1] == pieza_orig[1] and p[2] == pieza_orig[2] for p in proximo_estado):
-                        for pieza_nueva in proximo_estado:
-                            if pieza_nueva[2] == pieza_orig[2]:
-                                accion_str = f"{pieza_orig[0]},{pieza_orig[1]}->{pieza_nueva[0]},{pieza_nueva[1]}"
-                                break
-                        break
+                action = random.choice(possible_actions)
             else:
-                # Greedy: elegir movimiento con mayor Q
-                mejor_q = -float('inf')
-                mejores = []
-                for mov in movimientos_posibles:
-                    # Identificar acción
-                    for pieza_orig in white_state:
-                        encontrada = any(p[0] == pieza_orig[0] and p[1] == pieza_orig[1] and p[2] == pieza_orig[2] for p in mov)
-                        if not encontrada:
-                            # Esta pieza se movió
-                            for pieza_nueva in mov:
-                                if pieza_nueva[2] == pieza_orig[2]:
-                                    accion_str_temp = f"{pieza_orig[0]},{pieza_orig[1]}->{pieza_nueva[0]},{pieza_nueva[1]}"
-                                    q_val = q_table[(estado_str, accion_str_temp)]
-                                    if q_val > mejor_q:
-                                        mejor_q = q_val
-                                        mejores = [(mov, accion_str_temp)]
-                                    elif q_val == mejor_q:
-                                        mejores.append((mov, accion_str_temp))
-                                    break
-                            break
-                
-                if mejores:
-                    proximo_estado, accion_str = random.choice(mejores)
-                else:
-                    proximo_estado = random.choice(movimientos_posibles)
-                    # Obtener accion_str
-                    for pieza_orig in white_state:
-                        if not any(p[0] == pieza_orig[0] and p[1] == pieza_orig[1] and p[2] == pieza_orig[2] for p in proximo_estado):
-                            for pieza_nueva in proximo_estado:
-                                if pieza_nueva[2] == pieza_orig[2]:
-                                    accion_str = f"{pieza_orig[0]},{pieza_orig[1]}->{pieza_nueva[0]},{pieza_nueva[1]}"
-                                    break
-                            break
+                # Greedy: mejor Q-value
+                best_action = None
+                max_q = -float('inf')
+                for act in possible_actions:
+                    action_str = agent_helper.action_to_string(act[0], act[1])
+                    q_val = q_table[(estado_str, action_str)]
+                    if q_val > max_q:
+                        max_q = q_val
+                        best_action = act
+                action = best_action if best_action else random.choice(possible_actions)
             
-            # Actualizar estado blanco
-            white_state = proximo_estado
+            action_str = agent_helper.action_to_string(action[0], action[1])
             
-            # AHORA el rey negro se mueve (ANTES de actualización Q para MDP correcto)
+            # Ejecutar acción (reutilizando función)
+            white_state = agent_helper.execute_action(white_state, action)
+            
+            # Rey negro se mueve (parte específica del ejercicio 2.c)
             movimientos_rey_negro = []
             for dr in [-1, 0, 1]:
                 for dc in [-1, 0, 1]:
@@ -933,42 +893,26 @@ def ejercicio_2c():
             if movimientos_rey_negro:
                 black_king_row, black_king_col = random.choice(movimientos_rey_negro)
             
-            # Estado siguiente COMPLETO (tras movimiento del rey negro)
-            wk_new = white_state[0] if white_state[0][2] == 6 else white_state[1]
-            wr_new = white_state[1] if white_state[1][2] == 2 else white_state[0]
-            estado_siguiente = f"{wk_new[0]},{wk_new[1]},{wr_new[0]},{wr_new[1]},{black_king_row},{black_king_col}"
+            # Estado siguiente (tras movimiento rey negro)
+            next_estado_str = f"{white_state[0][0]},{white_state[0][1]},{white_state[1][0]},{white_state[1][1]},{black_king_row},{black_king_col}"
             
-            # Calcular recompensa
-            recompensa = -1.0  # Penalización por movimiento
+            # Recompensa
+            recompensa = -1.0
             
-            # Max Q del siguiente estado (CON rey negro en nueva posición)
-            TA_new = np.zeros((8, 8))
-            for p in white_state:
-                TA_new[p[0]][p[1]] = p[2]
-            TA_new[black_king_row][black_king_col] = 12
-            
-            tablero_new = board.Board(TA_new, False)
-            tablero_new.getListNextStatesW(white_state)
-            next_movs = tablero_new.listNextStates
-            
+            # Max Q siguiente estado
+            next_actions = agent_helper.get_possible_actions(white_state, (black_king_row, black_king_col))
             max_q_siguiente = 0
-            if next_movs:
-                for nmov in next_movs:
-                    for po in white_state:
-                        if not any(pn[0] == po[0] and pn[1] == po[1] and pn[2] == po[2] for pn in nmov):
-                            for pn in nmov:
-                                if pn[2] == po[2]:
-                                    astr = f"{po[0]},{po[1]}->{pn[0]},{pn[1]}"
-                                    qv = q_table[(estado_siguiente, astr)]
-                                    if qv > max_q_siguiente:
-                                        max_q_siguiente = qv
-                                    break
-                            break
+            if next_actions:
+                for next_act in next_actions:
+                    next_act_str = agent_helper.action_to_string(next_act[0], next_act[1])
+                    q_val = q_table[(next_estado_str, next_act_str)]
+                    if q_val > max_q_siguiente:
+                        max_q_siguiente = q_val
             
-            # Actualizar Q-value CON MODELO MDP CORRECTO
-            q_actual = q_table[(estado_str, accion_str)]
+            # Actualizar Q-value (Bellman)
+            q_actual = q_table[(estado_str, action_str)]
             q_nuevo = q_actual + alpha * (recompensa + gamma * max_q_siguiente - q_actual)
-            q_table[(estado_str, accion_str)] = q_nuevo
+            q_table[(estado_str, action_str)] = q_nuevo
         
         # Si no terminó, registrar max_pasos
         if len(pasos_por_episodio) <= episodio:
@@ -988,7 +932,7 @@ def ejercicio_2c():
     print(f"Pasos promedio: {np.mean(pasos_por_episodio):.1f}")
     print(f"Pasos mínimo: {min(pasos_por_episodio)}")
     
-    #Análisis de convergencia
+    # Análisis de convergencia
     print("\n" + "-"*70)
     print("ANÁLISIS DE CONVERGENCIA")
     print("-"*70)
