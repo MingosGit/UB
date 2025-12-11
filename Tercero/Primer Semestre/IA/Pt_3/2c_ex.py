@@ -183,15 +183,15 @@ def ejercicio_2c():
     print("- Demuestra Q-learning contra oponente dinámico")
     print("- MDP correcto: estado incluye posición rey negro tras su movimiento")
     
-    # Parámetros optimizados
-    alpha = 0.7  # Learning rate MUY ALTO
-    gamma = 0.85  # REDUCIDO para evitar inflación de Q-values
-    epsilon_inicial = 0.9  # Exploración muy alta
-    episodios = 10000  # Más episodios
-    max_pasos = 40  # REDUCIDO para forzar mates rápidos
+    # Parámetros BALANCEADOS (ajustados tras experimentación)
+    alpha = 0.75  # Learning rate alto pero no excesivo
+    gamma = 0.88  # Balance: valora secuencias pero no infla
+    epsilon_inicial = 0.9  # Exploración alta
+    episodios = 12000  # Suficientes para converger
+    max_pasos = 40  # Balance eficiencia/oportunidad
     
     print(f"\nParametros: alpha={alpha}, gamma={gamma}, epsilon={epsilon_inicial}->0.05, episodios={episodios}, max_pasos={max_pasos}")
-    print("Gamma BAJO (0.85) evita inflacion de Q-values | Penalizacion FUERTE por movimiento (-2)")
+    print("BALANCEADO: alpha=0.75 | gamma=0.88 | penalizacion=-1.5 | mate=1500 | decay lento")
     
     # Q-table expandida (incluye posición rey negro en el estado)
     q_table = defaultdict(float)
@@ -204,8 +204,8 @@ def ejercicio_2c():
     print(f"\nEntrenando contra rey negro móvil...")
     
     for episodio in range(episodios):
-        # Epsilon decay MUY lento (más exploración)
-        epsilon = max(0.05, epsilon_inicial * (0.9995 ** episodio))
+        # Epsilon decay lento (llega a 0.05 en ~episodio 6000)
+        epsilon = max(0.05, epsilon_inicial * (0.9997 ** episodio))
         
         # Posiciones iniciales realistas
         posiciones_iniciales = [(0,0), (0,4), (0,7), (4,0), (4,7), (7,0), (7,7)]
@@ -252,8 +252,8 @@ def ejercicio_2c():
             # Verificar jaque mate ANTES de que el rey negro se mueva
             agent_helper.black_king_pos = (black_king_row, black_king_col)
             if agent_helper.is_checkmate(white_state):
-                # ¡JAQUE MATE! Recompensa ENORME
-                recompensa_mate = 2000.0  # DUPLICADO para dominar cualquier Q-value
+                # ¡JAQUE MATE! Recompensa grande pero no excesiva
+                recompensa_mate = 1500.0  # Equilibrado con gamma=0.88
                 q_actual = q_table[(estado_str, action_str)]
                 q_nuevo = q_actual + alpha * (recompensa_mate - q_actual)
                 q_table[(estado_str, action_str)] = q_nuevo
@@ -307,19 +307,33 @@ def ejercicio_2c():
             
             if movimientos_rey_negro:
                 black_king_row, black_king_col = random.choice(movimientos_rey_negro)
+                
+                # CRÍTICO: Si captura una pieza blanca, eliminarla del estado
+                white_state = [p for p in white_state 
+                             if not (p[0] == black_king_row and p[1] == black_king_col)]
+                
+                # Si perdió la torre, terminar episodio (derrota)
+                if len(white_state) < 2:
+                    # Penalización ENORME por perder la torre
+                    recompensa_perder_torre = -500.0
+                    q_actual = q_table[(estado_str, action_str)]
+                    q_nuevo = q_actual + alpha * (recompensa_perder_torre - q_actual)
+                    q_table[(estado_str, action_str)] = q_nuevo
+                    pasos_por_episodio.append(max_pasos)  # Contar como fracaso
+                    break
             
             # Estado siguiente (tras movimiento rey negro)
             next_estado_str = f"{white_state[0][0]},{white_state[0][1]},{white_state[1][0]},{white_state[1][1]},{black_king_row},{black_king_col}"
             
             # ========================================================
-            # RECOMPENSA ULTRA MINIMALISTA
+            # RECOMPENSA BALANCEADA
             # ========================================================
-            recompensa = -2.0  # Penalización FUERTE por cada movimiento
+            recompensa = -1.5  # Penalización moderada
             
             bk_pos = (black_king_row, black_king_col)
             movimientos_legales_bk = len(movimientos_rey_negro)
             
-            # CRÍTICO: Verificar jaque
+            # Verificar jaque
             def esta_en_jaque_ahora():
                 if wr[0] == bk_pos[0]:
                     min_c, max_c = min(wr[1], bk_pos[1]), max(wr[1], bk_pos[1])
@@ -333,22 +347,26 @@ def ejercicio_2c():
             
             torre_da_jaque = esta_en_jaque_ahora()
             
-            # AHOGADO: penalización MASIVA
+            # AHOGADO: penalización muy fuerte
             if movimientos_legales_bk == 0 and not torre_da_jaque:
                 recompensa = -100.0
             else:
-                # SOLO bonificaciones MUY PEQUEÑAS
-                # Movilidad: objetivo principal
-                if movimientos_legales_bk <= 2:
-                    recompensa += (3 - movimientos_legales_bk) * 1.5  # Max +4.5
+                # Recompensas graduales hacia el mate
+                if torre_da_jaque:
+                    if movimientos_legales_bk == 1:
+                        recompensa += 30.0  # CASI MATE
+                    elif movimientos_legales_bk == 2:
+                        recompensa += 12.0
+                    elif movimientos_legales_bk == 3:
+                        recompensa += 5.0
+                    elif movimientos_legales_bk <= 4:
+                        recompensa += 2.0
+                    else:
+                        recompensa += 0.5  # Jaque genérico
                 
-                # Jaque + casi mate
-                if torre_da_jaque and movimientos_legales_bk == 1:
-                    recompensa += 15.0  # CASI MATE es lo único importante
-                elif torre_da_jaque and movimientos_legales_bk == 2:
-                    recompensa += 5.0
-                elif torre_da_jaque:
-                    recompensa += 1.0  # Jaque genérico casi no vale nada
+                # Bonus por reducir movilidad (incluso sin jaque)
+                if movimientos_legales_bk <= 3:
+                    recompensa += (4 - movimientos_legales_bk) * 0.5
             
             # Max Q siguiente estado
             next_actions = agent_helper.get_possible_actions(white_state, (black_king_row, black_king_col))
@@ -394,16 +412,16 @@ def ejercicio_2c():
     print("\n" + "-"*70)
     print("ANÁLISIS DE CONVERGENCIA")
     print("-"*70)
-    intervalos = [2000, 4000, 6000, 8000, 10000]
+    intervalos = [3000, 6000, 9000, 12000]
     
     for i in intervalos:
         if i > episodios:
             continue
-        recent = pasos_por_episodio[max(0, i-2000):i]
+        recent = pasos_por_episodio[max(0, i-3000):i]
         if not recent:
             continue
         mates_interval = sum(1 for p in recent if p < max_pasos)
-        print(f"Episodios {max(1, i-1999):4d}-{i:4d}: {mates_interval:4d} mates ({mates_interval/len(recent)*100:5.1f}%)")
+        print(f"Episodios {max(1, i-2999):5d}-{i:5d}: {mates_interval:4d} mates ({mates_interval/len(recent)*100:5.1f}%)")
     
     # ======================================================================
     # DEMOSTRACIONES: 10 Partidas de ejemplo con rey negro móvil
@@ -427,6 +445,10 @@ def ejercicio_2c():
         # Posiciones blancas fijas
         demo_white_state = [[7, 4, 6], [7, 0, 2]]
         
+        # Asegurar que rey negro NO colisiona con piezas blancas
+        while any(p[0] == demo_black_king[0] and p[1] == demo_black_king[1] for p in demo_white_state):
+            demo_black_king = random.choice(posiciones_iniciales_bk)
+        
         # Historial de estados COMPLETOS (incluyendo rey negro) para detectar ciclos
         estados_recientes = []
         
@@ -439,9 +461,9 @@ def ejercicio_2c():
             if movimiento == 0:
                 print(f"\n--- Movimiento {movimiento} (inicial) ---")
                 board_array = np.zeros((8, 8))
-                board_array[demo_black_king[0]][demo_black_king[1]] = 12
                 for piece in demo_white_state:
                     board_array[piece[0]][piece[1]] = piece[2]
+                board_array[demo_black_king[0]][demo_black_king[1]] = 12
                 temp_board = board.Board(board_array, False)
                 temp_board.print_board()
             
@@ -450,9 +472,9 @@ def ejercicio_2c():
             if agent_helper.is_checkmate(demo_white_state):
                 print(f"\n--- Movimiento {movimiento} (JAQUE MATE) ---")
                 board_array = np.zeros((8, 8))
-                board_array[demo_black_king[0]][demo_black_king[1]] = 12
                 for piece in demo_white_state:
                     board_array[piece[0]][piece[1]] = piece[2]
+                board_array[demo_black_king[0]][demo_black_king[1]] = 12
                 temp_board = board.Board(board_array, False)
                 temp_board.print_board()
                 print(f"¡JAQUE MATE en {movimiento} movimientos!")
@@ -571,7 +593,10 @@ def ejercicio_2c():
                 old_pos = demo_black_king
                 # Rey negro se mueve ALEATORIAMENTE (no defensivamente)
                 demo_black_king = random.choice(movimientos_posibles)
-                # No imprimir cada movimiento para no saturar
+                
+                # CRÍTICO: Si captura una pieza blanca, eliminarla del estado
+                demo_white_state = [p for p in demo_white_state 
+                                   if not (p[0] == demo_black_king[0] and p[1] == demo_black_king[1])]
             else:
                 # ¡Rey negro sin movimientos legales!
                 # Verificar si es ahogado (sin jaque) o mate (con jaque)
@@ -594,9 +619,9 @@ def ejercicio_2c():
                 if esta_en_jaque_demo():
                     print(f"\n--- Movimiento {movimiento} (JAQUE MATE) ---")
                     board_array = np.zeros((8, 8))
-                    board_array[demo_black_king[0]][demo_black_king[1]] = 12
                     for piece in demo_white_state:
                         board_array[piece[0]][piece[1]] = piece[2]
+                    board_array[demo_black_king[0]][demo_black_king[1]] = 12
                     temp_board = board.Board(board_array, False)
                     temp_board.print_board()
                     print(f"¡JAQUE MATE! Las blancas ganan en {movimiento} movimientos.")
@@ -605,9 +630,9 @@ def ejercicio_2c():
                 else:
                     print(f"\n--- Movimiento {movimiento} (AHOGADO) ---")
                     board_array = np.zeros((8, 8))
-                    board_array[demo_black_king[0]][demo_black_king[1]] = 12
                     for piece in demo_white_state:
                         board_array[piece[0]][piece[1]] = piece[2]
+                    board_array[demo_black_king[0]][demo_black_king[1]] = 12
                     temp_board = board.Board(board_array, False)
                     temp_board.print_board()
                     print(f"¡AHOGADO! Es empate en {movimiento} movimientos (las blancas no lograron el mate).")
@@ -619,9 +644,9 @@ def ejercicio_2c():
         if resultado_partida is None:
             print(f"\n--- Movimiento {movimiento} (final) ---")
             board_array = np.zeros((8, 8))
-            board_array[demo_black_king[0]][demo_black_king[1]] = 12
             for piece in demo_white_state:
                 board_array[piece[0]][piece[1]] = piece[2]
+            board_array[demo_black_king[0]][demo_black_king[1]] = 12
             temp_board = board.Board(board_array, False)
             temp_board.print_board()
             print(f"\nAlcanzado maximo de 60 movimientos sin resultado.")
