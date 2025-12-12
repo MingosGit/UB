@@ -418,7 +418,7 @@ class QLearningChess:
         self.q_table[(state_str, action_str)] = new_q
     
     def train(self, initial_white_state: List[List[int]], num_episodes: int, reward_type: str = 'simple',
-              snapshot_episodes: List[int] = None) -> Dict:
+              snapshot_episodes: List[int] = None, stochastic_prob: float = 1.0) -> Dict:
         """
         Entrena el agente con Q-learning.
         Rey negro permanece ESTÁTICO durante todo el entrenamiento.
@@ -428,6 +428,7 @@ class QLearningChess:
             num_episodes: Número de episodios
             reward_type: Tipo de recompensa ('simple' o 'heuristic')
             snapshot_episodes: Episodios donde guardar Q-table
+            stochastic_prob: Probabilidad de ejecutar acción elegida (1.0 = determinista)
         
         Returns:
             Diccionario con estadísticas
@@ -458,10 +459,25 @@ class QLearningChess:
                 if action is None:
                     break
                 
+                # STOCHASTICITY: aplicar acción elegida con probabilidad stochastic_prob
+                # (resto del tiempo, tomar acción aleatoria diferente)
+                if random.random() < stochastic_prob:
+                    # Ejecutar acción elegida
+                    actual_action = action
+                else:
+                    # Ejecutar acción aleatoria (marinero borracho)
+                    possible_actions = self.get_possible_actions(state, self.black_king_pos)
+                    # Excluir la acción elegida si es posible
+                    other_actions = [a for a in possible_actions if a != action]
+                    if other_actions:
+                        actual_action = random.choice(other_actions)
+                    else:
+                        actual_action = action  # Solo hay una acción posible
+                
                 action_str = self.action_to_string(action[0], action[1])
                 
-                # Ejecutar acción (solo mueve piezas blancas)
-                next_state = self.execute_action(state, action)
+                # Ejecutar acción (puede ser la elegida o una aleatoria)
+                next_state = self.execute_action(state, actual_action)
                 next_state_str = self.state_to_string(next_state)
                 
                 # Verificar jaque mate
@@ -571,6 +587,50 @@ class QLearningChess:
                 current_state = state
                 states_printed += 1
             print(f"  Acción {action}: Q = {q_val:.3f}")
+    
+    def print_q_table_snapshots(self):
+        """
+        Imprime los snapshots de la Q-table en diferentes episodios.
+        Cumple con el requisito: "provide the first, two intermediate and the final Q-table"
+        """
+        print("\n" + "="*70)
+        print("Q-TABLE SNAPSHOTS (First, Two Intermediate, Final)")
+        print("="*70)
+        
+        if not self.q_table_snapshots:
+            print("No hay snapshots disponibles.")
+            return
+        
+        for episode, q_table_snapshot in self.q_table_snapshots:
+            print(f"\n{'─'*70}")
+            print(f"EPISODIO {episode}")
+            print(f"{'─'*70}")
+            print(f"Tamaño de Q-table: {len(q_table_snapshot)} pares (estado, acción)")
+            
+            if len(q_table_snapshot) == 0:
+                print("Q-table vacía (sin exploración aún)")
+                continue
+            
+            # Mostrar estadísticas de Q-values
+            q_values = list(q_table_snapshot.values())
+            print(f"Estadísticas de Q-values:")
+            print(f"  - Min: {min(q_values):.3f}")
+            print(f"  - Max: {max(q_values):.3f}")
+            print(f"  - Mean: {np.mean(q_values):.3f}")
+            print(f"  - Std: {np.std(q_values):.3f}")
+            
+            # Mostrar muestra de mejores y peores Q-values
+            sorted_items = sorted(q_table_snapshot.items(), key=lambda x: x[1], reverse=True)
+            
+            print(f"\nTop 5 mejores Q-values:")
+            for i, ((state, action), q_val) in enumerate(sorted_items[:5]):
+                print(f"  {i+1}. Estado={state}, Acción={action}")
+                print(f"     Q-value={q_val:.3f}")
+            
+            print(f"\nTop 5 peores Q-values:")
+            for i, ((state, action), q_val) in enumerate(sorted_items[-5:]):
+                print(f"  {i+1}. Estado={state}, Acción={action}")
+                print(f"     Q-value={q_val:.3f}")
 
 
 def ejercicio_2a():
@@ -613,10 +673,6 @@ def ejercicio_2a():
     print(f"- Alpha (learning rate): {agent.alpha}")
     print(f"- Gamma (discount factor): {agent.gamma}")
     print(f"- Epsilon inicial (exploration): {agent.epsilon}")
-    print(f"\nJustificación:")
-    print(f"- Alpha = {agent.alpha}: actualización rápida para convergencia")
-    print(f"- Gamma = {agent.gamma}: muy alto para recompensas futuras (mate lejano)")
-    print(f"- Epsilon = {agent.epsilon}: exploración adaptativa (decae con episodios)")
     
     # Entrenar
     num_episodes = 5000
@@ -641,15 +697,26 @@ def ejercicio_2a():
     avg_last_500 = np.mean(steps[-500:])
     min_steps = min(steps[-500:])
     
-    print(f"\nConvergencia:")
+    print(f"\nEstadísticas de convergencia:")
     print(f"- Promedio pasos últimos 500 episodios: {avg_last_500:.2f}")
     print(f"- Mínimo de pasos alcanzado: {min_steps}")
     
-    # Q-table sample
-    print("\n" + "="*70)
-    print("MUESTRA DE Q-TABLE")
-    print("="*70)
-    agent.print_q_table_sample(num_samples=2)
+    # Calcular punto de convergencia
+    window_size = 100
+    convergence_episode = None
+    for i in range(window_size, len(steps)):
+        if np.mean(steps[i-window_size:i]) < 25:
+            convergence_episode = i
+            break
+    
+    if convergence_episode:
+        print(f"- Punto de convergencia: episodio ~{convergence_episode} ({convergence_episode/num_episodes*100:.1f}% del total)")
+    else:
+        print(f"- No converge en {num_episodes} episodios")
+    
+    # Q-TABLE SNAPSHOTS (Requerimiento del enunciado)
+    # "Remember to provide the first, two intermediate and the final Q-table"
+    agent.print_q_table_snapshots()
     
     # Secuencia óptima
     print("\n" + "="*70)
@@ -704,11 +771,10 @@ def ejercicio_2b(results_2a=None):
     agent.alpha = 0.3  # Mismo que 2.a - evita inestabilidad con heurística
     agent.gamma = 0.95  # Ligeramente menor - la heurística da señal inmediata
     
-    print(f"\nParámetros (optimizados para heurística):")
-    print(f"- Alpha: {agent.alpha} (igual que 2.a - evita inestabilidad)")
-    print(f"- Gamma: {agent.gamma} (menor que 2.a - la heurística da señal inmediata)")
+    print(f"\nParámetros:")
+    print(f"- Alpha: {agent.alpha}")
+    print(f"- Gamma: {agent.gamma}")
     print(f"- Epsilon: {agent.epsilon} inicial con decaimiento")
-    print(f"- Razón: la heurística guía pero necesita estabilidad en aprendizaje")
     
     # Entrenar CON MÁS EPISODIOS para demostrar convergencia
     num_episodes = 5000  # REDUCIDO: heurística no necesita más episodios
@@ -733,15 +799,26 @@ def ejercicio_2b(results_2a=None):
     avg_last_500 = np.mean(steps[-500:])
     min_steps = min(steps[-500:])
     
-    print(f"\nConvergencia:")
+    print(f"\nEstadísticas de convergencia:")
     print(f"- Promedio pasos últimos 500 episodios: {avg_last_500:.2f}")
     print(f"- Mínimo de pasos alcanzado: {min_steps}")
     
-    # Muestra de Q-table
-    print("\n" + "="*70)
-    print("MUESTRA DE Q-TABLE")
-    print("="*70)
-    agent.print_q_table_sample(num_samples=2)
+    # Calcular punto de convergencia
+    window_size = 100
+    convergence_episode = None
+    for i in range(window_size, len(steps)):
+        if np.mean(steps[i-window_size:i]) < 25:
+            convergence_episode = i
+            break
+    
+    if convergence_episode:
+        print(f"- Punto de convergencia: episodio ~{convergence_episode}")
+    else:
+        print(f"- No converge en {num_episodes} episodios")
+    
+    # Q-TABLE SNAPSHOTS (Requerimiento del enunciado)
+    # "Remember to provide the first, two intermediate and the final Q-table"
+    agent.print_q_table_snapshots()
     
     # Secuencia óptima
     print("\n" + "="*70)
@@ -769,18 +846,255 @@ def ejercicio_2b(results_2a=None):
                 break
     
     # Comparación con ejercicio 2.a
-    print(f"\nComparación con ejercicio 2.a:")
+    print(f"\n" + "="*70)
+    print("COMPARACIÓN CON EJERCICIO 2.a")
+    print("="*70)
+    
     if results_2a:
         mates_2a = results_2a['mates_found']
         pct_2a = (mates_2a / 5000) * 100
-        print(f"- 2.a encontró {mates_2a} mates en 5000 episodios ({pct_2a:.1f}%)")
-    else:
-        print(f"- 2.a: ~90-91% mates (recompensa simple)")
+        print(f"- 2.a: {mates_2a} mates en 5000 episodios ({pct_2a:.1f}%)")
     
     pct_2b = (results['mates_found'] / num_episodes) * 100
-    print(f"- 2.b encontró {results['mates_found']} mates en {num_episodes} episodios ({pct_2b:.1f}%)")
+    print(f"- 2.b: {results['mates_found']} mates en {num_episodes} episodios ({pct_2b:.1f}%)")
     
     return agent, results
+
+
+def ejercicio_2c():
+    """
+    Ejercicio 2.c: Marinero borracho (Drunken Sailor) - Q-learning estocástico
+    
+    El marinero sabe mover las piezas y qué es jaque mate, pero no que las negras
+    se mueven también. Además, por estar borracho, solo ejecuta correctamente un
+    porcentaje de sus movimientos intencionados, el resto son aleatorios.
+    
+    Rey negro sigue SIN MOVERSE (como en 2.a y 2.b).
+    """
+    print("\n\n" + "="*70)
+    print("EJERCICIO 2.c - Marinero Borracho (Stochastic Q-learning)")
+    print("="*70)
+    print("\nEscenario:")
+    print("- El marinero borracho intenta jugar ajedrez")
+    print("- Conoce cómo se mueven las piezas y qué es jaque mate")
+    print("- NO sabe que las negras también se mueven (rey negro ESTÁTICO)")
+    print("- Por estar borracho: solo % de movimientos se ejecutan correctamente")
+    print("- El resto de movimientos son ALEATORIOS")
+    
+    # Configuración inicial
+    black_king_pos = (0, 4)
+    initial_white_state = [
+        [7, 4, 6],  # Rey blanco
+        [7, 0, 2]   # Torre blanca
+    ]
+    
+    TA = np.zeros((8, 8))
+    TA[7][0] = 2   # Torre blanca
+    TA[7][4] = 6   # Rey blanco
+    TA[0][4] = 12  # Rey negro (ESTÁTICO)
+    
+    print("\nConfiguración inicial del tablero:")
+    temp_chess = chess.Chess(TA.copy(), True)
+    temp_chess.board.print_board()
+    
+    # ============================================================
+    # PARTE i: Introducir estocasticidad
+    # ============================================================
+    print("\n" + "="*70)
+    print("PARTE i: ESTOCASTICIDAD (Probabilidad de éxito)")
+    print("="*70)
+    
+    # Probar con diferentes probabilidades de éxito
+    stochastic_probs = [1.0, 0.9, 0.8, 0.7]  # 100%, 90%, 80%, 70% de éxito
+    results_all = {}
+    
+    for prob in stochastic_probs:
+        print(f"\n{'─'*70}")
+        if prob == 1.0:
+            print(f"Entrenando con probabilidad {prob} (DETERMINISTA - baseline)")
+        else:
+            print(f"Entrenando con probabilidad {prob} ({prob*100:.0f}% éxito, {(1-prob)*100:.0f}% aleatorio)")
+        print(f"{'─'*70}")
+        
+        agent = QLearningChess(black_king_pos)
+        
+        # Ajustar parámetros para estocástico
+        if prob < 1.0:
+            agent.alpha = 0.2  # Menor learning rate para entorno estocástico
+            agent.gamma = 0.95  # Mantener alto para planificación
+            agent.epsilon = 0.3  # Más exploración inicial
+        
+        num_episodes = 8000 if prob < 1.0 else 5000  # Más episodios para estocástico
+        
+        print(f"Parámetros ajustados:")
+        print(f"  - Alpha: {agent.alpha}")
+        print(f"  - Gamma: {agent.gamma}")
+        print(f"  - Epsilon inicial: {agent.epsilon}")
+        print(f"  - Episodios: {num_episodes}")
+        
+        results = agent.train(
+            initial_white_state=initial_white_state,
+            num_episodes=num_episodes,
+            reward_type='heuristic',  # Usar heurística (mejor que simple)
+            snapshot_episodes=[0, num_episodes//3, 2*num_episodes//3, num_episodes-1],
+            stochastic_prob=prob
+        )
+        
+        results_all[prob] = {
+            'agent': agent,
+            'results': results,
+            'num_episodes': num_episodes
+        }
+        
+        # Estadísticas
+        steps = results['steps_per_episode']
+        avg_last_500 = np.mean(steps[-500:])
+        min_steps = min(steps[-500:])
+        mates_pct = (results['mates_found'] / num_episodes) * 100
+        
+        print(f"\nResultados:")
+        print(f"  - Mates encontrados: {results['mates_found']}/{num_episodes} ({mates_pct:.1f}%)")
+        print(f"  - Promedio pasos (últimos 500): {avg_last_500:.2f}")
+        print(f"  - Mínimo de pasos: {min_steps}")
+        
+        # Q-TABLE SNAPSHOTS para cada probabilidad
+        # "Remember to provide the first, two intermediate and the final Q-table in every case"
+        # Statement requires Q-tables for EVERY case tested
+        print(f"\n{'─'*70}")
+        print(f"Q-TABLE SNAPSHOTS para probabilidad {prob}")
+        print(f"{'─'*70}")
+        agent.print_q_table_snapshots()
+    
+    # ============================================================
+    # PARTE ii: Análisis y comparación
+    # ============================================================
+    print("\n\n" + "="*70)
+    print("PARTE ii: ANÁLISIS DE RESULTADOS")
+    print("="*70)
+    
+    # ii.1: Parámetros usados
+    print("\n" + "─"*70)
+    print("PARÁMETROS USADOS EN ENTORNO ESTOCÁSTICO")
+    print("─"*70)
+    print("  - Alpha = 0.2")
+    print("  - Gamma = 0.95")
+    print("  - Epsilon = 0.3 inicial con decaimiento")
+    print("  - Recompensa: heurística")
+    
+    # ii.2: Comparación de convergencia
+    print("\n" + "─"*70)
+    print("COMPARACIÓN DE CONVERGENCIA")
+    print("─"*70)
+    print(f"\n{'Probabilidad':<15} {'Episodios':<12} {'Mates %':<10} {'Avg pasos':<12} {'Convergencia'}")
+    print("─"*70)
+    
+    for prob in stochastic_probs:
+        data = results_all[prob]
+        results = data['results']
+        num_ep = data['num_episodes']
+        steps = results['steps_per_episode']
+        
+        mates_pct = (results['mates_found'] / num_ep) * 100
+        avg_last_500 = np.mean(steps[-500:])
+        
+        # Estimar punto de convergencia (cuando avg cae por debajo de 20)
+        window_size = 100
+        convergence_ep = "No converge"
+        for i in range(window_size, len(steps)):
+            if np.mean(steps[i-window_size:i]) < 25:
+                convergence_ep = f"~{i} eps"
+                break
+        
+        prob_str = f"{prob} ({prob*100:.0f}%)" if prob < 1.0 else f"{prob} (det.)"
+        print(f"{prob_str:<15} {num_ep:<12} {mates_pct:>6.1f}%    {avg_last_500:>6.2f}       {convergence_ep}")
+    
+    # ii.3: Camino óptimo
+    print("\n" + "─"*70)
+    print("CAMINO ÓPTIMO (probabilidad 0.8)")
+    print("─"*70)
+    
+    # Usar agente con prob=0.8
+    agent_08 = results_all[0.8]['agent']
+    
+    sequence = agent_08.get_optimal_sequence(initial_white_state, max_moves=30)
+    
+    if len(sequence) > 0:
+        num_states = len(sequence)
+        print(f"\nSecuencia de {num_states} estados ({num_states-1} movimientos):")
+        for i, state in enumerate(sequence):
+            wk = [p for p in state if p[2] == 6][0]
+            wr = [p for p in state if p[2] == 2][0]
+            print(f"  Estado {i}: Rey({wk[0]},{wk[1]}) Torre({wr[0]},{wr[1]})")
+            if agent_08.is_checkmate(state):
+                print(f"  >>> ¡JAQUE MATE! (en {i} movimientos) <<<")
+                break
+            if i >= 9:
+                print(f"  ... (continúa)")
+                break
+    
+    # Simulación de seguimiento de política
+    print("\n" + "─"*70)
+    print("SIMULACIÓN DE EJECUCIÓN DE POLÍTICA")
+    print("─"*70)
+    
+    print("\nSimulando 10 intentos de ejecutar la política aprendida:")
+    successful_mates = 0
+    path_lengths = []
+    
+    for trial in range(10):
+        state = [p.copy() for p in initial_white_state]
+        steps = 0
+        max_steps = 50
+        
+        while steps < max_steps:
+            state_str = agent_08.state_to_string(state)
+            
+            # Verificar mate
+            if agent_08.is_checkmate(state):
+                successful_mates += 1
+                path_lengths.append(steps)
+                print(f"  Intento {trial+1}: MATE en {steps} movimientos ✓")
+                break
+            
+            # Elegir mejor acción (greedy)
+            possible_actions = agent_08.get_possible_actions(state, black_king_pos)
+            if not possible_actions:
+                print(f"  Intento {trial+1}: Sin movimientos (pasos={steps}) ✗")
+                break
+            
+            best_action = None
+            max_q = -float('inf')
+            for action in possible_actions:
+                action_str = agent_08.action_to_string(action[0], action[1])
+                q_val = agent_08.q_table[(state_str, action_str)]
+                if q_val > max_q:
+                    max_q = q_val
+                    best_action = action
+            
+            if best_action is None:
+                print(f"  Intento {trial+1}: Sin acción válida ✗")
+                break
+            
+            # Aplicar estocasticidad: 80% ejecuta acción óptima, 20% aleatoria
+            if random.random() < 0.8:
+                actual_action = best_action
+            else:
+                other_actions = [a for a in possible_actions if a != best_action]
+                actual_action = random.choice(other_actions) if other_actions else best_action
+            
+            # Ejecutar
+            state = agent_08.execute_action(state, actual_action)
+            steps += 1
+        else:
+            print(f"  Intento {trial+1}: No alcanzó mate en {max_steps} pasos ✗")
+    
+    print(f"\nResultados de simulación:")
+    print(f"  - Mates exitosos: {successful_mates}/10 ({successful_mates*10}%)")
+    if path_lengths:
+        print(f"  - Longitud promedio: {np.mean(path_lengths):.1f} movimientos")
+        print(f"  - Rango: {min(path_lengths)}-{max(path_lengths)} movimientos")
+    
+    return results_all
 
 
 # ======================================================================
@@ -789,7 +1103,11 @@ def ejercicio_2b(results_2a=None):
 
 if __name__ == "__main__":
     # Ejecutar ejercicio 2.a
-    #agent_2a, results_2a = ejercicio_2a()
+    agent_2a, results_2a = ejercicio_2a()
     
     # Ejecutar ejercicio 2.b (pasando resultados de 2.a para comparación)
-    #agent_2b, results_2b = ejercicio_2b(results_2a)
+    agent_2b, results_2b = ejercicio_2b(results_2a)
+    
+    # Ejecutar ejercicio 2.c - Marinero borracho (Stochastic Q-learning)
+    results_2c = ejercicio_2c()
+    
