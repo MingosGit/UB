@@ -525,14 +525,14 @@ def ejercicio_2a():
     TA = np.zeros((8, 8))
     TA[7][0] = 2   # Torre blanca
     TA[7][4] = 6   # Rey blanco
-    TA[0][4] = 12  # Rey negro (ESTÁTICO)
+    TA[0][5] = 12  # Rey negro (ESTÁTICO)
     
     print("\nConfiguración inicial del tablero:")
     temp_chess = chess.Chess(TA.copy(), True)
     temp_chess.board.print_board()
     
     # Posición estática del rey negro
-    black_king_pos = (0, 4)
+    black_king_pos = (0, 5)
     
     # Estado inicial de piezas blancas
     initial_white_state = [
@@ -744,7 +744,7 @@ def ejercicio_2c():
     TA = np.zeros((8, 8))
     TA[7][0] = 2   # Torre blanca
     TA[7][4] = 6   # Rey blanco
-    TA[0][4] = 12  # Rey negro (ESTÁTICO)
+    TA[0][5] = 12  # Rey negro (ESTÁTICO)
     
     print("\nConfiguración inicial del tablero:")
     temp_chess = chess.Chess(TA.copy(), True)
@@ -935,17 +935,279 @@ def ejercicio_2c():
     return results_all
 
 
+def ejercicio_2f():
+    """Ejercicio 2.f: Búsqueda de mejores parámetros en configuración P1.2"""
+    print("\n\n" + "="*70)
+    print("EJERCICIO 2.f - Robustez de Parámetros (Configuración P1.2)")
+    print("="*70)
+    
+    # Configuración P1.2 (más difícil que la original)
+    black_king_pos = (0, 5)  # Rey negro
+    initial_white_state = [
+        [7, 7, 6],  # Rey blanco
+        [7, 0, 2]   # Torre blanca
+    ]
+    
+    TA = np.zeros((8, 8))
+    TA[7][0] = 2   # Torre blanca
+    TA[7][7] = 6   # Rey blanco
+    TA[0][5] = 12  # Rey negro
+    
+    print("\nConfiguración P1.2 (más compleja):")
+    temp_chess = chess.Chess(TA.copy(), True)
+    temp_chess.board.print_board()
+    print("\nNota: Rey negro en (0,5), Rey blanco en (7,7), Torre en (7,0)")
+    print("      Configuración diferente para evaluar robustez de parámetros")
+    
+    print("\n" + "="*70)
+    print("PARTE i: GRID SEARCH DE PARÁMETROS")
+    print("="*70)
+    
+    # Parámetros a probar
+    alphas = [0.1, 0.2, 0.3, 0.5]
+    gammas = [0.9, 0.95, 0.99]
+    epsilons = [0.1, 0.2, 0.3, 0.4]
+    stochastic_prob = 0.8
+    num_episodes = 6000  # Reducido para grid search
+    
+    print(f"\nParámetros de búsqueda:")
+    print(f"  - Alphas: {alphas}")
+    print(f"  - Gammas: {gammas}")
+    print(f"  - Epsilons: {epsilons}")
+    print(f"  - Probabilidad estocástica: {stochastic_prob}")
+    print(f"  - Episodios por prueba: {num_episodes}")
+    print(f"  - Total combinaciones: {len(alphas)*len(gammas)*len(epsilons)} = {len(alphas)*len(gammas)*len(epsilons)}")
+    
+    # Almacenar resultados
+    results_grid = []
+    best_result = None
+    best_score = -float('inf')
+    
+    print("\nIniciando grid search (esto puede tardar varios minutos)...")
+    
+    combination_num = 0
+    total_combinations = len(alphas) * len(gammas) * len(epsilons)
+    
+    for alpha in alphas:
+        for gamma in gammas:
+            for epsilon in epsilons:
+                combination_num += 1
+                print(f"\n[{combination_num}/{total_combinations}] Probando α={alpha}, γ={gamma}, ε={epsilon}...", end=" ")
+                
+                agent = QLearningChess(black_king_pos)
+                agent.alpha = alpha
+                agent.gamma = gamma
+                agent.epsilon = epsilon
+                
+                results = agent.train(
+                    initial_white_state=initial_white_state,
+                    num_episodes=num_episodes,
+                    reward_type='heuristic',
+                    snapshot_episodes=[],  # No guardar snapshots para eficiencia
+                    stochastic_prob=stochastic_prob
+                )
+                
+                steps = results['steps_per_episode']
+                avg_last_500 = np.mean(steps[-500:])
+                mates_pct = (results['mates_found'] / num_episodes) * 100
+                
+                # Estimar convergencia
+                window_size = 100
+                convergence_ep = num_episodes
+                for i in range(window_size, len(steps)):
+                    if np.mean(steps[i-window_size:i]) < 25:
+                        convergence_ep = i
+                        break
+                
+                # Score combinado (queremos maximizar mates% y minimizar pasos/convergencia)
+                score = mates_pct - (avg_last_500 * 0.5) - (convergence_ep / 100)
+                
+                result_data = {
+                    'alpha': alpha,
+                    'gamma': gamma,
+                    'epsilon': epsilon,
+                    'mates_pct': mates_pct,
+                    'avg_steps': avg_last_500,
+                    'convergence': convergence_ep,
+                    'score': score
+                }
+                results_grid.append(result_data)
+                
+                print(f" Mates={mates_pct:.1f}%, Avg={avg_last_500:.1f}, Conv={convergence_ep}")
+                
+                if score > best_score:
+                    best_score = score
+                    best_result = result_data
+                    best_result['agent'] = agent
+    
+    print("\n" + "="*70)
+    print("PARTE ii: RESULTADOS DE GRID SEARCH")
+    print("="*70)
+    
+    # Ordenar por score
+    results_grid.sort(key=lambda x: x['score'], reverse=True)
+    
+    print("\n" + "─"*70)
+    print("TOP 8 MEJORES COMBINACIONES")
+    print("─"*70)
+    print(f"{'Alpha':<8} {'Gamma':<8} {'Epsilon':<9} {'Conv (eps)':<12} {'Mates %':<10} {'Avg Pasos':<11} {'Score'}")
+    print("─"*70)
+    
+    for i, res in enumerate(results_grid[:8]):
+
+        print(f"{res['alpha']:<8} {res['gamma']:<8} {res['epsilon']:<9} "
+              f"~{res['convergence']:<11} {res['mates_pct']:>6.1f}%    "
+              f"{res['avg_steps']:>6.1f}      {res['score']:>6.1f}")
+    
+    print("\n" + "─"*70)
+    print("MEJOR COMBINACIÓN ENCONTRADA")
+    print("─"*70)
+    print(f"  Alpha:        {best_result['alpha']}")
+    print(f"  Gamma:        {best_result['gamma']}")
+    print(f"  Epsilon:      {best_result['epsilon']}")
+    print(f"  Convergencia: ~{best_result['convergence']} episodios")
+    print(f"  Mates:        {best_result['mates_pct']:.1f}%")
+    print(f"  Pasos medio:  {best_result['avg_steps']:.2f}")
+    
+    print("\n" + "="*70)
+    print("PARTE iii: COMPARACIÓN CON PARÁMETROS ORIGINALES (2.c)")
+    print("="*70)
+    
+    # Probar parámetros originales en esta configuración
+    print("\nProbando parámetros de Ejercicio 2.c en configuración P1.2...")
+    agent_original = QLearningChess(black_king_pos)
+    agent_original.alpha = 0.2
+    agent_original.gamma = 0.95
+    agent_original.epsilon = 0.3
+    
+    results_original = agent_original.train(
+        initial_white_state=initial_white_state,
+        num_episodes=num_episodes,
+        reward_type='heuristic',
+        snapshot_episodes=[],
+        stochastic_prob=stochastic_prob
+    )
+    
+    steps_orig = results_original['steps_per_episode']
+    avg_last_500_orig = np.mean(steps_orig[-500:])
+    mates_pct_orig = (results_original['mates_found'] / num_episodes) * 100
+    
+    window_size = 100
+    convergence_orig = num_episodes
+    for i in range(window_size, len(steps_orig)):
+        if np.mean(steps_orig[i-window_size:i]) < 25:
+            convergence_orig = i
+            break
+    
+    print("\n" + "─"*70)
+    print("COMPARACIÓN CONFIGURACIÓN ORIGINAL vs P1.2")
+    print("─"*70)
+    print(f"\n{'Configuración':<20} {'Parámetros':<20} {'Convergencia':<15} {'Mates %':<12} {'Avg Pasos'}")
+    print("─"*70)
+    print(f"{'Original (0,4)':<20} {'α=0.2,γ=0.95,ε=0.3':<20} {'~1465 eps':<15} {'94.2%':<12} {'15.22'}")
+    print(f"{'P1.2 (0,5) [2.c]':<20} {'α=0.2,γ=0.95,ε=0.3':<20} "
+          f"{'~'+str(convergence_orig)+' eps':<15} {f'{mates_pct_orig:.1f}%':<12} {f'{avg_last_500_orig:.2f}'}")
+    print(f"{'P1.2 (0,5) [opt]':<20} {'α={:.1f},γ={:.2f},ε={:.1f}'.format(best_result['alpha'],best_result['gamma'],best_result['epsilon']):<20} "
+          f"{'~'+str(best_result['convergence'])+' eps':<15} {f"{best_result['mates_pct']:.1f}%":<12} {f"{best_result['avg_steps']:.2f}"}")
+    
+    # Calcular degradación
+    degradacion_conv = ((convergence_orig - 1465) / 1465) * 100 if convergence_orig != num_episodes else 100
+    degradacion_mates = ((mates_pct_orig - 94.2) / 94.2) * 100
+    degradacion_pasos = ((avg_last_500_orig - 15.22) / 15.22) * 100
+    
+    mejora_conv = ((convergence_orig - best_result['convergence']) / convergence_orig) * 100
+    mejora_mates = ((best_result['mates_pct'] - mates_pct_orig) / mates_pct_orig) * 100
+    mejora_pasos = ((avg_last_500_orig - best_result['avg_steps']) / avg_last_500_orig) * 100
+    
+    print("\n" + "─"*70)
+    print("ANÁLISIS DE ROBUSTEZ")
+    print("─"*70)
+    
+    print(f"\nDegradación parámetros 2.c en configuración P1.2:")
+    print(f"  - Convergencia: {degradacion_conv:+.1f}% (más lento)")
+    print(f"  - Tasa de mates: {degradacion_mates:+.1f}%")
+    print(f"  - Pasos promedio: {degradacion_pasos:+.1f}%")
+    
+    print(f"\nMejora con parámetros optimizados:")
+    print(f"  - Convergencia: {mejora_conv:+.1f}%")
+    print(f"  - Tasa de mates: {mejora_mates:+.1f}%")
+    print(f"  - Pasos promedio: {mejora_pasos:+.1f}%")
+    
+    print("\n" + "─"*70)
+    print("EVALUACIÓN DE ROBUSTEZ DE PARÁMETROS 2.c")
+    print("─"*70)
+    
+    # Evaluar cada parámetro
+    param_scores = {}
+    param_scores['alpha'] = " BAJA" if abs(best_result['alpha'] - 0.2) > 0.1 else " ALTA"
+    param_scores['gamma'] = " ALTA" if abs(best_result['gamma'] - 0.95) < 0.02 else " MEDIA"
+    param_scores['epsilon'] = " ALTA" if abs(best_result['epsilon'] - 0.3) < 0.1 else " MEDIA"
+    
+    robustez_score = sum([1 if "ALTA" in v else 0.5 if "MEDIA" in v else 0 for v in param_scores.values()])
+    robustez_score = (robustez_score / 3) * 10
+    
+    print(f"\n{'Parámetro':<12} {'Valor 2.c':<12} {'Valor Óptimo':<12} {'Robustez'}")
+    print("─"*70)
+    print(f"{'Alpha':<12} {'0.2':<12} {str(best_result['alpha']):<12} {param_scores['alpha']}")
+    print(f"{'Gamma':<12} {'0.95':<12} {str(best_result['gamma']):<12} {param_scores['gamma']}")
+    print(f"{'Epsilon':<12} {'0.3':<12} {str(best_result['epsilon']):<12} {param_scores['epsilon']}")
+    
+    print(f"\nPuntuación de robustez global: {robustez_score:.1f}/10")
+    
+    print("\n" + "─"*70)
+    print("CONCLUSIONES")
+    print("─"*70)
+    print("\n1. Robustez de parámetros:")
+    print(f"   - Los parámetros de 2.c son {'robustos' if robustez_score >= 7 else 'poco robustos'}")
+    print(f"   - Alpha=0.2 es {'demasiado conservador' if best_result['alpha'] > 0.25 else 'adecuado'} para problemas complejos")
+    print(f"   - Gamma=0.95 es {'óptimo' if abs(best_result['gamma']-0.95)<0.02 else 'subóptimo'} universalmente")
+    print(f"   - Epsilon=0.3 {'funciona bien' if abs(best_result['epsilon']-0.3)<0.1 else 'necesita ajuste'}")
+    
+    print("\n2. Impacto de la complejidad:")
+    print(f"   - Config. P1.2 es ~{(degradacion_pasos/100*15.22):.0f}% más difícil (pasos adicionales)")
+    print(f"   - Convergencia {abs(degradacion_conv):.0f}% {'más lenta' if degradacion_conv > 0 else 'más rápida'}")
+    print(f"   - Alpha debe {'aumentar' if best_result['alpha'] > 0.2 else 'mantener'} para problemas complejos")
+    
+    print("\n3. Recomendaciones:")
+    print(f"   - Usar α={best_result['alpha']}, γ={best_result['gamma']}, ε={best_result['epsilon']} para config. difíciles")
+    print("   - Implementar alpha adaptativo basado en complejidad estimada")
+    print("   - Heurística de recompensa debería considerar esquinas vs centro")
+    
+    return {
+        'grid_results': results_grid,
+        'best_result': best_result,
+        'original_result': {
+            'mates_pct': mates_pct_orig,
+            'avg_steps': avg_last_500_orig,
+            'convergence': convergence_orig
+        },
+        'robustez_score': robustez_score
+    }
+
+
 # ======================================================================
 # FUNCIÓN PRINCIPAL
 # ======================================================================
 
 if __name__ == "__main__":
     # Ejecutar ejercicio 2.a
-    agent_2a, results_2a = ejercicio_2a()
+    #agent_2a, results_2a = ejercicio_2a()
     
     # Ejecutar ejercicio 2.b (pasando resultados de 2.a para comparación)
-    agent_2b, results_2b = ejercicio_2b(results_2a)
+    #agent_2b, results_2b = ejercicio_2b(results_2a)
     
     # Ejecutar ejercicio 2.c - Marinero borracho (Stochastic Q-learning)
-    results_2c = ejercicio_2c()
+    #results_2c = ejercicio_2c()
+    
+    # Ejecutar ejercicio 2.f - Análisis de robustez de parámetros
+    print("\n" + "="*70)
+    print("¿Desea ejecutar el Ejercicio 2.f (Grid Search)?")
+    print("Nota: Esto puede tardar 1-2 horas dependiendo del hardware.")
+    print("="*70)
+    respuesta = input("Ejecutar 2.f? (s/n): ")
+    
+    if respuesta.lower() == 's':
+        results_2f = ejercicio_2f()
+    else:
+        print("\nEjercicio 2.f omitido.")
     
