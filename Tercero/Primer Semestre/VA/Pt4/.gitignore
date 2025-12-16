@@ -1,5 +1,4 @@
-# Ignore images folder and all its contents (at any depth)
-**/images/
+# Ignore images folder and all its contents
 images/
 
 # Jupyter Notebook checkpoints
