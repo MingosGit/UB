@@ -1,4 +1,5 @@
 """
+@author: Jose Candon y Pau Gonzalez
 Per utilitzar aquest mòdul en un notebook:
     import practica3 as pt3
 
