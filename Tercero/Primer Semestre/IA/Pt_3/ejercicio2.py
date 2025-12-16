@@ -11,42 +11,26 @@ import os
 from typing import Tuple, Dict, List
 from collections import defaultdict
 
-# Añadir directorio chess al path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'chess'))
 
 import chess
 import board
 import piece
 
-
 class QLearningChess:
-    """
-    Q-learning para ajedrez (K+R vs K).
-    Rey negro está estático, solo se mueven las piezas blancas.
-    """
     
     def __init__(self, black_king_pos: Tuple[int, int]):
-        # Parámetros de Q-learning
-        self.alpha = 0.3   # Learning rate (aumentado para aprendizaje más rápido)
-        self.gamma = 0.99  # Discount factor (muy alto para planificación a largo plazo)
-        self.epsilon = 0.3 # Exploration rate (aumentado para mejor exploración)
-        
-        # Posición ESTÁTICA del rey negro
+        self.alpha = 0.3
+        self.gamma = 0.99
+        self.epsilon = 0.3
         self.black_king_pos = black_king_pos
-        
-        # Q-table: {(state_string, action_string): Q-value}
         self.q_table = defaultdict(float)
-        
-        # Estadísticas
         self.q_table_snapshots = []
         self.episodes_history = []
         self.mates_found = 0
         
     def state_to_string(self, white_state: List[List[int]]) -> str:
-        """Convierte estado de piezas blancas a string."""
-        # Obtener rey blanco (tipo 6)
         wk = [p for p in white_state if p[2] == 6][0] if any(p[2] == 6 for p in white_state) else None
-        # Obtener torre blanca (tipo 2)
         wr = [p for p in white_state if p[2] == 2][0] if any(p[2] == 2 for p in white_state) else None
         
         state_str = f"{wk[0]},{wk[1]}" if wk else ""
@@ -56,25 +40,17 @@ class QLearningChess:
         return state_str
     
     def action_to_string(self, piece_state: List[int], next_pos: List[int]) -> str:
-        """Convierte una acción a string."""
         return f"{piece_state[0]},{piece_state[1]}->{next_pos[0]},{next_pos[1]}"
     
     def is_checkmate(self, white_state: List[List[int]]) -> bool:
-        """Verifica si hay jaque mate."""
-        # Usar posición estática del rey negro
         black_king = self.black_king_pos
         
-        # Verificar si está en jaque
         def is_square_attacked(row, col, white_pieces):
-            # Obtener rey y torre blanca
             wk = [p for p in white_pieces if p[2] == 6][0] if any(p[2] == 6 for p in white_pieces) else None
             wr = [p for p in white_pieces if p[2] == 2][0] if any(p[2] == 2 for p in white_pieces) else None
             
-            # Verificar ataque de torre (líneas rectas)
             if wr:
-                # Torre en misma fila
                 if wr[0] == row:
-                    # Verificar que no hay piezas bloqueando
                     min_col = min(wr[1], col)
                     max_col = max(wr[1], col)
                     blocked = False
@@ -85,7 +61,6 @@ class QLearningChess:
                     if not blocked:
                         return True
                 
-                # Torre en misma columna
                 if wr[1] == col:
                     min_row = min(wr[0], row)
                     max_row = max(wr[0], row)
@@ -97,19 +72,15 @@ class QLearningChess:
                     if not blocked:
                         return True
             
-            # Verificar adyacencia al rey blanco
             if wk:
                 if abs(wk[0] - row) <= 1 and abs(wk[1] - col) <= 1:
                     return True
             
             return False
         
-        # Si no está en jaque, no es mate
         if not is_square_attacked(black_king[0], black_king[1], white_state):
             return False
         
-        # Verificar si tiene movimientos de escape
-        # (aunque el rey NO se mueve, debemos verificar que NO TENGA salidas posibles)
         for dr in [-1, 0, 1]:
             for dc in [-1, 0, 1]:
                 if dr == 0 and dc == 0:
@@ -118,7 +89,6 @@ class QLearningChess:
                 new_col = black_king[1] + dc
                 
                 if 0 <= new_row < 8 and 0 <= new_col < 8:
-                    # Verificar si hay pieza blanca en esa casilla
                     occupied_by_white = False
                     for wp in white_state:
                         if wp[0] == new_row and wp[1] == new_col:
@@ -128,15 +98,12 @@ class QLearningChess:
                     if occupied_by_white:
                         continue
                     
-                    # Verificar si esa casilla estaría atacada
                     if not is_square_attacked(new_row, new_col, white_state):
                         return False
         
         return True
     
     def get_possible_actions(self, white_state: List[List[int]], black_king_pos: Tuple[int, int]) -> List[Tuple[List[int], List[int]]]:
-        """Obtiene acciones posibles para las blancas."""
-        # Recrear tablero con estado actual
         board_array = np.zeros((8, 8))
         board_array[black_king_pos[0]][black_king_pos[1]] = 12
         for piece in white_state:
@@ -148,7 +115,6 @@ class QLearningChess:
         
         actions = []
         for next_state in next_states:
-            # Encontrar qué pieza se movió comparando estados
             moved_piece = None
             new_position = None
             
@@ -163,10 +129,8 @@ class QLearningChess:
                 
                 if not found:
                     moved_piece = orig_piece
-                    # Buscar nueva posición de esta pieza
                     for new_piece in next_state:
                         if new_piece[2] == orig_piece[2]:
-                            # Verificar que no es otra pieza del mismo tipo
                             is_other_piece = False
                             for other in white_state:
                                 if (other != orig_piece and 
@@ -187,17 +151,14 @@ class QLearningChess:
         return actions
     
     def choose_action(self, state: List[List[int]], state_str: str) -> Tuple[List[int], List[int]]:
-        """Política epsilon-greedy para elegir acción."""
         possible_actions = self.get_possible_actions(state, self.black_king_pos)
         
         if not possible_actions:
             return None
         
         if random.random() < self.epsilon:
-            # Exploración: acción aleatoria
             return random.choice(possible_actions)
         else:
-            # Explotación: mejor acción según Q-table
             best_action = None
             max_q = -float('inf')
             
@@ -211,32 +172,25 @@ class QLearningChess:
             return best_action if best_action else random.choice(possible_actions)
     
     def execute_action(self, white_state: List[List[int]], action: Tuple[List[int], List[int]]) -> List[List[int]]:
-        """Ejecuta una acción moviendo una pieza blanca."""
         new_state = [p.copy() for p in white_state]
         
-        # Encontrar pieza que se mueve
         for i, piece in enumerate(new_state):
             if piece[0] == action[0][0] and piece[1] == action[0][1] and piece[2] == action[0][2]:
-                # Mover a nueva posición
                 new_state[i] = [action[1][0], action[1][1], piece[2]]
                 break
         
         return new_state
     
     def get_reward(self, white_state: List[List[int]], reward_type: str = 'simple') -> float:
-        """Calcula la recompensa del estado."""
         if self.is_checkmate(white_state):
             return 100.0
         
         if reward_type == 'simple':
-            # Ejercicio 2.a: -1 por cada movimiento
             return -1.0
         
         elif reward_type == 'heuristic':
-            # Heurística para guiar el aprendizaje
             bk_pos = self.black_king_pos
             
-            # Buscar rey y torre blanca
             wk = [p for p in white_state if p[2] == 6][0] if any(p[2] == 6 for p in white_state) else None
             wr = [p for p in white_state if p[2] == 2][0] if any(p[2] == 2 for p in white_state) else None
             
@@ -245,26 +199,24 @@ class QLearningChess:
             
             reward = -1.0
             
-            # Proximidad del rey blanco al rey negro
             king_dist = max(abs(wk[0] - bk_pos[0]), abs(wk[1] - bk_pos[1]))
             if king_dist == 2:
-                reward += 0.4  # Óptimo: distancia de mate
+                reward += 0.4
             elif king_dist == 1:
-                reward += 0.3  # Oposición directa
+                reward += 0.3
             elif king_dist == 3:
-                reward += 0.2  # Cerca
+                reward += 0.2
             elif king_dist <= 4:
                 reward += 0.1
             
-            # Torre atacando al rey negro
             def tower_attacks_king():
-                if wr[0] == bk_pos[0]:  # Misma fila
+                if wr[0] == bk_pos[0]:
                     min_c, max_c = min(wr[1], bk_pos[1]), max(wr[1], bk_pos[1])
                     for c in range(min_c + 1, max_c):
                         if wk[0] == wr[0] and wk[1] == c:
                             return False
                     return True
-                if wr[1] == bk_pos[1]:  # Misma columna
+                if wr[1] == bk_pos[1]:
                     min_r, max_r = min(wr[0], bk_pos[0]), max(wr[0], bk_pos[0])
                     for r in range(min_r + 1, max_r):
                         if wk[0] == r and wk[1] == wr[1]:
@@ -277,7 +229,6 @@ class QLearningChess:
             elif wr[0] == bk_pos[0] or wr[1] == bk_pos[1]:
                 reward += 0.2
             
-            # Control de casillas de escape
             escape_squares_controlled = 0
             for dr in [-1, 0, 1]:
                 for dc in [-1, 0, 1]:
@@ -288,7 +239,6 @@ class QLearningChess:
                         if abs(wk[0] - er) <= 1 and abs(wk[1] - ec) <= 1:
                             escape_squares_controlled += 1
                         elif wr[0] == er or wr[1] == ec:
-                            # Verificar si no está bloqueada
                             if wr[0] == er:
                                 min_c, max_c = min(wr[1], ec), max(wr[1], ec)
                                 blocked = any(wk[0] == er and wk[1] == c for c in range(min_c + 1, max_c))
@@ -308,10 +258,8 @@ class QLearningChess:
     
     def update_q_value(self, state_str: str, action_str: str, reward: float, 
                       next_state_str: str, possible_next_actions: List[str]):
-        """Actualiza Q(s,a) usando ecuación de Bellman."""
         current_q = self.q_table[(state_str, action_str)]
         
-        # Calcular max Q del siguiente estado
         max_next_q = -float('inf')
         if possible_next_actions:
             for next_action_str in possible_next_actions:
@@ -321,13 +269,11 @@ class QLearningChess:
         else:
             max_next_q = 0.0
         
-        # Ecuación de Bellman
         new_q = current_q + self.alpha * (reward + self.gamma * max_next_q - current_q)
         self.q_table[(state_str, action_str)] = new_q
     
     def train(self, initial_white_state: List[List[int]], num_episodes: int, reward_type: str = 'simple',
               snapshot_episodes: List[int] = None, stochastic_prob: float = 1.0) -> Dict:
-        """Entrena el agente con Q-learning."""
         if snapshot_episodes is None:
             snapshot_episodes = [0, num_episodes // 3, 2 * num_episodes // 3, num_episodes - 1]
         
@@ -336,31 +282,25 @@ class QLearningChess:
         self.mates_found = 0
         
         for episode in range(num_episodes):
-            # Decaimiento de epsilon (exploración -> explotación)
             self.epsilon = max(0.1, 0.3 - (episode / num_episodes) * 0.2)
             
-            # Resetear estado inicial
             state = [p.copy() for p in initial_white_state]
             state_str = self.state_to_string(state)
             
             steps = 0
-            max_steps = 100  # Aumentado para permitir más exploración
+            max_steps = 100
             episode_done = False
             
             while not episode_done and steps < max_steps:
-                # Elegir acción
                 action = self.choose_action(state, state_str)
                 
                 if action is None:
                     break
                 
-                # Aplicar acción elegida con probabilidad stochastic_prob
                 if random.random() < stochastic_prob:
                     actual_action = action
                 else:
-                    # Acción aleatoria
                     possible_actions = self.get_possible_actions(state, self.black_king_pos)
-                    # Excluir la acción elegida si es posible
                     other_actions = [a for a in possible_actions if a != action]
                     if other_actions:
                         actual_action = random.choice(other_actions)
@@ -369,40 +309,31 @@ class QLearningChess:
                 
                 action_str = self.action_to_string(action[0], action[1])
                 
-                # Ejecutar acción (puede ser la elegida o una aleatoria)
                 next_state = self.execute_action(state, actual_action)
                 next_state_str = self.state_to_string(next_state)
                 
-                # Verificar jaque mate
                 is_mate = self.is_checkmate(next_state)
                 
-                # Obtener recompensa
                 reward = self.get_reward(next_state, reward_type)
                 
-                # Obtener posibles acciones del siguiente estado
                 possible_next_actions = self.get_possible_actions(next_state, self.black_king_pos)
                 next_action_strs = [self.action_to_string(a[0], a[1]) for a in possible_next_actions]
                 
-                # Actualizar Q-value
                 self.update_q_value(state_str, action_str, reward, next_state_str, next_action_strs)
                 
-                # Siguiente estado
                 state = next_state
                 state_str = next_state_str
                 steps += 1
                 
-                # Verificar jaque mate
                 if is_mate:
                     episode_done = True
                     self.mates_found += 1
             
             steps_per_episode.append(steps)
             
-            # Guardar snapshot
             if episode in snapshot_episodes:
                 self.q_table_snapshots.append((episode, dict(self.q_table)))
             
-            # Mostrar progreso
             if (episode + 1) % 500 == 0:
                 avg_steps = np.mean(steps_per_episode[-500:])
                 mates_last_500 = sum(1 for s in steps_per_episode[-500:] if s < max_steps)
@@ -416,7 +347,6 @@ class QLearningChess:
         }
     
     def get_optimal_sequence(self, initial_white_state: List[List[int]], max_moves: int = 50) -> List:
-        """Extrae secuencia óptima de movimientos usando política greedy."""
         sequence = []
         state = [p.copy() for p in initial_white_state]
         
@@ -424,13 +354,11 @@ class QLearningChess:
             state_str = self.state_to_string(state)
             sequence.append(state.copy())
             
-            # Verificar mate
             if self.is_checkmate(state):
                 actual_moves = len(sequence) - 1
                 print(f"¡Jaque mate encontrado! Secuencia de {len(sequence)} estados ({actual_moves} movimientos)")
                 break
             
-            # Mejor acción (sin exploración)
             possible_actions = self.get_possible_actions(state, self.black_king_pos)
             if not possible_actions:
                 break
@@ -448,13 +376,11 @@ class QLearningChess:
             if best_action is None:
                 break
             
-            # Ejecutar mejor acción
             state = self.execute_action(state, best_action)
         
         return sequence
     
     def print_q_table_sample(self, num_samples: int = 3):
-        """Imprime muestra de la Q-table."""
         print("\n" + "="*70)
         print(f"MUESTRA DE Q-TABLE (primeros {num_samples} estados)")
         print("="*70)
@@ -472,7 +398,6 @@ class QLearningChess:
             print(f"  Acción {action}: Q = {q_val:.3f}")
     
     def print_q_table_snapshots(self):
-        """Imprime los snapshots de la Q-table en diferentes episodios."""
         print("\n" + "="*70)
         print("Q-TABLE SNAPSHOTS (First, Two Intermediate, Final)")
         print("="*70)
@@ -491,7 +416,6 @@ class QLearningChess:
                 print("Q-table vacía (sin exploración aún)")
                 continue
             
-            # Mostrar estadísticas de Q-values
             q_values = list(q_table_snapshot.values())
             print(f"Estadísticas de Q-values:")
             print(f"  - Min: {min(q_values):.3f}")
@@ -499,7 +423,6 @@ class QLearningChess:
             print(f"  - Mean: {np.mean(q_values):.3f}")
             print(f"  - Std: {np.std(q_values):.3f}")
             
-            # Mostrar muestra de mejores y peores Q-values
             sorted_items = sorted(q_table_snapshot.items(), key=lambda x: x[1], reverse=True)
             
             print(f"\nTop 5 mejores Q-values:")
@@ -514,33 +437,26 @@ class QLearningChess:
 
 
 def ejercicio_2a():
-    """
-    Ejercicio 2.a: Q-learning en ajedrez con recompensa simple
-    """
     print("\n" + "="*70)
     print("EJERCICIO 2.a - Q-learning en Ajedrez (Recompensa Simple)")
     print("="*70)
     
-    # Configuración inicial
     TA = np.zeros((8, 8))
-    TA[7][0] = 2   # Torre blanca
-    TA[7][4] = 6   # Rey blanco
-    TA[0][5] = 12  # Rey negro (ESTÁTICO)
+    TA[7][0] = 2
+    TA[7][4] = 6
+    TA[0][5] = 12
     
     print("\nConfiguración inicial del tablero:")
     temp_chess = chess.Chess(TA.copy(), True)
     temp_chess.board.print_board()
     
-    # Posición estática del rey negro
     black_king_pos = (0, 5)
     
-    # Estado inicial de piezas blancas
     initial_white_state = [
-        [7, 4, 6],  # Rey blanco
-        [7, 0, 2]   # Torre blanca
+        [7, 4, 6],
+        [7, 0, 2]
     ]
     
-    # Crear agente con rey negro estático
     agent = QLearningChess(black_king_pos)
     
     print(f"\nParámetros de Q-learning:")
@@ -548,7 +464,6 @@ def ejercicio_2a():
     print(f"- Gamma (discount factor): {agent.gamma}")
     print(f"- Epsilon inicial (exploration): {agent.epsilon}")
     
-    # Entrenar
     num_episodes = 5000
     print(f"\nEntrenando {num_episodes} episodios con epsilon decreciente...")
     print("(Esto puede tardar 1-2 minutos)")
@@ -560,13 +475,11 @@ def ejercicio_2a():
         snapshot_episodes=[0, 1000, 2500, 4999]
     )
     
-    # Mostrar estadísticas
     print("\n" + "="*70)
     print("RESULTADOS DEL ENTRENAMIENTO")
     print("="*70)
     print(f"Total de mates encontrados: {results['mates_found']}/{num_episodes}")
     
-    # Convergencia
     steps = results['steps_per_episode']
     avg_last_500 = np.mean(steps[-500:])
     min_steps = min(steps[-500:])
@@ -575,7 +488,6 @@ def ejercicio_2a():
     print(f"- Promedio pasos últimos 500 episodios: {avg_last_500:.2f}")
     print(f"- Mínimo de pasos alcanzado: {min_steps}")
     
-    # Calcular punto de convergencia
     window_size = 100
     convergence_episode = None
     for i in range(window_size, len(steps)):
@@ -588,11 +500,8 @@ def ejercicio_2a():
     else:
         print(f"- No converge en {num_episodes} episodios")
     
-    # Q-TABLE SNAPSHOTS (Requerimiento del enunciado)
-    # "Remember to provide the first, two intermediate and the final Q-table"
     agent.print_q_table_snapshots()
     
-    # Secuencia óptima
     print("\n" + "="*70)
     print("SECUENCIA ÓPTIMA DE MOVIMIENTOS (Política Greedy)")
     print("="*70)
@@ -600,7 +509,6 @@ def ejercicio_2a():
     sequence = agent.get_optimal_sequence(initial_white_state, max_moves=30)
     
     if len(sequence) > 0:
-        # La secuencia contiene ESTADOS (incluyendo inicial), los MOVIMIENTOS son len-1
         num_states = len(sequence)
         mate_step = None
         
@@ -611,9 +519,9 @@ def ejercicio_2a():
             print(f"  Estado {i}: Rey({wk[0]},{wk[1]}) Torre({wr[0]},{wr[1]})")
             if agent.is_checkmate(state):
                 mate_step = i
-                print(f"  >>> ¡JAQUE MATE! (alcanzado en {i} movimientos desde el estado inicial) <<<")
+                print(f"  ¡JAQUE MATE! (alcanzado en {i} movimientos desde el estado inicial)")
                 break
-            if i >= 14:  # Mostrar solo primeros 15
+            if i >= 14:
                 print(f"  ... (continúa hasta estado {num_states-1})")
                 break
     
@@ -621,21 +529,16 @@ def ejercicio_2a():
 
 
 def ejercicio_2b(results_2a=None):
-    """
-    Ejercicio 2.b: Q-learning con recompensa heurística
-    """
     print("\n\n" + "="*70)
     print("EJERCICIO 2.b - Q-learning con Recompensa Heurística")
     print("="*70)
     
-    # Configuración inicial
     black_king_pos = (0, 4)
     initial_white_state = [
-        [7, 4, 6],  # Rey blanco
-        [7, 0, 2]   # Torre blanca
+        [7, 4, 6],
+        [7, 0, 2]
     ]
     
-    # Crear agente con rey negro estático
     agent = QLearningChess(black_king_pos)
     agent.alpha = 0.3
     agent.gamma = 0.95
@@ -655,13 +558,11 @@ def ejercicio_2b(results_2a=None):
         snapshot_episodes=[0, 1000, 2500, 4999]
     )
     
-    # Resultados
     print("\n" + "="*70)
     print("RESULTADOS DEL ENTRENAMIENTO")
     print("="*70)
     print(f"Total de mates encontrados: {results['mates_found']}/{num_episodes} ({results['mates_found']/num_episodes*100:.1f}%)")
     
-    # Convergencia
     steps = results['steps_per_episode']
     avg_last_500 = np.mean(steps[-500:])
     min_steps = min(steps[-500:])
@@ -670,7 +571,6 @@ def ejercicio_2b(results_2a=None):
     print(f"- Promedio pasos últimos 500 episodios: {avg_last_500:.2f}")
     print(f"- Mínimo de pasos alcanzado: {min_steps}")
     
-    # Calcular punto de convergencia
     window_size = 100
     convergence_episode = None
     for i in range(window_size, len(steps)):
@@ -683,11 +583,8 @@ def ejercicio_2b(results_2a=None):
     else:
         print(f"- No converge en {num_episodes} episodios")
     
-    # Q-TABLE SNAPSHOTS (Requerimiento del enunciado)
-    # "Remember to provide the first, two intermediate and the final Q-table"
     agent.print_q_table_snapshots()
     
-    # Secuencia óptima
     print("\n" + "="*70)
     print("SECUENCIA ÓPTIMA (Política Greedy)")
     print("="*70)
@@ -695,7 +592,6 @@ def ejercicio_2b(results_2a=None):
     sequence = agent.get_optimal_sequence(initial_white_state, max_moves=30)
     
     if len(sequence) > 0:
-        # La secuencia contiene ESTADOS (incluyendo inicial), los MOVIMIENTOS son len-1
         num_states = len(sequence)
         mate_step = None
         
@@ -712,7 +608,6 @@ def ejercicio_2b(results_2a=None):
                 print(f"  ... (continúa hasta estado {num_states-1})")
                 break
     
-    # Comparación con ejercicio 2.a
     print(f"\n" + "="*70)
     print("COMPARACIÓN CON EJERCICIO 2.a")
     print("="*70)
@@ -729,22 +624,20 @@ def ejercicio_2b(results_2a=None):
 
 
 def ejercicio_2c():
-    """Ejercicio 2.c: Marinero borracho - Q-learning estocástico."""
     print("\n\n" + "="*70)
     print("EJERCICIO 2.c - Marinero Borracho (Stochastic Q-learning)")
     print("="*70)
     
-    # Configuración inicial
     black_king_pos = (0, 4)
     initial_white_state = [
-        [7, 4, 6],  # Rey blanco
-        [7, 0, 2]   # Torre blanca
+        [7, 4, 6],
+        [7, 0, 2]
     ]
     
     TA = np.zeros((8, 8))
-    TA[7][0] = 2   # Torre blanca
-    TA[7][4] = 6   # Rey blanco
-    TA[0][5] = 12  # Rey negro (ESTÁTICO)
+    TA[7][0] = 2
+    TA[7][4] = 6
+    TA[0][5] = 12
     
     print("\nConfiguración inicial del tablero:")
     temp_chess = chess.Chess(TA.copy(), True)
@@ -754,8 +647,7 @@ def ejercicio_2c():
     print("PARTE i: ESTOCASTICIDAD (Probabilidad de éxito)")
     print("="*70)
     
-    # Probar con diferentes probabilidades de éxito
-    stochastic_probs = [1.0, 0.9, 0.8, 0.7]  # 100%, 90%, 80%, 70% de éxito
+    stochastic_probs = [1.0, 0.9, 0.8, 0.7]
     results_all = {}
     
     for prob in stochastic_probs:
@@ -768,13 +660,12 @@ def ejercicio_2c():
         
         agent = QLearningChess(black_king_pos)
         
-        # Ajustar parámetros para estocástico
         if prob < 1.0:
-            agent.alpha = 0.2  # Menor learning rate para entorno estocástico
-            agent.gamma = 0.95  # Mantener alto para planificación
-            agent.epsilon = 0.3  # Más exploración inicial
+            agent.alpha = 0.2
+            agent.gamma = 0.95
+            agent.epsilon = 0.3
         
-        num_episodes = 8000 if prob < 1.0 else 5000  # Más episodios para estocástico
+        num_episodes = 8000 if prob < 1.0 else 5000
         
         print(f"Parámetros ajustados:")
         print(f"  - Alpha: {agent.alpha}")
@@ -785,7 +676,7 @@ def ejercicio_2c():
         results = agent.train(
             initial_white_state=initial_white_state,
             num_episodes=num_episodes,
-            reward_type='heuristic',  # Usar heurística (mejor que simple)
+            reward_type='heuristic',
             snapshot_episodes=[0, num_episodes//3, 2*num_episodes//3, num_episodes-1],
             stochastic_prob=prob
         )
@@ -837,7 +728,6 @@ def ejercicio_2c():
         mates_pct = (results['mates_found'] / num_ep) * 100
         avg_last_500 = np.mean(steps[-500:])
         
-        # Estimar punto de convergencia (cuando avg cae por debajo de 20)
         window_size = 100
         convergence_ep = "No converge"
         for i in range(window_size, len(steps)):
@@ -870,7 +760,6 @@ def ejercicio_2c():
                 print(f"  ... (continúa)")
                 break
     
-    # Simulación de seguimiento de política
     print("\n" + "─"*70)
     print("SIMULACIÓN DE EJECUCIÓN DE POLÍTICA")
     print("─"*70)
@@ -887,14 +776,12 @@ def ejercicio_2c():
         while steps < max_steps:
             state_str = agent_08.state_to_string(state)
             
-            # Verificar mate
             if agent_08.is_checkmate(state):
                 successful_mates += 1
                 path_lengths.append(steps)
                 print(f"  Intento {trial+1}: MATE en {steps} movimientos (OK)")
                 break
             
-            # Elegir mejor acción (greedy)
             possible_actions = agent_08.get_possible_actions(state, black_king_pos)
             if not possible_actions:
                 print(f"  Intento {trial+1}: Sin movimientos (pasos={steps}) (FALLO)")
@@ -913,14 +800,12 @@ def ejercicio_2c():
                 print(f"  Intento {trial+1}: Sin acción válida (FALLO)")
                 break
             
-            # Aplicar estocasticidad
             if random.random() < 0.8:
                 actual_action = best_action
             else:
                 other_actions = [a for a in possible_actions if a != best_action]
                 actual_action = random.choice(other_actions) if other_actions else best_action
             
-            # Ejecutar
             state = agent_08.execute_action(state, actual_action)
             steps += 1
         else:
@@ -936,22 +821,20 @@ def ejercicio_2c():
 
 
 def ejercicio_2f():
-    """Ejercicio 2.f: Búsqueda de mejores parámetros en configuración P1.2"""
     print("\n\n" + "="*70)
     print("EJERCICIO 2.f - Robustez de Parámetros (Configuración P1.2)")
     print("="*70)
     
-    # Configuración P1.2 (más difícil que la original)
-    black_king_pos = (0, 5)  # Rey negro
+    black_king_pos = (0, 5)
     initial_white_state = [
-        [7, 7, 6],  # Rey blanco
-        [7, 0, 2]   # Torre blanca
+        [7, 7, 6],
+        [7, 0, 2]
     ]
     
     TA = np.zeros((8, 8))
-    TA[7][0] = 2   # Torre blanca
-    TA[7][7] = 6   # Rey blanco
-    TA[0][5] = 12  # Rey negro
+    TA[7][0] = 2
+    TA[7][7] = 6
+    TA[0][5] = 12
     
     print("\nConfiguración P1.2 (más compleja):")
     temp_chess = chess.Chess(TA.copy(), True)
@@ -963,12 +846,11 @@ def ejercicio_2f():
     print("PARTE i: GRID SEARCH DE PARÁMETROS")
     print("="*70)
     
-    # Parámetros a probar
     alphas = [0.1, 0.2, 0.3, 0.5]
     gammas = [0.9, 0.95, 0.99]
     epsilons = [0.1, 0.2, 0.3, 0.4]
     stochastic_prob = 0.8
-    num_episodes = 6000  # Reducido para grid search
+    num_episodes = 6000
     
     print(f"\nParámetros de búsqueda:")
     print(f"  - Alphas: {alphas}")
@@ -978,7 +860,6 @@ def ejercicio_2f():
     print(f"  - Episodios por prueba: {num_episodes}")
     print(f"  - Total combinaciones: {len(alphas)*len(gammas)*len(epsilons)} = {len(alphas)*len(gammas)*len(epsilons)}")
     
-    # Almacenar resultados
     results_grid = []
     best_result = None
     best_score = -float('inf')
@@ -1003,7 +884,7 @@ def ejercicio_2f():
                     initial_white_state=initial_white_state,
                     num_episodes=num_episodes,
                     reward_type='heuristic',
-                    snapshot_episodes=[],  # No guardar snapshots para eficiencia
+                    snapshot_episodes=[],
                     stochastic_prob=stochastic_prob
                 )
                 
@@ -1011,7 +892,6 @@ def ejercicio_2f():
                 avg_last_500 = np.mean(steps[-500:])
                 mates_pct = (results['mates_found'] / num_episodes) * 100
                 
-                # Estimar convergencia
                 window_size = 100
                 convergence_ep = num_episodes
                 for i in range(window_size, len(steps)):
@@ -1019,7 +899,6 @@ def ejercicio_2f():
                         convergence_ep = i
                         break
                 
-                # Score combinado (queremos maximizar mates% y minimizar pasos/convergencia)
                 score = mates_pct - (avg_last_500 * 0.5) - (convergence_ep / 100)
                 
                 result_data = {
@@ -1044,7 +923,6 @@ def ejercicio_2f():
     print("PARTE ii: RESULTADOS DE GRID SEARCH")
     print("="*70)
     
-    # Ordenar por score
     results_grid.sort(key=lambda x: x['score'], reverse=True)
     
     print("\n" + "─"*70)
@@ -1054,7 +932,6 @@ def ejercicio_2f():
     print("─"*70)
     
     for i, res in enumerate(results_grid[:8]):
-
         print(f"{res['alpha']:<8} {res['gamma']:<8} {res['epsilon']:<9} "
               f"~{res['convergence']:<11} {res['mates_pct']:>6.1f}%    "
               f"{res['avg_steps']:>6.1f}      {res['score']:>6.1f}")
@@ -1073,7 +950,6 @@ def ejercicio_2f():
     print("PARTE iii: COMPARACIÓN CON PARÁMETROS ORIGINALES (2.c)")
     print("="*70)
     
-    # Probar parámetros originales en esta configuración
     print("\nProbando parámetros de Ejercicio 2.c en configuración P1.2...")
     agent_original = QLearningChess(black_king_pos)
     agent_original.alpha = 0.2
@@ -1110,7 +986,6 @@ def ejercicio_2f():
     print(f"{'P1.2 (0,5) [opt]':<20} {'α={:.1f},γ={:.2f},ε={:.1f}'.format(best_result['alpha'],best_result['gamma'],best_result['epsilon']):<20} "
           f"{'~'+str(best_result['convergence'])+' eps':<15} {f"{best_result['mates_pct']:.1f}%":<12} {f"{best_result['avg_steps']:.2f}"}")
     
-    # Calcular degradación
     degradacion_conv = ((convergence_orig - 1465) / 1465) * 100 if convergence_orig != num_episodes else 100
     degradacion_mates = ((mates_pct_orig - 94.2) / 94.2) * 100
     degradacion_pasos = ((avg_last_500_orig - 15.22) / 15.22) * 100
@@ -1137,7 +1012,6 @@ def ejercicio_2f():
     print("EVALUACIÓN DE ROBUSTEZ DE PARÁMETROS 2.c")
     print("─"*70)
     
-    # Evaluar cada parámetro
     param_scores = {}
     param_scores['alpha'] = " BAJA" if abs(best_result['alpha'] - 0.2) > 0.1 else " ALTA"
     param_scores['gamma'] = " ALTA" if abs(best_result['gamma'] - 0.95) < 0.02 else " MEDIA"
@@ -1185,21 +1059,13 @@ def ejercicio_2f():
     }
 
 
-# ======================================================================
-# FUNCIÓN PRINCIPAL
-# ======================================================================
-
 if __name__ == "__main__":
-    # Ejecutar ejercicio 2.a
-    #agent_2a, results_2a = ejercicio_2a()
+    agent_2a, results_2a = ejercicio_2a()
     
-    # Ejecutar ejercicio 2.b (pasando resultados de 2.a para comparación)
-    #agent_2b, results_2b = ejercicio_2b(results_2a)
+    agent_2b, results_2b = ejercicio_2b(results_2a)
     
-    # Ejecutar ejercicio 2.c - Marinero borracho (Stochastic Q-learning)
-    #results_2c = ejercicio_2c()
+    results_2c = ejercicio_2c()
     
-    # Ejecutar ejercicio 2.f - Análisis de robustez de parámetros
     print("\n" + "="*70)
     print("¿Desea ejecutar el Ejercicio 2.f (Grid Search)?")
     print("Nota: Esto puede tardar 1-2 horas dependiendo del hardware.")
@@ -1210,4 +1076,3 @@ if __name__ == "__main__":
         results_2f = ejercicio_2f()
     else:
         print("\nEjercicio 2.f omitido.")
-    

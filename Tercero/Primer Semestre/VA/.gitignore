@@ -1,0 +1,32 @@
+# Ignore all images folders and their contents at any depth
+**/images/
+**/images_notebook/
+**/images_notebook2/
+
+**/TODOS/
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.zip
+*.txt
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+__MACOSX/
